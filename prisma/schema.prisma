@@ -20,19 +20,36 @@ model AllowedUser {
   @@map("alloweduser")
 }
 
+enum UserStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+}
+
 model User {
-  id            String    @id
+  id            String     @id
   name          String
   email         String
-  emailVerified Boolean   @default(false)
+  emailVerified Boolean    @default(false)
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+
+  globalRole    GlobalRole @default(USER)
+  status UserStatus @default(PENDING)
+  
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
   sessions      Session[]
   accounts      Account[]
 
+  workspaces UserWorkspace[]
+
   @@unique([email])
   @@map("user")
+}
+
+enum GlobalRole {
+  SUPER_ADMIN
+  USER
 }
 
 model Session {
@@ -81,4 +98,49 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+model Workspace {
+  id String @id @default(cuid())
+
+  typeformId String @unique
+  name       String
+
+  accountId String
+
+  isDefault Boolean @default(false)
+  isShared  Boolean @default(false)
+
+  selfUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users UserWorkspace[]
+
+  @@index([typeformId])
+  @@map("workspace")
+}
+
+model UserWorkspace {
+  id String @id @default(cuid())
+
+  userId      String
+  workspaceId String
+
+  role WorkspaceRole @default(VIEWER)
+
+  createdAt DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@index([workspaceId])
+  @@map("user_workspace")
+}
+
+enum WorkspaceRole {
+  EDITOR
+  VIEWER
 }

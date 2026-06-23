@@ -1,15 +1,16 @@
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/getCurrentUser";
 
 export default async function HomePage() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getCurrentUser();
 
-  if (!session) {
+  if (!user) {
     redirect("/auth/login");
   }
 
-  redirect("/workspaces");
+  if (user.globalRole === "SUPER_ADMIN") {
+    redirect("/admin/workspaces");
+  }
+
+  redirect("/workspaces/me");
 }

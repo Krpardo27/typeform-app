@@ -46,7 +46,7 @@ export function OtpStep({ email, onBack }: OtpStepProps) {
       setIsEnteringWorkspace(true);
 
       setTimeout(() => {
-        router.replace("/workspaces");
+        router.replace("/");
         router.refresh();
       }, 1500);
     } catch (err) {

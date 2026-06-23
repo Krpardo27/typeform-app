@@ -14,5 +14,5 @@ export default async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/workspaces/:path*", "/dashboard/:path*"],
+  matcher: ["/admin/:path*", "/workspaces/:path*"],
 };
