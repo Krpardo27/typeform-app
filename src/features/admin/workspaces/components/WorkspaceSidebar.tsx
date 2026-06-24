@@ -1,7 +1,5 @@
-"use client";
-
-import { usePathname, useRouter } from "next/navigation";
-import { LuLayoutDashboard, LuFileText, LuInbox } from "react-icons/lu";
+import Link from "next/link";
+import { LuFileText, LuHouse, LuInbox, LuLayoutDashboard } from "react-icons/lu";
 import { LogoutButton } from "../../../../shared/components/LogoutButton";
 
 type WorkspaceSidebarProps = {
@@ -14,68 +12,90 @@ type WorkspaceSidebarProps = {
     id: string;
     name: string;
   }[];
+
+  currentWorkspaceId?: string;
+  currentSection?: "home" | "forms" | "responses";
 };
 
 const workspaceNavItems = [
-  { label: "Inicio", href: "", icon: LuLayoutDashboard },
+  { label: "Inicio", href: "", icon: LuLayoutDashboard, section: "home" },
   { label: "Formularios", href: "forms", icon: LuFileText },
   { label: "Respuestas", href: "responses", icon: LuInbox },
-];
+] as const;
 
-export function WorkspaceSidebar({ user, workspaces }: WorkspaceSidebarProps) {
-  const pathname = usePathname();
-  const router = useRouter();
+export function WorkspaceSidebar({
+  user,
+  workspaces,
+  currentWorkspaceId,
+  currentSection,
+}: WorkspaceSidebarProps) {
   const displayName = user.name?.trim() || user.email.split("@")[0];
-
-  const segments = pathname.split("/");
-  const currentWorkspaceId =
-    segments[1] === "workspaces" && segments[2] && segments[2] !== "me"
-      ? segments[2]
-      : null;
 
   return (
     <aside className="flex min-h-dvh w-72 shrink-0 flex-col border-r border-zinc-800 bg-[#0f0f0f] px-4 py-6 text-zinc-200">
-      {/* Header del Sidebar */}
       <div className="mb-4">
-        <p className="text-xs text-zinc-500 mb-2">Radios</p>
+        <Link
+          href={currentWorkspaceId ? `/workspaces/${currentWorkspaceId}` : "/workspaces/me"}
+          className="mb-5 flex items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-900 hover:text-white"
+        >
+          <LuHouse className="size-4 text-[#C8A96E]" />
+          Panel
+        </Link>
+
+        <p className="mb-2 px-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
+          Radios
+        </p>
         <div className="space-y-1">
           {workspaces.map((w) => {
             const isActive = currentWorkspaceId === w.id;
 
             return (
-              <button
+              <Link
                 key={w.id}
-                onClick={() => router.push(`/workspaces/${w.id}`)}
-                className={`w-full text-left px-2 py-1 rounded-md text-sm transition ${
+                href={`/workspaces/${w.id}`}
+                className={`block w-full rounded-md px-2 py-1.5 text-left text-sm transition ${
                   isActive
                     ? "bg-[#C8A96E]/10 text-[#C8A96E]"
                     : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
                 }`}
               >
-                📻 {w.name}
-              </button>
+                {w.name}
+              </Link>
             );
           })}
         </div>
       </div>
-      {/* SOLO SI HAY WORKSPACE */}
+
       {currentWorkspaceId && (
-        <nav className="space-y-1">
-          {workspaceNavItems.map((item) => (
-            <button
-              key={item.label}
-              onClick={() =>
-                router.push(
-                  item.href
-                    ? `/workspaces/${currentWorkspaceId}/${item.href}`
-                    : `/workspaces/${currentWorkspaceId}`,
-                )
-              }
-              className="w-full text-left px-3 py-2 rounded-lg text-sm text-zinc-400 hover:bg-zinc-900 hover:text-white"
-            >
-              {item.label}
-            </button>
-          ))}
+        <nav className="mt-3 border-t border-zinc-800 pt-4">
+          <p className="mb-2 px-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
+            Workspace
+          </p>
+          <div className="space-y-1">
+            {workspaceNavItems.map((item) => {
+              const Icon = item.icon;
+              const section = "section" in item ? item.section : item.href;
+              const isActive = currentSection === section;
+              const href = item.href
+                ? `/workspaces/${currentWorkspaceId}/${item.href}`
+                : `/workspaces/${currentWorkspaceId}`;
+
+              return (
+                <Link
+                  key={item.label}
+                  href={href}
+                  className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
+                    isActive
+                      ? "bg-zinc-900 text-white"
+                      : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                  }`}
+                >
+                  <Icon className="size-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
         </nav>
       )}
 

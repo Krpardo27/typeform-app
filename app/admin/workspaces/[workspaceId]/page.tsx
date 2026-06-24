@@ -1,120 +1,176 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { LuArrowLeft, LuArrowUpRight, LuFileText } from "react-icons/lu";
+import Link from "next/link";
+import { getWorkspaceForms } from "@/features/typeform/services/typeform.service";
 
-export default async function AdminWorkspaceDetailPage({
-  params,
-}: {
+interface Props {
   params: Promise<{ workspaceId: string }>;
-}) {
+}
+
+export default async function WorkspaceDetailPage({ params }: Props) {
   const { workspaceId } = await params;
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    include: {
-      users: {
-        include: {
-          user: true,
-        },
+    select: {
+      id: true,
+      name: true,
+      typeformId: true,
+      _count: {
+        select: { users: true },
       },
     },
   });
 
   if (!workspace) notFound();
 
+  const [typeformForms, appForms] = await Promise.all([
+    getWorkspaceForms(workspace.typeformId),
+    prisma.form.findMany({
+      where: { workspaceId: workspace.id },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        title: true,
+        typeformId: true,
+        description: true,
+        createdAt: true,
+      },
+    }),
+  ]);
+
+  const appFormsByTypeformId = new Map(
+    appForms.map((form) => [form.typeformId, form]),
+  );
+
   return (
-    <div className="min-h-dvh bg-[#0b0b0d] px-10 py-8 text-zinc-100">
-      {/* HEADER */}
-      <div className="mb-8 flex items-start justify-between">
+    <div>
+      {/* Header */}
+      <div className="mb-8 flex items-start justify-between gap-6">
         <div>
           <Link
             href="/admin/workspaces"
-            className="text-sm text-zinc-500 hover:text-[#C8A96E]"
+            className="mb-3 flex items-center gap-1.5 text-xs text-zinc-500 transition hover:text-zinc-300"
           >
-            ← Volver
+            <LuArrowLeft className="size-3" />
+            Volver a workspaces
           </Link>
 
-          <h1 className="mt-3 text-2xl font-bold">
+          <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+            Workspace
+          </p>
+
+          <h1 className="mt-2 text-2xl font-bold text-white">
             {workspace.name}
           </h1>
 
-          <p className="text-sm text-zinc-500">
-            Typeform: {workspace.typeformId}
+          <p className="mt-1 text-sm text-zinc-500">
+            ID Typeform: {workspace.typeformId}
+          </p>
+          <p className="mt-2 max-w-xl text-sm text-zinc-500">
+            Vista de auditoria conectada a Typeform. Prisma solo marca los formularios creados por esta app.
           </p>
         </div>
 
-        <div className="flex gap-2">
-          <span className="rounded-md border border-zinc-800 px-2 py-1 text-xs">
-            {workspace.isShared ? "Shared" : "Private"}
-          </span>
-
-          {workspace.isDefault && (
-            <span className="rounded-md border border-[#C8A96E]/40 px-2 py-1 text-xs text-[#C8A96E]">
-              Default
-            </span>
-          )}
+        <div className="flex gap-3">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-400">
+            {typeformForms.total_items} en Typeform
+          </div>
+          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-400">
+            {appForms.length} creados por la app
+          </div>
         </div>
       </div>
 
-      {/* GRID LAYOUT */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        
-        {/* USERS */}
-        <div className="lg:col-span-2 rounded-xl border border-zinc-800 bg-[#111113]">
-          <div className="border-b border-zinc-800 p-4">
-            <h2 className="font-semibold">Usuarios con acceso</h2>
-          </div>
+      {/* Forms grid */}
+      {typeformForms.items.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-800 py-16 text-center">
+          <LuFileText className="mb-3 size-8 text-zinc-700" />
+          <p className="text-sm font-medium text-zinc-400">
+            No hay formularios en este workspace
+          </p>
+          <p className="mt-1 text-xs text-zinc-600">
+            Typeform no devolvio formularios para este workspace.
+          </p>
+        </div>
+      ) : (
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {typeformForms.items.map((form) => {
+            const appForm = appFormsByTypeformId.get(form.id);
 
-          <div className="divide-y divide-zinc-800">
-            {workspace.users.length === 0 ? (
-              <p className="p-4 text-sm text-zinc-500">
-                Sin usuarios asignados
-              </p>
-            ) : (
-              workspace.users.map((uw) => (
-                <div
-                  key={uw.id}
-                  className="flex items-center justify-between p-4"
-                >
-                  <div>
-                    <p className="text-sm font-medium">
-                      {uw.user.name}
-                    </p>
-                    <p className="text-xs text-zinc-500">
-                      {uw.user.email}
+            return (
+              <article
+                key={form.id}
+                className="rounded-xl border border-zinc-800 bg-[#111113] p-5"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="truncate text-base font-semibold text-white">
+                        {form.title}
+                      </h2>
+                      {appForm && (
+                        <span className="rounded-md border border-[#C8A96E]/40 px-2 py-0.5 text-[11px] font-medium text-[#C8A96E]">
+                          App
+                        </span>
+                      )}
+                    </div>
+
+                    {appForm?.description && (
+                      <p className="mt-1 line-clamp-2 text-xs text-zinc-500">
+                        {appForm.description}
+                      </p>
+                    )}
+
+                    <p className="mt-2 truncate text-xs text-zinc-600">
+                      ID: {form.id}
                     </p>
                   </div>
 
-                  <span className="text-xs text-zinc-400">
-                    {uw.role}
+                  {form._links?.display && (
+                    <a
+                      href={form._links.display}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-lg border border-zinc-800 p-2 text-zinc-400 transition hover:border-[#C8A96E] hover:text-[#C8A96E]"
+                    >
+                      <LuArrowUpRight className="size-4" />
+                    </a>
+                  )}
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2 text-xs text-zinc-600">
+                  <span>
+                    Actualizado{" "}
+                    {form.last_updated_at
+                      ? new Date(form.last_updated_at).toLocaleDateString("es-CL", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "sin fecha"}
+                  </span>
+                  <span>
+                    {form.settings?.is_public === false ? "Privado" : "Publico"}
                   </span>
                 </div>
-              ))
-            )}
-          </div>
-        </div>
 
-        {/* SETTINGS */}
-        <div className="rounded-xl border border-zinc-800 bg-[#111113] p-4">
-          <h2 className="font-semibold mb-4">Configuración</h2>
-
-          <div className="space-y-3 text-sm">
-            <div>
-              <p className="text-zinc-500">Workspace ID</p>
-              <p>{workspace.id}</p>
-            </div>
-
-            <div>
-              <p className="text-zinc-500">Estado</p>
-              <p>{workspace.isShared ? "Compartido" : "Privado"}</p>
-            </div>
-          </div>
-
-          <button className="mt-6 w-full rounded-lg bg-[#C8A96E] px-4 py-2 text-sm font-semibold text-zinc-950">
-            Editar workspace
-          </button>
-        </div>
-      </div>
+                {appForm && (
+                  <div className="mt-2 text-xs text-zinc-600">
+                    Registrado en app{" "}
+                    {new Date(appForm.createdAt).toLocaleDateString("es-CL", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </section>
+      )}
     </div>
   );
 }

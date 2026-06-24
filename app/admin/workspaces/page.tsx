@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LuArrowUpRight, LuUsers } from "react-icons/lu";
 import { prisma } from "@/lib/prisma";
+import WorkspacesPageClient from "@/features/admin/workspaces/components/WorkspacesPageClient";
 
 export default async function AdminWorkspacesPage() {
   const workspaces = await prisma.workspace.findMany({
@@ -31,12 +32,16 @@ export default async function AdminWorkspacesPage() {
           </p>
         </div>
 
-        <Link
-          href="/admin/users"
-          className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-300 transition hover:border-[#C8A96E] hover:text-[#C8A96E]"
-        >
-          Gestionar usuarios
-        </Link>
+        <div className="flex items-center gap-3">
+          <WorkspacesPageClient /> {/* ← botón Crear Workspace */}
+
+          <Link
+            href="/admin/users"
+            className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-300 transition hover:border-[#C8A96E] hover:text-[#C8A96E]"
+          >
+            Gestionar usuarios
+          </Link>
+        </div>
       </div>
 
       {/* GRID */}
