@@ -13,9 +13,7 @@ export default function AdminPage() {
         <div className="rounded-xl border border-zinc-800 bg-[#0f0f0f] p-6 shadow-sm">
           <p className="text-sm font-medium text-zinc-400">Total Usuarios</p>
           <p className="text-3xl font-bold text-zinc-100 mt-1">1,248</p>
-          <span className="text-xs text-emerald-500 font-medium">
-            +12% este mes
-          </span>
+          
         </div>
 
         <div className="rounded-xl border border-zinc-800 bg-[#0f0f0f] p-6 shadow-sm">
@@ -37,18 +35,6 @@ export default function AdminPage() {
         <h2 className="text-lg font-semibold text-zinc-100 mb-4">
           Actividad Reciente
         </h2>
-        <div className="space-y-3 text-sm text-zinc-400">
-          <p>
-            El usuario
-            <span className="text-zinc-200 font-medium">Juan Pérez</span> se
-            unió al workspace Marketing.
-          </p>
-          <p>
-            Se creó el nuevo workspace de nivel enterprise{" "}
-            <span className="text-zinc-200 font-medium">Acme Corp</span>.
-          </p>
-          <p> Alerta de seguridad resuelta en el nodo principal.</p>
-        </div>
       </div>
     </div>
   );

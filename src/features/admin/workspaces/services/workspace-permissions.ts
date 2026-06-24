@@ -5,15 +5,18 @@ type CurrentUser = {
   globalRole: string;
 };
 
+export type WorkspaceRole = "EDITOR" | "VIEWER";
+
 export type WorkspaceSummary = {
   id: string;
   name: string;
   typeformId: string;
+  role: WorkspaceRole;
 };
 
 export async function getVisibleWorkspaces(user: CurrentUser) {
   if (user.globalRole === "SUPER_ADMIN") {
-    return prisma.workspace.findMany({
+    const workspaces = await prisma.workspace.findMany({
       orderBy: { name: "asc" },
       select: {
         id: true,
@@ -21,6 +24,11 @@ export async function getVisibleWorkspaces(user: CurrentUser) {
         typeformId: true,
       },
     });
+
+    return workspaces.map((workspace) => ({
+      ...workspace,
+      role: "EDITOR" as const,
+    }));
   }
 
   const userWorkspaces = await prisma.userWorkspace.findMany({
@@ -41,7 +49,10 @@ export async function getVisibleWorkspaces(user: CurrentUser) {
     },
   });
 
-  return userWorkspaces.map(({ workspace }) => workspace);
+  return userWorkspaces.map(({ workspace, role }) => ({
+    ...workspace,
+    role,
+  }));
 }
 
 export async function getAuthorizedWorkspace(
@@ -49,7 +60,7 @@ export async function getAuthorizedWorkspace(
   workspaceId: string,
 ) {
   if (user.globalRole === "SUPER_ADMIN") {
-    return prisma.workspace.findUnique({
+    const workspace = await prisma.workspace.findUnique({
       where: { id: workspaceId },
       select: {
         id: true,
@@ -57,6 +68,8 @@ export async function getAuthorizedWorkspace(
         typeformId: true,
       },
     });
+
+    return workspace ? { ...workspace, role: "EDITOR" as const } : null;
   }
 
   const access = await prisma.userWorkspace.findUnique({
@@ -77,5 +90,10 @@ export async function getAuthorizedWorkspace(
     },
   });
 
-  return access?.workspace ?? null;
+  return access
+    ? {
+        ...access.workspace,
+        role: access.role,
+      }
+    : null;
 }
