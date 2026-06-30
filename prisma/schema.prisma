@@ -100,6 +100,42 @@ model Verification {
   @@map("verification")
 }
 
+enum AuditAction {
+  OTP_REQUESTED
+  FORM_CLONED
+  SENSITIVE_DATA_VIEWED
+  WINNER_SELECTED
+}
+
+model AuditLog {
+  id String @id @default(cuid())
+
+  action AuditAction
+
+  actorId    String?
+  actorEmail String?
+  actorName  String?
+
+  targetType String?
+  targetId   String?
+
+  workspaceId   String?
+  workspaceName String?
+  formId        String?
+  formTitle     String?
+
+  ipAddress String?
+  userAgent String?
+  metadata  Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([action])
+  @@index([actorEmail])
+  @@index([createdAt])
+  @@map("audit_log")
+}
+
 model Form {
   id          String   @id @default(cuid())
 

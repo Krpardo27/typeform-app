@@ -15,6 +15,7 @@ import {
   getTypeformFormResponses,
   mapMaskedTypeformResponses,
 } from "@/features/typeform/services/typeform.service";
+import { createAuditLog } from "@/features/admin/audit/services/audit-log.service";
 
 function formatDate(value?: string) {
   if (!value) return "Sin fecha";
@@ -48,6 +49,23 @@ export default async function FormResponsesPage({
       response.hidden.length,
     0,
   );
+
+  await createAuditLog({
+    action: "SENSITIVE_DATA_VIEWED",
+    actor: user,
+    target: { type: "form_responses", id: form.id },
+    context: {
+      workspaceId: workspace.id,
+      workspaceName: workspace.name,
+      formId: form.id,
+      formTitle: form.title,
+      metadata: {
+        totalResponses: responses.total_items,
+        displayedResponses: maskedResponses.length,
+        maskedAnswerCount,
+      },
+    },
+  });
 
   return (
     <WorkspaceShell
