@@ -9,6 +9,10 @@ const globalForPrisma = global as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+type PrismaClientWithAuditLog = PrismaClient & {
+  auditLog?: unknown;
+};
+
 function createPrismaClient() {
   const adapter = new PrismaPg({
     connectionString: process.env.DATABASE_URL!,
@@ -20,6 +24,9 @@ function createPrismaClient() {
   });
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+const cachedPrisma = globalForPrisma.prisma as PrismaClientWithAuditLog | undefined;
+
+export const prisma =
+  cachedPrisma && cachedPrisma.auditLog ? cachedPrisma : createPrismaClient();
 
 globalForPrisma.prisma = prisma;

@@ -40,11 +40,29 @@ type TypeformFormsResponse = {
   items: TypeformFormSummary[];
 };
 
-type TypeformWorkspace = {
+export type TypeformWorkspace = {
   id: string;
+  name?: string;
+  account_id?: string;
+  shared?: boolean;
+  forms?: {
+    count?: number;
+    href?: string;
+  };
+  members?: {
+    email?: string;
+    name?: string;
+    role?: "owner" | "member";
+  }[];
   self: {
     href: string;
   };
+};
+
+type TypeformWorkspacesResponse = {
+  total_items: number;
+  page_count: number;
+  items: TypeformWorkspace[];
 };
 
 type TypeformCreateFormPayload = {
@@ -174,7 +192,46 @@ export async function getWorkspaceForms(workspaceTypeformId: string) {
     order_by: "desc",
   });
 
-  return typeformRequest<TypeformFormsResponse>(`/forms?${searchParams}`);
+  const firstPage = await typeformRequest<TypeformFormsResponse>(
+    `/forms?${searchParams}`,
+  );
+
+  if (firstPage.page_count <= 1) {
+    return firstPage;
+  }
+
+  const remainingPages = await Promise.all(
+    Array.from({ length: firstPage.page_count - 1 }, (_, index) => {
+      const pageParams = new URLSearchParams(searchParams);
+      pageParams.set("page", String(index + 2));
+
+      return typeformRequest<TypeformFormsResponse>(`/forms?${pageParams}`);
+    }),
+  );
+
+  return {
+    ...firstPage,
+    items: [
+      ...firstPage.items,
+      ...remainingPages.flatMap((page) => page.items),
+    ],
+  };
+}
+
+export async function getTypeformWorkspaces() {
+  const searchParams = new URLSearchParams({
+    page_size: "200",
+  });
+
+  return typeformRequest<TypeformWorkspacesResponse>(
+    `/workspaces?${searchParams}`,
+  );
+}
+
+export async function getTypeformWorkspace(workspaceTypeformId: string) {
+  return typeformRequest<TypeformWorkspace>(
+    `/workspaces/${encodeURIComponent(workspaceTypeformId)}`,
+  );
 }
 
 export async function getTypeformForm(formId: string) {

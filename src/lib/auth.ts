@@ -4,6 +4,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "@/lib/prisma";
 import { emailOTP } from "better-auth/plugins";
 import { AuthEmailService } from "@/emails/services/AuthEmailService";
+import { createAuditLog } from "@/features/admin/audit/services/audit-log.service";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -30,6 +31,18 @@ export const auth = betterAuth({
         console.log("[AUTH] Allowed user check:", {
           email,
           isAllowed: !!isAllowed,
+        });
+
+        await createAuditLog({
+          action: "OTP_REQUESTED",
+          actor: { email },
+          target: { type: "auth_otp", id: email.toLowerCase() },
+          context: {
+            metadata: {
+              type,
+              allowed: !!isAllowed,
+            },
+          },
         });
 
         if (!isAllowed) {

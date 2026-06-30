@@ -1,19 +1,23 @@
 import Link from "next/link";
-import { LuArrowUpRight, LuUsers } from "react-icons/lu";
 import { prisma } from "@/lib/prisma";
 import WorkspacesPageClient from "@/features/admin/workspaces/components/WorkspacesPageClient";
+import { AdminWorkspacesGrid } from "@/features/admin/workspaces/components/AdminWorkspacesGrid";
+import { getTypeformWorkspaces } from "@/features/typeform/services/typeform.service";
 
 export default async function AdminWorkspacesPage() {
-  const workspaces = await prisma.workspace.findMany({
-    include: {
-      _count: {
-        select: { users: true },
+  const [typeformWorkspaces, appWorkspaces] = await Promise.all([
+    getTypeformWorkspaces(),
+    prisma.workspace.findMany({
+      include: {
+        _count: {
+          select: { users: true },
+        },
       },
-    },
-    orderBy: {
-      name: "asc",
-    },
-  });
+      orderBy: {
+        name: "asc",
+      },
+    }),
+  ]);
 
   return (
     <>
@@ -44,39 +48,10 @@ export default async function AdminWorkspacesPage() {
         </div>
       </div>
 
-      {/* GRID */}
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {workspaces.map((workspace) => (
-          <article
-            key={workspace.id}
-            className="rounded-xl border border-zinc-800 bg-[#111113] p-5"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <h2 className="truncate text-lg font-semibold text-white">
-                  {workspace.name}
-                </h2>
-
-                <p className="mt-1 truncate text-xs text-zinc-500">
-                  Typeform workspace ID: {workspace.typeformId}
-                </p>
-              </div>
-
-              <Link
-                href={`/admin/workspaces/${workspace.id}`}
-                className="rounded-lg border border-zinc-800 p-2 text-zinc-400 transition hover:border-[#C8A96E] hover:text-[#C8A96E]"
-              >
-                <LuArrowUpRight className="size-4" />
-              </Link>
-            </div>
-
-            <div className="mt-5 flex items-center gap-2 text-sm text-zinc-400">
-              <LuUsers className="size-4 text-[#C8A96E]" />
-              <span>{workspace._count.users} usuarios asignados</span>
-            </div>
-          </article>
-        ))}
-      </section>
+      <AdminWorkspacesGrid
+        typeformWorkspaces={typeformWorkspaces.items}
+        appWorkspaces={appWorkspaces}
+      />
     </>
   );
 }
