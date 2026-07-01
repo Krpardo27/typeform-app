@@ -10,7 +10,7 @@ type WorkspaceShellProps = {
     name: string;
   }[];
   currentWorkspaceId?: string;
-  currentSection?: "home" | "forms" | "responses";
+  currentSection?: "home" | "forms";
   children: React.ReactNode;
 };
 

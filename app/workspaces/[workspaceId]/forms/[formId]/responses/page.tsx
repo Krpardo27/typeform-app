@@ -146,15 +146,15 @@ export default async function FormResponsesPage({
       user={user}
       workspaces={workspaces}
       currentWorkspaceId={workspace.id}
-      currentSection="responses"
+      currentSection="forms"
     >
       <header className="border-b border-zinc-800/60 pb-6">
         <Link
-          href={`/workspaces/${workspace.id}/responses`}
+          href={`/workspaces/${workspace.id}/forms`}
           className="inline-flex items-center gap-2 text-sm text-zinc-500 transition hover:text-[#C8A96E]"
         >
           <LuArrowLeft className="size-4" />
-          Volver a respuestas
+          Volver a formularios
         </Link>
 
         <div className="mt-5 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
