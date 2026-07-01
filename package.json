@@ -24,6 +24,7 @@
     "react-toastify": "^11.1.0",
     "resend": "^6.14.0",
     "sonner": "^2.0.7",
+    "sweetalert2": "^11.26.25",
     "zod": "^4.4.3"
   },
   "devDependencies": {

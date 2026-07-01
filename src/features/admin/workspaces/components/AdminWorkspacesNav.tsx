@@ -7,6 +7,7 @@ import {
   LuClipboardList,
   LuFolder,
   LuLayoutDashboard,
+  LuUserPlus,
   LuUsers,
 } from "react-icons/lu";
 
@@ -16,6 +17,7 @@ export default function AdminWorkspacesNav() {
   const isDashboard = pathname === "/admin";
   const isWorkspaces = pathname.startsWith("/admin/workspaces");
   const isUsers = pathname.startsWith("/admin/users");
+  const isMembers = pathname.startsWith("/admin/miembros");
   const isAudit = pathname.startsWith("/admin/auditoria");
 
   return (
@@ -59,6 +61,18 @@ export default function AdminWorkspacesNav() {
         >
           <LuUsers className="size-4" />
           Usuarios
+        </Link>
+
+        <Link
+          href="/admin/miembros"
+          className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition ${
+            isMembers
+              ? "bg-[#C8A96E]/10 text-[#C8A96E]"
+              : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+          }`}
+        >
+          <LuUserPlus className="size-4" />
+          Agregar miembros
         </Link>
 
         <Link

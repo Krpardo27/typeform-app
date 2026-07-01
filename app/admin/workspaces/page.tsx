@@ -3,21 +3,23 @@ import { prisma } from "@/lib/prisma";
 import WorkspacesPageClient from "@/features/admin/workspaces/components/WorkspacesPageClient";
 import { AdminWorkspacesGrid } from "@/features/admin/workspaces/components/AdminWorkspacesGrid";
 import { getTypeformWorkspaces } from "@/features/typeform/services/typeform.service";
+import { syncTypeformWorkspaceIds } from "@/features/admin/workspaces/services/sync-typeform-workspace-ids";
 
 export default async function AdminWorkspacesPage() {
-  const [typeformWorkspaces, appWorkspaces] = await Promise.all([
-    getTypeformWorkspaces(),
-    prisma.workspace.findMany({
-      include: {
-        _count: {
-          select: { users: true },
-        },
+  const typeformWorkspaces = await getTypeformWorkspaces();
+
+  await syncTypeformWorkspaceIds(typeformWorkspaces.items);
+
+  const appWorkspaces = await prisma.workspace.findMany({
+    include: {
+      _count: {
+        select: { users: true },
       },
-      orderBy: {
-        name: "asc",
-      },
-    }),
-  ]);
+    },
+    orderBy: {
+      name: "asc",
+    },
+  });
 
   return (
     <>

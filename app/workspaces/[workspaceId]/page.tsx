@@ -78,7 +78,7 @@ export default async function WorkspacePage({
         )}
 
         <Link
-          href={`/workspaces/${workspace.id}/responses`}
+          href={`/workspaces/${workspace.id}/forms`}
           className="rounded-xl border border-zinc-800 bg-[#111113] p-5 transition hover:border-[#C8A96E]/50"
         >
           <div className="flex items-center gap-3">
@@ -88,7 +88,7 @@ export default async function WorkspacePage({
             <div>
               <h2 className="text-base font-semibold text-white">Respuestas</h2>
               <p className="mt-1 text-sm text-zinc-500">
-                Preparado para revisar participantes por formulario.
+                Revisa respuestas por formulario desde la tabla principal.
               </p>
             </div>
           </div>

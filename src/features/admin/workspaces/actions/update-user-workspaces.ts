@@ -23,7 +23,44 @@ export async function updateUserWorkspaces(
     };
   }
 
+  if (currentUser.globalRole !== "SUPER_ADMIN") {
+    return {
+      success: false,
+      message: "Solo un SUPER_ADMIN puede actualizar permisos",
+      changed: false,
+    };
+  }
+
   const { userId, workspaceIds } = data;
+
+  const roleByWorkspaceId = new Map<string, WorkspaceRole>();
+
+  for (const rawWorkspaceId of workspaceIds) {
+    const [workspaceId, rawRole] = rawWorkspaceId.split("::");
+    const role =
+      rawRole === WorkspaceRole.EDITOR
+        ? WorkspaceRole.EDITOR
+        : WorkspaceRole.VIEWER;
+
+    if (!workspaceId) {
+      continue;
+    }
+
+    if (
+      role !== WorkspaceRole.VIEWER &&
+      role !== WorkspaceRole.EDITOR
+    ) {
+      return {
+        success: false,
+        message: "Rol de workspace invalido",
+        changed: false,
+      };
+    }
+
+    roleByWorkspaceId.set(workspaceId, role);
+  }
+
+  const normalizedWorkspaceIds = [...roleByWorkspaceId.keys()];
 
   const [user, validWorkspaces] = await Promise.all([
     prisma.user.findUnique({
@@ -34,7 +71,7 @@ export async function updateUserWorkspaces(
     prisma.workspace.findMany({
       where: {
         id: {
-          in: workspaceIds,
+          in: normalizedWorkspaceIds,
         },
       },
       select: {
@@ -53,20 +90,29 @@ export async function updateUserWorkspaces(
 
   const validWorkspaceIds = validWorkspaces.map((workspace) => workspace.id);
 
+  const validWorkspaceIdSet = new Set(validWorkspaceIds);
+
+  const nextAssignments = [...roleByWorkspaceId.entries()]
+    .filter(([workspaceId]) => validWorkspaceIdSet.has(workspaceId))
+    .map(([workspaceId, role]) => ({ workspaceId, role }));
+
   const currentAssignments = await prisma.userWorkspace.findMany({
     where: {
       userId,
     },
     select: {
       workspaceId: true,
+      role: true,
     },
   });
 
   const currentWorkspaceIds = currentAssignments
-    .map((item) => item.workspaceId)
+    .map((item) => `${item.workspaceId}:${item.role}`)
     .sort();
 
-  const nextWorkspaceIds = [...validWorkspaceIds].sort();
+  const nextWorkspaceIds = nextAssignments
+    .map((item) => `${item.workspaceId}:${item.role}`)
+    .sort();
 
   const hasChanges =
     JSON.stringify(currentWorkspaceIds) !==
@@ -85,19 +131,28 @@ export async function updateUserWorkspaces(
       where: {
         userId,
         workspaceId: {
-          notIn: validWorkspaceIds,
+          notIn: nextAssignments.map((item) => item.workspaceId),
         },
       },
     }),
-
-    prisma.userWorkspace.createMany({
-      data: validWorkspaceIds.map((workspaceId) => ({
-        userId,
-        workspaceId,
-        role: WorkspaceRole.VIEWER,
-      })),
-      skipDuplicates: true,
-    }),
+    ...nextAssignments.map((assignment) =>
+      prisma.userWorkspace.upsert({
+        where: {
+          userId_workspaceId: {
+            userId,
+            workspaceId: assignment.workspaceId,
+          },
+        },
+        create: {
+          userId,
+          workspaceId: assignment.workspaceId,
+          role: assignment.role,
+        },
+        update: {
+          role: assignment.role,
+        },
+      }),
+    ),
   ]);
 
   revalidatePath("/admin/users");

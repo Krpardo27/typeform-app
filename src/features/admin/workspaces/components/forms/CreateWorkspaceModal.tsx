@@ -20,7 +20,7 @@ export default function CreateWorkspaceModal({ onClose }: Props) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit: NonNullable<React.ComponentProps<"form">["onSubmit"]> = async (e) => {
     e.preventDefault();
 
     setError("");
@@ -43,7 +43,24 @@ export default function CreateWorkspaceModal({ onClose }: Props) {
       return;
     }
 
-    toast.success("Workspace creado exitosamente");
+    if (response?.success) {
+      const workspaceName = response.workspace?.name ?? name;
+      const defaultFormTitle =
+        response.defaultForm?.title ?? `Formulario base - ${workspaceName}`;
+      const workspaceAdminPath = response.workspace?.typeformId
+        ? `/admin/workspaces/${response.workspace.typeformId}`
+        : "/admin/workspaces";
+
+      toast.success("Workspace creado exitosamente", {
+        description: `Se creo ${workspaceName} con el formulario base ${defaultFormTitle}.`,
+        action: {
+          label: "Abrir",
+          onClick: () => router.push(workspaceAdminPath),
+        },
+      });
+    } else {
+      toast.success("Workspace creado exitosamente");
+    }
 
     onClose();
     router.refresh();

@@ -1,78 +1,41 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { LuLoader } from "react-icons/lu";
-import { updateUserWorkspaces } from "../actions/update-user-workspaces";
+import { LuLoader, LuUserPlus, LuCheck } from "react-icons/lu";
+import { authorizeMember } from "../actions/authorize-member.action";
 
-type Workspace = {
+type WorkspaceOption = {
   id: string;
   name: string;
   typeformId: string;
 };
 
-type WorkspaceRole = "VIEWER" | "EDITOR";
+type Props = {
+  workspaces: WorkspaceOption[];
+};
 
 type WorkspaceAssignment = {
   workspaceId: string;
-  role: WorkspaceRole;
+  role: "VIEWER" | "EDITOR";
 };
 
-type UpdateUserWorkspacesResult = {
-  success: boolean;
-  changed: boolean;
-  message: string;
-};
-
-type Props = {
-  userId: string;
-  workspaces: Workspace[];
-  assignedWorkspaces: WorkspaceAssignment[];
-};
-
-export function UserWorkspaceForm({
-  userId,
-  workspaces,
-  assignedWorkspaces,
-}: Props) {
-  const [assignments, setAssignments] =
-    useState<WorkspaceAssignment[]>(assignedWorkspaces);
-
+export function AuthorizeMemberForm({ workspaces }: Props) {
+  const [email, setEmail] = useState("");
+  const [assignments, setAssignments] = useState<WorkspaceAssignment[]>([]);
   const [isPending, startTransition] = useTransition();
-
-  const initialValue = useMemo(
-    () =>
-      [...assignedWorkspaces]
-        .sort((a, b) => a.workspaceId.localeCompare(b.workspaceId))
-        .map((item) => `${item.workspaceId}:${item.role}`)
-        .join("|"),
-    [assignedWorkspaces],
-  );
-
-  const currentValue = useMemo(
-    () =>
-      [...assignments]
-        .sort((a, b) => a.workspaceId.localeCompare(b.workspaceId))
-        .map((item) => `${item.workspaceId}:${item.role}`)
-        .join("|"),
-    [assignments],
-  );
-
-  const hasChanges = initialValue !== currentValue;
 
   function toggleWorkspace(workspaceId: string) {
     setAssignments((current) => {
       const exists = current.some((item) => item.workspaceId === workspaceId);
-
       if (exists) {
         return current.filter((item) => item.workspaceId !== workspaceId);
       }
-
       return [...current, { workspaceId, role: "VIEWER" }];
     });
   }
 
-  function updateRole(workspaceId: string, role: WorkspaceRole) {
+  function updateRole(workspaceId: string, role: "VIEWER" | "EDITOR") {
     setAssignments((current) =>
       current.map((item) =>
         item.workspaceId === workspaceId ? { ...item, role } : item,
@@ -80,73 +43,66 @@ export function UserWorkspaceForm({
     );
   }
 
-  function handleSubmit() {
-    if (!hasChanges) {
-      toast.info("No se detectaron cambios");
+  const canSubmit = Boolean(email.trim()) && assignments.length > 0;
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!canSubmit) {
+      toast.error("Completa email y selecciona al menos 1 workspace");
       return;
     }
 
     startTransition(async () => {
-      const payload = {
-        userId,
-        workspaceIds: assignments.map(
-          (item) => `${item.workspaceId}::${item.role}`,
-        ),
-      };
-      const response = (await updateUserWorkspaces(
-        payload,
-      )) as UpdateUserWorkspacesResult;
+      for (const assignment of assignments) {
+        const result = await authorizeMember({
+          email,
+          workspaceId: assignment.workspaceId,
+          role: assignment.role,
+        });
 
-      if (!response.success) {
-        toast.error(response.message);
-        return;
+        if (!result.success) {
+          toast.error(result.message);
+          return;
+        }
       }
 
-      if (!response.changed) {
-        toast.info(response.message);
-        return;
-      }
-
-      toast.success(response.message);
+      toast.success(
+        `${email} autorizado en ${assignments.length} workspace(s)`,
+      );
+      setEmail("");
+      setAssignments([]);
     });
   }
 
-  const selectedCount = assignments.length;
-
   return (
-    <div className="rounded-xl border border-zinc-800 bg-[#111113]">
-      {/* HEADER */}
-      <div className="border-b border-zinc-800 px-5 py-4">
-        <h2 className="text-lg font-semibold text-white">
-          Workspaces autorizados
-        </h2>
-
-        <p className="mt-1 text-sm text-zinc-500">
-          Selecciona las radios o marcas y el rol dentro de cada una.
-        </p>
-
-        <div className="mt-3 grid gap-2 rounded-lg border border-zinc-800 bg-zinc-950/60 p-3 text-xs text-zinc-400 md:grid-cols-2">
-          <p>
-            <span className="font-semibold text-zinc-200">Viewer:</span> solo
-            lectura de formularios y respuestas.
-          </p>
-          <p>
-            <span className="font-semibold text-zinc-200">Editor:</span> puede
-            crear y duplicar formularios en su workspace.
-          </p>
-        </div>
-
-        <div className="mt-3 inline-flex rounded-md border border-[#C8A96E]/30 bg-[#C8A96E]/10 px-3 py-1 text-sm text-[#C8A96E]">
-          {selectedCount} workspace{selectedCount !== 1 ? "s" : ""} asignado
-          {selectedCount !== 1 ? "s" : ""}
-        </div>
+    <form
+      onSubmit={handleSubmit}
+      className="rounded-xl border border-zinc-800 bg-[#111113] p-5 space-y-4"
+    >
+      <div className="mb-4 flex items-center gap-2 text-sm font-medium text-zinc-200">
+        <LuUserPlus className="size-4 text-[#C8A96E]" />
+        Autorizar miembro
       </div>
 
-      {/* GRID */}
-      <div className="space-y-4 p-5">
+      <label className="block">
+        <span className="mb-1 block text-xs uppercase tracking-wide text-zinc-500">
+          Email
+        </span>
+        <input
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          placeholder="pepito@empresa.com"
+          className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-[#C8A96E]"
+          required
+        />
+      </label>
+
+      <div className="space-y-3">
         <label className="block">
-          <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-zinc-500">
-            Seleccionar workspaces
+          <span className="mb-1 block text-xs uppercase tracking-wide text-zinc-500">
+            Workspaces
           </span>
           <select
             multiple
@@ -175,7 +131,8 @@ export function UserWorkspaceForm({
             ))}
           </select>
           <p className="mt-1 text-xs text-zinc-500">
-            Usa Ctrl+Click para multi-selección.
+            Selecciona uno o más workspaces. Usa Ctrl+Click para
+            multi-selección.
           </p>
         </label>
 
@@ -211,7 +168,7 @@ export function UserWorkspaceForm({
                       onChange={(event) =>
                         updateRole(
                           assignment.workspaceId,
-                          event.target.value as WorkspaceRole,
+                          event.target.value as "VIEWER" | "EDITOR",
                         )
                       }
                       className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-2 text-xs font-medium text-zinc-100 outline-none transition focus:border-[#C8A96E] focus:ring-1 focus:ring-[#C8A96E]/50"
@@ -227,23 +184,26 @@ export function UserWorkspaceForm({
         )}
       </div>
 
-      {/* FOOTER */}
-      <div className="flex items-center justify-between border-t border-zinc-800 px-5 py-4">
-        <p className="text-xs text-zinc-500">
-          {hasChanges ? "Tienes cambios sin guardar" : "Sin cambios pendientes"}
-        </p>
-
+      <div className="mt-4 flex justify-end">
         <button
-          type="button"
-          disabled={isPending || !hasChanges}
-          onClick={handleSubmit}
-          className="flex items-center gap-2 rounded-lg bg-[#C8A96E] px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-[#d7b979] disabled:opacity-50"
+          type="submit"
+          disabled={isPending || !canSubmit}
+          className="inline-flex items-center gap-2 rounded-lg bg-[#C8A96E] px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-[#d7b979] disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isPending && <LuLoader className="size-4 animate-spin" />}
-
-          {isPending ? "Guardando..." : "Guardar permisos"}
+          {isPending ? (
+            <>
+              <LuLoader className="size-4 animate-spin" />
+              Autorizando...
+            </>
+          ) : (
+            <>
+              <LuCheck className="size-4" />
+              Autorizar en {assignments.length} workspace
+              {assignments.length !== 1 ? "s" : ""}
+            </>
+          )}
         </button>
       </div>
-    </div>
+    </form>
   );
 }

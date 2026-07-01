@@ -22,7 +22,7 @@ export function WorkspaceShell({
   children,
 }: WorkspaceShellProps) {
   return (
-    <div className="flex min-h-dvh bg-[#09090b] text-zinc-100">
+    <div className="flex h-full min-h-0 overflow-hidden bg-[#09090b] text-zinc-100">
       <WorkspaceSidebar
         user={user}
         workspaces={workspaces}
