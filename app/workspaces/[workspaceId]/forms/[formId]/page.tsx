@@ -1,14 +1,32 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { LuArrowLeft, LuExternalLink, LuFilePlus2, LuFileText, LuInbox } from "react-icons/lu";
+import { LuArrowLeft, LuExternalLink, LuFileText, LuInbox } from "react-icons/lu";
 import { WorkspaceShell } from "@/features/admin/workspaces/components/WorkspaceShell";
 import { getWorkspaceAccessContext } from "@/features/admin/workspaces/services/workspace-access";
 import { duplicateFormAction } from "@/features/typeform/actions/duplicate-form.action";
+import { DuplicateFormPanel } from "@/features/typeform/components/DuplicateFormPanel";
 import {
   formBelongsToWorkspace,
   getTypeformForm,
+  resolveWorkspaceTypeformId,
 } from "@/features/typeform/services/typeform.service";
 import { CopyButton } from "@/shared/components/CopyButton";
+
+function getSuggestedDuplicateTitle(title: string) {
+  const normalized = title.trim();
+  const numberedMatch = normalized.match(/^(.*)\s\((\d+)\)$/);
+
+  if (numberedMatch) {
+    const baseTitle = numberedMatch[1]?.trim();
+    const currentNumber = Number(numberedMatch[2]);
+
+    if (baseTitle && Number.isFinite(currentNumber)) {
+      return `${baseTitle} (${currentNumber + 1})`;
+    }
+  }
+
+  return `${normalized} (2)`;
+}
 
 export default async function WorkspaceFormDetailPage({
   params,
@@ -22,8 +40,11 @@ export default async function WorkspaceFormDetailPage({
   const { user, workspaces, workspace, canCreateForms } =
     await getWorkspaceAccessContext(workspaceId);
   const form = await getTypeformForm(formId);
+  const resolvedWorkspaceTypeformId = await resolveWorkspaceTypeformId(
+    workspace.typeformId,
+  );
 
-  if (!formBelongsToWorkspace(form, workspace.typeformId)) {
+  if (!formBelongsToWorkspace(form, resolvedWorkspaceTypeformId)) {
     notFound();
   }
 
@@ -83,62 +104,13 @@ export default async function WorkspaceFormDetailPage({
         </div>
       </header>
 
-      {clonedFrom && (
-        <section className="mt-8 rounded-xl border border-[#C8A96E]/40 bg-[#15130e] p-5">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-[#C8A96E]">
-                Formulario clonado
-              </p>
-              <h2 className="mt-2 text-lg font-semibold text-white">
-                Nuevo Typeform creado correctamente
-              </h2>
-              <p className="mt-1 text-sm text-zinc-400">
-                Base utilizada: {clonedFrom}
-              </p>
-            </div>
-
-            <CopyButton value={form.id} />
-          </div>
-        </section>
-      )}
-
       
       {canCreateForms && (
-        <section className="mt-6 rounded-xl border border-zinc-800 bg-[#111113] p-5">
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
-            <LuFilePlus2 className="size-3.5 text-[#C8A96E]" />
-            <span>Duplicacion</span>
-          </div>
-
-          <h2 className="mt-2 text-base font-semibold text-white">
-            Crear nuevo formulario desde esta base
-          </h2>
-          <p className="mt-1 text-sm text-zinc-500">
-            Se copiara la estructura del formulario, eliminando los campos id antes de crear el nuevo Typeform.
-          </p>
-
-          <form action={duplicateForm} className="mt-5 flex flex-col gap-3 md:flex-row">
-            <label className="min-w-0 flex-1">
-              <span className="sr-only">Nombre del nuevo formulario</span>
-              <input
-                name="title"
-                type="text"
-                required
-                defaultValue={`Copia de ${form.title}`}
-                className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-[#C8A96E]"
-              />
-            </label>
-
-            <button
-              type="submit"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#C8A96E] px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-[#d7b87b]"
-            >
-              <LuFilePlus2 className="size-4" />
-              Duplicar
-            </button>
-          </form>
-        </section>
+        <DuplicateFormPanel
+          action={duplicateForm}
+          defaultTitle={getSuggestedDuplicateTitle(form.title)}
+          clonedFrom={clonedFrom}
+        />
       )}
 
       <section className="mt-8 grid gap-4 lg:grid-cols-3">
@@ -176,16 +148,16 @@ export default async function WorkspaceFormDetailPage({
         <h2 className="text-base font-semibold text-white">Estructura detectada</h2>
         <div className="mt-4 grid gap-3 text-sm text-zinc-400 md:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
-            Welcome screens: {form.welcome_screens?.length ?? 0}
+            Pantallas de bienvenida: {form.welcome_screens?.length ?? 0}
           </div>
           <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
-            Thank-you screens: {form.thankyou_screens?.length ?? 0}
+            Pantallas de agradecimiento: {form.thankyou_screens?.length ?? 0}
           </div>
           <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
-            Reglas de logica: {form.logic?.length ?? 0}
+            Reglas de lógica: {form.logic?.length ?? 0}
           </div>
           <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
-            Estado: {form.settings?.is_public === false ? "Privado" : "Publico"}
+            Estado: {form.settings?.is_public === false ? "Privado" : "Público"}
           </div>
         </div>
       </section>

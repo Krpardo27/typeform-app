@@ -202,7 +202,7 @@ export default async function WorkspaceDetailPage({
                     <span>
                       {form.settings?.is_public === false
                         ? "Privado"
-                        : "Publico"}
+                        : "Público"}
                     </span>
                   </div>
 

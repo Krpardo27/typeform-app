@@ -3,6 +3,7 @@ import Link from "next/link";
 import { LuArrowLeft, LuFilePlus2 } from "react-icons/lu";
 import { WorkspaceShell } from "@/features/admin/workspaces/components/WorkspaceShell";
 import { getWorkspaceAccessContext } from "@/features/admin/workspaces/services/workspace-access";
+import { createDefaultFormForWorkspaceAction } from "@/features/typeform/actions/create-default-form-for-workspace.action";
 import { getWorkspaceForms } from "@/features/typeform/services/typeform.service";
 
 export default async function NewWorkspaceFormPage({
@@ -19,6 +20,10 @@ export default async function NewWorkspaceFormPage({
   }
 
   const forms = await getWorkspaceForms(workspace.typeformId);
+  const createDefaultForm = createDefaultFormForWorkspaceAction.bind(
+    null,
+    workspace.id,
+  );
 
   return (
     <WorkspaceShell
@@ -43,7 +48,7 @@ export default async function NewWorkspaceFormPage({
 
         <h1 className="mt-2 text-2xl font-bold text-white">Crear formulario</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Selecciona un formulario base para iniciar la duplicacion.
+          Puedes usar cualquier formulario como base para crear una nueva version.
         </p>
       </header>
 
@@ -53,6 +58,16 @@ export default async function NewWorkspaceFormPage({
           <p className="mt-1 text-sm text-zinc-500">
             Este workspace no tiene formularios disponibles para duplicar.
           </p>
+
+          <form action={createDefaultForm} className="mt-5">
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#C8A96E] px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-[#d7b87b]"
+            >
+              <LuFilePlus2 className="size-4" />
+              Crear formulario base ahora
+            </button>
+          </form>
         </section>
       ) : (
         <section className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">

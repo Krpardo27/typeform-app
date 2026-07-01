@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LuFileText, LuHouse, LuInbox, LuLayoutDashboard } from "react-icons/lu";
+import { LuFileText, LuHouse, LuLayoutDashboard } from "react-icons/lu";
 import { LogoutButton } from "../../../../shared/components/LogoutButton";
 
 type WorkspaceSidebarProps = {
@@ -14,13 +14,12 @@ type WorkspaceSidebarProps = {
   }[];
 
   currentWorkspaceId?: string;
-  currentSection?: "home" | "forms" | "responses";
+  currentSection?: "home" | "forms";
 };
 
 const workspaceNavItems = [
   { label: "Inicio", href: "", icon: LuLayoutDashboard, section: "home" },
   { label: "Formularios", href: "forms", icon: LuFileText },
-  { label: "Respuestas", href: "responses", icon: LuInbox },
 ] as const;
 
 export function WorkspaceSidebar({
@@ -32,7 +31,7 @@ export function WorkspaceSidebar({
   const displayName = user.name?.trim() || user.email.split("@")[0];
 
   return (
-    <aside className="flex min-h-dvh w-72 shrink-0 flex-col border-r border-zinc-800 bg-[#0f0f0f] px-4 py-6 text-zinc-200">
+    <aside className="flex h-full min-h-0 w-72 shrink-0 flex-col overflow-y-auto border-r border-zinc-800 bg-[#0f0f0f] px-4 py-6 text-zinc-200">
       <div className="mb-4">
         <Link
           href={currentWorkspaceId ? `/workspaces/${currentWorkspaceId}` : "/workspaces/me"}

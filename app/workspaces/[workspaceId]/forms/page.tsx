@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { LuArrowUpRight, LuFilePlus2, LuFileText } from "react-icons/lu";
+import {
+  LuArrowUpRight,
+  LuFilePlus2,
+  LuFileText,
+  LuInbox,
+} from "react-icons/lu";
 import { WorkspaceShell } from "@/features/admin/workspaces/components/WorkspaceShell";
 import { getWorkspaceAccessContext } from "@/features/admin/workspaces/services/workspace-access";
 import { getWorkspaceForms } from "@/features/typeform/services/typeform.service";
@@ -22,7 +27,6 @@ export default async function WorkspaceFormsPage({
   const { user, workspaces, workspace, canCreateForms } =
     await getWorkspaceAccessContext(workspaceId);
   const forms = await getWorkspaceForms(workspace.typeformId);
-  console.log('USUARIO:', forms)
 
   return (
     <WorkspaceShell
@@ -69,17 +73,20 @@ export default async function WorkspaceFormsPage({
 
       {forms.items.length === 0 ? (
         <section className="mt-8 rounded-xl border border-zinc-800 bg-[#111113] p-6">
-          <h2 className="text-base font-semibold text-white">Sin formularios</h2>
+          <h2 className="text-base font-semibold text-white">
+            Sin formularios
+          </h2>
           <p className="mt-1 text-sm text-zinc-500">
             Typeform no devolvio formularios para este workspace.
           </p>
         </section>
       ) : (
         <section className="mt-8 overflow-hidden rounded-xl border border-zinc-800 bg-[#111113]">
-          <div className="grid grid-cols-[1fr_180px_140px_44px] border-b border-zinc-800 px-4 py-3 text-xs font-medium uppercase tracking-wider text-zinc-500">
+          <div className="grid grid-cols-[1fr_180px_120px_150px_44px] border-b border-zinc-800 px-4 py-3 text-xs font-medium uppercase tracking-wider text-zinc-500">
             <span>Formulario</span>
             <span>Actualizado</span>
             <span>Estado</span>
+            <span>Respuestas</span>
             <span />
           </div>
 
@@ -87,7 +94,7 @@ export default async function WorkspaceFormsPage({
             {forms.items.map((form) => (
               <div
                 key={form.id}
-                className="grid grid-cols-[1fr_180px_140px_44px] items-center gap-4 px-4 py-4"
+                className="grid grid-cols-[1fr_180px_120px_150px_44px] items-center gap-4 px-4 py-4"
               >
                 <div className="min-w-0">
                   <Link
@@ -96,7 +103,9 @@ export default async function WorkspaceFormsPage({
                   >
                     {form.title}
                   </Link>
-                  <p className="mt-1 truncate text-xs text-zinc-500">ID: {form.id}</p>
+                  <p className="mt-1 truncate text-xs text-zinc-500">
+                    ID: {form.id}
+                  </p>
                 </div>
 
                 <p className="text-sm text-zinc-400">
@@ -104,8 +113,16 @@ export default async function WorkspaceFormsPage({
                 </p>
 
                 <span className="w-fit rounded-md border border-zinc-800 px-2 py-1 text-xs text-zinc-400">
-                  {form.settings?.is_public === false ? "Privado" : "Publico"}
+                  {form.settings?.is_public === false ? "Privado" : "Público"}
                 </span>
+
+                <Link
+                  href={`/workspaces/${workspace.id}/forms/${form.id}/responses`}
+                  className="inline-flex w-fit items-center gap-1.5 rounded-md border border-zinc-800 px-2 py-1 text-xs text-zinc-400 transition hover:border-[#C8A96E] hover:text-[#C8A96E]"
+                >
+                  <LuInbox className="size-3.5" />
+                  Ver respuestas
+                </Link>
 
                 <Link
                   href={`/workspaces/${workspace.id}/forms/${form.id}`}

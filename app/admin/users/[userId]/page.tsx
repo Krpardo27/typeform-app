@@ -3,6 +3,11 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { prisma } from "@/lib/prisma";
 import { UserWorkspaceForm } from "@/features/admin/workspaces/components/UserWorkspaceForm";
+import { getTypeformWorkspaces } from "@/features/typeform/services/typeform.service";
+import {
+  ensureAppWorkspacesFromTypeform,
+  syncTypeformWorkspaceIds,
+} from "@/features/admin/workspaces/services/sync-typeform-workspace-ids";
 
 export default async function AdminUserPage({
   params,
@@ -18,6 +23,10 @@ export default async function AdminUserPage({
   if (currentUser.globalRole !== "SUPER_ADMIN") {
     notFound();
   }
+
+  const typeformWorkspaces = await getTypeformWorkspaces();
+  await ensureAppWorkspacesFromTypeform(typeformWorkspaces.items);
+  await syncTypeformWorkspaceIds(typeformWorkspaces.items);
 
   const { userId } = await params;
   const [user, workspaces] = await Promise.all([
@@ -38,9 +47,10 @@ export default async function AdminUserPage({
     notFound();
   }
 
-  const assignedWorkspaceIds = new Set(
-    user.workspaces.map((workspaceAccess) => workspaceAccess.workspaceId),
-  );
+  const assignedWorkspaces = user.workspaces.map((workspaceAccess) => ({
+    workspaceId: workspaceAccess.workspaceId,
+    role: workspaceAccess.role,
+  }));
 
   return (
     <div className="min-h-dvh bg-[#0b0b0d] px-10 py-8 text-zinc-100">
@@ -66,7 +76,7 @@ export default async function AdminUserPage({
       <UserWorkspaceForm
         userId={user.id}
         workspaces={workspaces}
-        assignedWorkspaceIds={[...assignedWorkspaceIds]}
+        assignedWorkspaces={assignedWorkspaces}
       />
     </div>
   );

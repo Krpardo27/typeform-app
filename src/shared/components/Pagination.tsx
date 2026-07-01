@@ -9,6 +9,9 @@ interface PaginationProps {
   totalItems: number;
   itemsPerPage: number;
   itemLabel?: string;
+  showPageSizeSelector?: boolean;
+  pageSizeOptions?: number[];
+  pageSizeParamName?: string;
 }
 
 export default function Pagination({
@@ -17,6 +20,9 @@ export default function Pagination({
   totalItems,
   itemsPerPage,
   itemLabel = "items",
+  showPageSizeSelector = false,
+  pageSizeOptions = [10, 20, 50, 100],
+  pageSizeParamName = "pageSize",
 }: PaginationProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -25,6 +31,13 @@ export default function Pagination({
   const goToPage = (page: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", String(page));
+    router.push(`${pathname}?${params.toString()}`);
+  };
+
+  const setPageSize = (nextPageSize: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set(pageSizeParamName, String(nextPageSize));
+    params.set("page", "1");
     router.push(`${pathname}?${params.toString()}`);
   };
 
@@ -74,52 +87,75 @@ export default function Pagination({
         {itemLabel}
       </p>
 
-      {hasMultiplePages && (
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => goToPage(currentPage - 1)}
-            disabled={currentPage === 1}
-            aria-label="Ir a la pagina anterior"
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <FiChevronLeft className="h-4 w-4" />
-          </button>
+      <div className="flex items-center gap-3">
+        {showPageSizeSelector && (
+          <label className="flex items-center gap-2 text-xs text-zinc-400">
+            <span>Por pagina</span>
+            <select
+              value={itemsPerPage}
+              onChange={(event) => setPageSize(Number(event.target.value))}
+              className="rounded-md border border-white/10 cursor-pointer px-2 py-1 text-xs text-white outline-none transition focus:border-[#C8A96E]"
+            >
+              {pageSizeOptions.map((option) => (
+                <option
+                  key={option}
+                  value={option}
+                  className="bg-[#111113] text-white"
+                >
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
-          {getPageRange().map((page, index) =>
-            page === "..." ? (
-              <span key={`dots-${index}`} className="px-2 text-zinc-500">
-                ...
-              </span>
-            ) : (
-              <button
-                type="button"
-                key={page}
-                onClick={() => goToPage(page)}
-                aria-current={currentPage === page ? "page" : undefined}
-                aria-label={`Ir a la pagina ${page}`}
-                className={`flex h-9 w-9 items-center justify-center rounded-lg border text-sm font-medium transition-colors ${
-                  currentPage === page
-                    ? "border-[#C8A96E] bg-[#C8A96E]/10 text-[#C8A96E]"
-                    : "border-white/10 bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white"
-                }`}
-              >
-                {page}
-              </button>
-            ),
-          )}
+        {hasMultiplePages && (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage === 1}
+              aria-label="Ir a la pagina anterior"
+              className="flex h-9 w-9 items-center cursor-pointer justify-center rounded-lg border border-white/10 bg-white/5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <FiChevronLeft className="h-4 w-4" />
+            </button>
 
-          <button
-            type="button"
-            onClick={() => goToPage(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            aria-label="Ir a la pagina siguiente"
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <FiChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-      )}
+            {getPageRange().map((page, index) =>
+              page === "..." ? (
+                <span key={`dots-${index}`} className="px-2 text-zinc-500">
+                  ...
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  key={page}
+                  onClick={() => goToPage(page)}
+                  aria-current={currentPage === page ? "page" : undefined}
+                  aria-label={`Ir a la pagina ${page}`}
+                  className={`flex h-9 w-9 items-center cursor-pointer justify-center rounded-lg border text-sm font-medium transition-colors ${
+                    currentPage === page
+                      ? "border-[#C8A96E] bg-[#C8A96E]/10 text-[#C8A96E]"
+                      : "border-white/10 bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  {page}
+                </button>
+              ),
+            )}
+
+            <button
+              type="button"
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              aria-label="Ir a la pagina siguiente"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <FiChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
