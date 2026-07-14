@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { prisma } from "@/lib/prisma";
+import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { UserWorkspaceForm } from "@/features/admin/workspaces/components/UserWorkspaceForm";
 import { getTypeformWorkspaces } from "@/features/typeform/services/typeform.service";
 import {
@@ -53,25 +54,25 @@ export default async function AdminUserPage({
   }));
 
   return (
-    <div className="min-h-dvh bg-[#0b0b0d] px-10 py-8 text-zinc-100">
-      <div className="mb-8 flex items-start justify-between gap-6">
-        <div>
+    <div className="text-zinc-100">
+      <AdminPageHeader
+        eyebrow=""
+        title={user.name || "Sin nombre"}
+        description={user.email}
+        leading={
           <Link
             href="/admin/users"
-            className="text-sm text-zinc-500 transition hover:text-[#C8A96E]"
+            className="mb-3 inline-flex rounded-md border border-zinc-800 px-3 py-2 text-sm text-zinc-500 transition hover:border-[#C8A96E] hover:text-[#C8A96E]"
           >
             Volver a usuarios
           </Link>
-          <h1 className="mt-3 text-2xl font-bold tracking-tight text-white">
-            {user.name || "Sin nombre"}
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500">{user.email}</p>
-        </div>
-
+        }
+        actions={
         <span className="rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-400">
           {user.globalRole}
         </span>
-      </div>
+        }
+      />
 
       <UserWorkspaceForm
         userId={user.id}

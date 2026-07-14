@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
+import Swal from "sweetalert2";
 import { LuLoader } from "react-icons/lu";
 import { updateUserWorkspaces } from "../actions/update-user-workspaces";
 
@@ -80,9 +81,39 @@ export function UserWorkspaceForm({
     );
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!hasChanges) {
       toast.info("No se detectaron cambios");
+      return;
+    }
+
+    const selectedPreview = assignments
+      .slice(0, 3)
+      .map((assignment) => {
+        const workspace = workspaces.find(
+          (item) => item.id === assignment.workspaceId,
+        );
+
+        return `${workspace?.name ?? assignment.workspaceId} (${assignment.role})`;
+      })
+      .join("\n");
+
+    const result = await Swal.fire({
+      title: "Guardar permisos",
+      text:
+        assignments.length > 3
+          ? `${selectedPreview}\n... y ${assignments.length - 3} workspace(s) mas.`
+          : selectedPreview || "El usuario quedara sin workspaces asignados.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Si, guardar",
+      cancelButtonText: "Cancelar",
+      background: "#111113",
+      color: "#f4f4f5",
+      confirmButtonColor: "#C8A96E",
+    });
+
+    if (!result.isConfirmed) {
       return;
     }
 

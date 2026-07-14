@@ -27,10 +27,17 @@ export const auth = betterAuth({
         const isAllowed = await prisma.allowedUser.findFirst({
           where: { email: { equals: email, mode: "insensitive" } },
         });
+        const existingUser = await prisma.user.findFirst({
+          where: { email: { equals: email, mode: "insensitive" } },
+          select: { status: true },
+        });
+        const canReceiveOtp = Boolean(isAllowed) && existingUser?.status !== "REJECTED";
 
         console.log("[AUTH] Allowed user check:", {
           email,
           isAllowed: !!isAllowed,
+          userStatus: existingUser?.status ?? null,
+          canReceiveOtp,
         });
 
         await createAuditLog({
@@ -40,13 +47,13 @@ export const auth = betterAuth({
           context: {
             metadata: {
               type,
-              allowed: !!isAllowed,
+              allowed: canReceiveOtp,
             },
           },
         });
 
-        if (!isAllowed) {
-          console.log("[AUTH] BLOCKED: email not in AllowedUser");
+        if (!canReceiveOtp) {
+          console.log("[AUTH] BLOCKED: email not authorized for OTP");
           await prisma.verification.deleteMany({
             where: { identifier: `${type}-otp-${email.toLowerCase()}` },
           });

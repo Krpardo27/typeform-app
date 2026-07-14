@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/getCurrentUser";
+import AdminMobileDock from "@/features/admin/components/AdminMobileDock";
 import AdminWorkspacesNav from "@/features/admin/workspaces/components/AdminWorkspacesNav";
 import { LogoutButton } from "@/shared/components/LogoutButton";
 
@@ -21,13 +22,16 @@ export default async function AdminLayout({
 
   return (
     <div className="flex h-dvh bg-[#0b0b0d] text-zinc-100">
-      <div className="flex w-72 flex-col border-r border-zinc-800 bg-[#0f0f0f]">
+      <div className="hidden w-72 flex-col border-r border-zinc-800 bg-[#0f0f0f] lg:flex">
         <AdminWorkspacesNav />
         <div className="mt-auto border-t border-zinc-800 p-4">
           <LogoutButton />
         </div>
       </div>
-      <main className="flex-1 overflow-y-auto px-10 py-8">{children}</main>
+      <main className="flex-1 overflow-y-auto px-4 pb-28 pt-6 md:px-8 lg:px-10 lg:py-8">
+        {children}
+      </main>
+      <AdminMobileDock />
     </div>
   );
 }

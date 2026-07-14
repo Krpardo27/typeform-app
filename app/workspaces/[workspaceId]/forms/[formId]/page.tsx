@@ -5,6 +5,7 @@ import { WorkspaceShell } from "@/features/admin/workspaces/components/Workspace
 import { getWorkspaceAccessContext } from "@/features/admin/workspaces/services/workspace-access";
 import { duplicateFormAction } from "@/features/typeform/actions/duplicate-form.action";
 import { DuplicateFormPanel } from "@/features/typeform/components/DuplicateFormPanel";
+import NewWorkspaceFormPage from "../new/page";
 import {
   formBelongsToWorkspace,
   getTypeformForm,
@@ -37,6 +38,11 @@ export default async function WorkspaceFormDetailPage({
 }) {
   const { workspaceId, formId } = await params;
   const { clonedFrom } = await searchParams;
+
+  if (formId === "new") {
+    return <NewWorkspaceFormPage params={Promise.resolve({ workspaceId })} />;
+  }
+
   const { user, workspaces, workspace, canCreateForms } =
     await getWorkspaceAccessContext(workspaceId);
   const form = await getTypeformForm(formId);

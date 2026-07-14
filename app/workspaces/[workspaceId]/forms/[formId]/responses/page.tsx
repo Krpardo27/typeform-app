@@ -60,7 +60,6 @@ export default async function FormResponsesPage({
 }: {
   params: Promise<{ workspaceId: string; formId: string }>;
   searchParams: Promise<{
-    showSensitive?: string;
     page?: string;
     pageSize?: string;
     winnerSelection?: string;
@@ -68,12 +67,9 @@ export default async function FormResponsesPage({
   }>;
 }) {
   const { workspaceId, formId } = await params;
-  const { showSensitive, page, pageSize, winnerSelection, winnerError } =
-    await searchParams;
+  const { page, pageSize, winnerSelection, winnerError } = await searchParams;
   const { user, workspaces, workspace } =
     await getWorkspaceAccessContext(workspaceId);
-  const canViewSensitive = user.globalRole === "SUPER_ADMIN";
-  const isSensitiveVisible = canViewSensitive && showSensitive === "1";
   const canSelectWinners =
     user.globalRole === "SUPER_ADMIN" || workspace.role === "EDITOR";
   const currentPage = Math.max(1, Number.parseInt(page ?? "1", 10) || 1);
@@ -85,14 +81,20 @@ export default async function FormResponsesPage({
   const winnerCookieName = `winner_selection:${workspace.id}:${form.id}`;
   const winnerCookieRaw = (await cookies()).get(winnerCookieName)?.value;
   let revealedWinnerTokens = new Set<string>();
+  let winnerSelectionReason: string | null = null;
 
   if (winnerCookieRaw) {
     try {
       const parsed = JSON.parse(winnerCookieRaw) as {
         tokens?: string[];
+        by?: string;
+        reason?: string;
       };
 
-      revealedWinnerTokens = new Set(parsed.tokens ?? []);
+      if (parsed.by === user.id) {
+        revealedWinnerTokens = new Set(parsed.tokens ?? []);
+        winnerSelectionReason = parsed.reason ?? null;
+      }
     } catch {
       revealedWinnerTokens = new Set();
     }
@@ -113,33 +115,41 @@ export default async function FormResponsesPage({
 
   const selectWinners = selectWinnersAction.bind(null, workspace.id, form.id);
   const maskedResponses = mapMaskedTypeformResponses(form, responses.items, {
-    maskSensitive: !isSensitiveVisible,
+    maskSensitive: true,
     unmaskTokens: revealedWinnerTokens,
   });
+  const revealedResponses = maskedResponses.filter((response) =>
+    revealedWinnerTokens.has(response.token),
+  );
   const maskedAnswerCount = maskedResponses.reduce(
     (total, response) =>
       total +
       response.answers.filter((answer) => answer.masked).length +
-      response.hidden.length,
+      response.hidden.filter((answer) => answer.masked).length,
     0,
   );
 
-  await createAuditLog({
-    action: "SENSITIVE_DATA_VIEWED",
-    actor: user,
-    target: { type: "form_responses", id: form.id },
-    context: {
-      workspaceId: workspace.id,
-      workspaceName: workspace.name,
-      formId: form.id,
-      formTitle: form.title,
-      metadata: {
-        totalResponses: responses.total_items,
-        displayedResponses: maskedResponses.length,
-        maskedAnswerCount,
+  if (revealedResponses.length > 0) {
+    await createAuditLog({
+      action: "SENSITIVE_DATA_VIEWED",
+      actor: user,
+      target: { type: "form_winner_data", id: form.id },
+      context: {
+        workspaceId: workspace.id,
+        workspaceName: workspace.name,
+        formId: form.id,
+        formTitle: form.title,
+        metadata: {
+          displayedResponses: revealedResponses.length,
+          revealedTokens: revealedResponses
+            .map((response) => response.token)
+            .join(","),
+          reason: winnerSelectionReason,
+          scope: "winner_selection_flow",
+        },
       },
-    },
-  });
+    });
+  }
 
   return (
     <WorkspaceShell
@@ -179,21 +189,6 @@ export default async function FormResponsesPage({
           >
             Ver formulario
           </Link>
-
-          {canViewSensitive && (
-            <Link
-              href={
-                isSensitiveVisible
-                  ? `/workspaces/${workspace.id}/forms/${form.id}/responses`
-                  : `/workspaces/${workspace.id}/forms/${form.id}/responses?showSensitive=1`
-              }
-              className="inline-flex items-center rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-300 transition hover:border-[#C8A96E] hover:text-[#C8A96E]"
-            >
-              {isSensitiveVisible
-                ? "Ocultar datos sensibles"
-                : "Mostrar datos sensibles"}
-            </Link>
-          )}
         </div>
       </header>
 
@@ -219,17 +214,13 @@ export default async function FormResponsesPage({
         <article className="rounded-xl border border-[#C8A96E]/40 bg-[#15130e] p-5">
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-[#C8A96E]">
             <LuShieldCheck className="size-3.5" />
-            <span>
-              {isSensitiveVisible
-                ? "Protección desactivada"
-                : "Protección activa"}
-            </span>
+            <span>Protección activa</span>
           </div>
           <p className="mt-3 text-2xl font-bold text-white">
             {maskedAnswerCount}
           </p>
           <p className="mt-1 text-xs text-zinc-500">
-            {isSensitiveVisible ? "Campos visibles" : "Campos ocultados"}
+            Campos ocultados
           </p>
         </article>
       </section>
@@ -296,8 +287,8 @@ export default async function FormResponsesPage({
 
                 <span className="inline-flex items-center gap-1.5 rounded-md border border-zinc-800 px-2 py-1 text-xs text-zinc-400">
                   <LuEyeOff className="size-3.5 text-[#C8A96E]" />
-                  {isSensitiveVisible
-                    ? "Datos sensibles visibles"
+                  {revealedWinnerTokens.has(response.token)
+                    ? "Ganador visible por selección"
                     : "Datos sensibles ocultos"}
                 </span>
               </div>

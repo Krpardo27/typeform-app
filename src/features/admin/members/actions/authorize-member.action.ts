@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { WorkspaceRole } from "@/generated/prisma/client";
+import { UserStatus, WorkspaceRole } from "@/generated/prisma/client";
 import { createAuditLog } from "@/features/admin/audit/services/audit-log.service";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { prisma } from "@/lib/prisma";
@@ -88,11 +88,14 @@ export async function authorizeMember(
 
     const user = await tx.user.upsert({
       where: { email },
-      update: {},
+      update: {
+        status: UserStatus.ACTIVE,
+      },
       create: {
         id: crypto.randomUUID(),
         email,
         name: fallbackNameFromEmail(email),
+        status: UserStatus.ACTIVE,
       },
     });
 
