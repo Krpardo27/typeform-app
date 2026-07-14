@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { LuFileText, LuHouse, LuLayoutDashboard, LuRadio } from "react-icons/lu";
+import { LogoutButton } from "@/shared/components/LogoutButton";
 
 type WorkspaceMobileDockProps = {
   workspaces: {
@@ -31,9 +32,6 @@ export function WorkspaceMobileDock({
   const currentWorkspace = workspaces.find(
     (workspace) => workspace.id === currentWorkspaceId,
   );
-  const otherWorkspaces = workspaces.filter(
-    (workspace) => workspace.id !== currentWorkspaceId,
-  );
 
   const triggerHapticFeedback = () => {
     if (typeof navigator !== "undefined" && "vibrate" in navigator) {
@@ -42,10 +40,10 @@ export function WorkspaceMobileDock({
   };
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
-      <div className="relative mx-auto max-w-xl overflow-hidden rounded-[1.35rem] border border-[#dedede]/10 bg-[#111111]/95 shadow-[0_-12px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+    <div className="fixed inset-x-0 bottom-0 z-40 bg-[#0b0b0d]/80 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 lg:hidden">
+      <div className="relative mx-auto max-w-xl overflow-visible rounded-[1.35rem] border border-[#dedede]/10 bg-[#111111] shadow-[0_-12px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-[#C8A96E]/70 to-transparent" />
-        <nav className="grid grid-cols-4 gap-1 p-1.5">
+        <nav className="grid grid-cols-5 gap-1 p-1.5">
           <Link
             href={currentWorkspaceId ? `/workspaces/${currentWorkspaceId}` : "/workspaces/me"}
             onClick={triggerHapticFeedback}
@@ -89,36 +87,37 @@ export function WorkspaceMobileDock({
               );
             })}
 
-          <div className="group relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl px-0.5 py-1 text-[9px] font-medium text-zinc-400 min-[390px]:text-[10px]">
-            <LuRadio className="h-4 w-4 shrink-0 text-[#C8A96E]" />
-            <select
-              aria-label="Cambiar radio"
-              value={currentWorkspaceId ?? ""}
-              onChange={(event) => {
-                triggerHapticFeedback();
-                const nextWorkspaceId = event.target.value;
-
-                if (nextWorkspaceId) {
-                  window.location.href = `/workspaces/${nextWorkspaceId}`;
-                }
-              }}
-              className="w-full appearance-none truncate bg-transparent text-center text-[9px] leading-none text-zinc-300 outline-none min-[390px]:text-[10px]"
-            >
-              <option value="" disabled>
+          <details className="group relative">
+            <summary className="relative flex min-h-14 list-none flex-col items-center justify-center gap-1 rounded-2xl px-0.5 py-1 text-[9px] font-medium text-zinc-400 outline-none transition-colors marker:hidden hover:text-white min-[390px]:text-[10px] [&::-webkit-details-marker]:hidden">
+              <LuRadio className="h-4 w-4 shrink-0 text-[#C8A96E]" />
+              <span className="max-w-full truncate leading-none">
                 {getShortWorkspaceName(currentWorkspace?.name)}
-              </option>
-              {currentWorkspace && (
-                <option value={currentWorkspace.id}>
-                  {getShortWorkspaceName(currentWorkspace.name)}
-                </option>
-              )}
-              {otherWorkspaces.map((workspace) => (
-                <option key={workspace.id} value={workspace.id}>
-                  {workspace.name}
-                </option>
-              ))}
-            </select>
-          </div>
+              </span>
+            </summary>
+
+            <div className="absolute bottom-full right-0 z-50 mb-2 max-h-72 w-56 overflow-y-auto rounded-xl border border-zinc-800 bg-[#111111] p-1.5 shadow-2xl shadow-black/50">
+              {workspaces.map((workspace) => {
+                const isActive = currentWorkspaceId === workspace.id;
+
+                return (
+                  <Link
+                    key={workspace.id}
+                    href={`/workspaces/${workspace.id}`}
+                    onClick={triggerHapticFeedback}
+                    className={`block rounded-lg px-3 py-2 text-sm transition ${
+                      isActive
+                        ? "bg-[#C8A96E]/10 text-[#C8A96E]"
+                        : "text-zinc-300 hover:bg-zinc-900 hover:text-white"
+                    }`}
+                  >
+                    <span className="block truncate">{workspace.name}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </details>
+
+          <LogoutButton variant="dock" />
         </nav>
       </div>
     </div>

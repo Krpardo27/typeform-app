@@ -2,11 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { LuLoader, LuLogOut } from "react-icons/lu";
 import { authClient } from "@/lib/auth-client";
 import { AppLoader } from "@/shared/components/AppLoader";
 import { useMinDuration } from "@/shared/hooks/useMinDuration";
 
-export function LogoutButton() {
+type LogoutButtonProps = {
+  variant?: "default" | "dock";
+};
+
+export function LogoutButton({ variant = "default" }: LogoutButtonProps) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +34,36 @@ export function LogoutButton() {
       router.replace("/auth/login");
       router.refresh();
     }, 1200);
+  }
+
+  if (variant === "dock") {
+    return (
+      <>
+        <AppLoader
+          isOpen={showLoader}
+          title="Cerrando sesion"
+          description="Estamos eliminando tu token de sesion y limpiando el acceso de este navegador."
+        />
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={isPending}
+          aria-label="Cerrar sesion"
+          title="Cerrar sesion"
+          className="group relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl px-0.5 py-1 text-[9px] font-medium text-zinc-400 transition-colors hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50 min-[390px]:text-[10px]"
+        >
+          {isPending ? (
+            <LuLoader className="h-4 w-4 shrink-0 animate-spin" />
+          ) : (
+            <LuLogOut className="h-4 w-4 shrink-0" />
+          )}
+          <span className="max-w-full truncate leading-none">
+            {isPending ? "Saliendo" : "Salir"}
+          </span>
+        </button>
+      </>
+    );
   }
 
   return (
