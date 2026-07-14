@@ -34,13 +34,18 @@ export default async function WorkspaceFormDetailPage({
   searchParams,
 }: {
   params: Promise<{ workspaceId: string; formId: string }>;
-  searchParams: Promise<{ clonedFrom?: string }>;
+  searchParams: Promise<{ clonedFrom?: string; page?: string; pageSize?: string }>;
 }) {
   const { workspaceId, formId } = await params;
-  const { clonedFrom } = await searchParams;
+  const { clonedFrom, page, pageSize } = await searchParams;
 
   if (formId === "new") {
-    return <NewWorkspaceFormPage params={Promise.resolve({ workspaceId })} />;
+    return (
+      <NewWorkspaceFormPage
+        params={Promise.resolve({ workspaceId })}
+        searchParams={Promise.resolve({ page, pageSize })}
+      />
+    );
   }
 
   const { user, workspaces, workspace, canCreateForms } =
