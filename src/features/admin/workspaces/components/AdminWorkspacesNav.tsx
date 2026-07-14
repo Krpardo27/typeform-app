@@ -6,7 +6,6 @@ import {
   LuChartPie,
   LuClipboardList,
   LuFolder,
-  LuLayoutDashboard,
   LuUserPlus,
   LuUsers,
 } from "react-icons/lu";
@@ -85,16 +84,6 @@ export default function AdminWorkspacesNav() {
         >
           <LuClipboardList className="size-4" />
           Auditoria
-        </Link>
-
-        <hr className="my-4 border-zinc-800" />
-
-        <Link
-          href="/workspaces/me"
-          className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-900 hover:text-white transition"
-        >
-          <LuLayoutDashboard className="size-4" />
-          Volver a la App
         </Link>
       </nav>
     </div>
