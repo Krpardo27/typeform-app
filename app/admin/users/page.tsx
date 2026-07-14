@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/getCurrentUser";
+import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
+import { DeleteUserButton } from "@/features/admin/users/components/DeleteUserButton";
 
 export default async function AdminUsersPage() {
   const currentUser = await getCurrentUser();
@@ -26,30 +28,24 @@ export default async function AdminUsersPage() {
   });
 
   return (
-    <div className="min-h-dvh bg-[#0b0b0d] text-zinc-100">
-      {/* Header */}
-      <div className="mb-8 flex items-start justify-between gap-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Administración de usuarios
-          </h1>
-          <p className="text-sm text-zinc-500 mt-1">
-            Gestión de accesos a radios / workspaces
-          </p>
-        </div>
-
-        <Link
-          href="/admin/workspaces"
-          className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-300 transition hover:border-[#C8A96E] hover:text-[#C8A96E]"
-        >
-          Ver workspaces
-        </Link>
-      </div>
+    <div className="text-zinc-100">
+      <AdminPageHeader
+        title="Administración de usuarios"
+        description="Gestión de accesos a radios / workspaces"
+        actions={
+          <Link
+            href="/admin/workspaces"
+            className="inline-flex items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-300 transition hover:border-[#C8A96E] hover:text-[#C8A96E]"
+          >
+            Ver workspaces
+          </Link>
+        }
+      />
 
       {/* Table container */}
-      <div className="rounded-xl border border-zinc-800 bg-[#111113] overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-zinc-800 bg-[#111113]">
         {/* Header row */}
-        <div className="grid grid-cols-12 px-5 py-3 text-xs uppercase tracking-wider text-zinc-500 border-b border-zinc-800">
+        <div className="grid grid-cols-12 border-b border-zinc-800 px-5 py-3 text-xs uppercase tracking-wider text-zinc-500">
           <div className="col-span-4">Usuario</div>
           <div className="col-span-3">Rol</div>
           <div className="col-span-3">Workspaces</div>
@@ -60,11 +56,12 @@ export default async function AdminUsersPage() {
         <div className="divide-y divide-zinc-800">
           {users.map((user) => {
             const workspaceCount = user.workspaces.length;
+            const isSelf = user.id === currentUser.id;
 
             return (
               <div
                 key={user.id}
-                className="grid grid-cols-12 px-5 py-4 items-center hover:bg-zinc-900/40 transition"
+                className="grid grid-cols-12 items-center px-5 py-4 transition hover:bg-zinc-900/40"
               >
                 {/* Usuario */}
                 <div className="col-span-4 min-w-0">
@@ -97,13 +94,18 @@ export default async function AdminUsersPage() {
                 </div>
 
                 {/* Acción */}
-                <div className="col-span-2 flex justify-end">
+                <div className="col-span-2 flex items-start justify-end gap-2">
                   <Link
                     href={`/admin/users/${user.id}`}
-                    className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-[#C8A96E] hover:text-[#C8A96E] transition"
+                    className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs transition hover:border-[#C8A96E] hover:text-[#C8A96E]"
                   >
                     Gestionar
                   </Link>
+                  <DeleteUserButton
+                    userId={user.id}
+                    userName={user.name || user.email}
+                    disabled={isSelf}
+                  />
                 </div>
               </div>
             );

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import Swal from "sweetalert2";
 import { LuTrophy } from "react-icons/lu";
 
@@ -27,8 +28,16 @@ export function WinnerSelectionPanel({
   winnerSelection,
   winnerError,
 }: WinnerSelectionPanelProps) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const submitConfirmedRef = useRef(false);
+
   const handleSubmit: NonNullable<React.ComponentProps<"form">["onSubmit"]> =
     async (event) => {
+      if (submitConfirmedRef.current) {
+        submitConfirmedRef.current = false;
+        return;
+      }
+
       event.preventDefault();
 
       const form = event.currentTarget;
@@ -83,7 +92,8 @@ export function WinnerSelectionPanel({
         return;
       }
 
-      form.submit();
+      submitConfirmedRef.current = true;
+      formRef.current?.requestSubmit();
     };
 
   return (
@@ -112,7 +122,12 @@ export function WinnerSelectionPanel({
         </p>
       )}
 
-      <form action={action} onSubmit={handleSubmit} className="mt-4 space-y-4">
+      <form
+        ref={formRef}
+        action={action}
+        onSubmit={handleSubmit}
+        className="mt-4 space-y-4"
+      >
         <input type="hidden" name="page" value={String(currentPage)} />
         <input type="hidden" name="pageSize" value={String(itemsPerPage)} />
 

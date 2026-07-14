@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import Swal from "sweetalert2";
 import { LuX, LuLoader } from "react-icons/lu";
 
 import FormErrors from "./FormErrors";
@@ -32,9 +33,26 @@ export default function CreateWorkspaceModal({ onClose }: Props) {
       return;
     }
 
+    const workspaceName = result.data.name;
+    const confirmation = await Swal.fire({
+      title: "Crear workspace",
+      text: `Se creara el workspace "${workspaceName}" y su formulario base.`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Si, crear",
+      cancelButtonText: "Cancelar",
+      background: "#111113",
+      color: "#f4f4f5",
+      confirmButtonColor: "#C8A96E",
+    });
+
+    if (!confirmation.isConfirmed) {
+      return;
+    }
+
     setLoading(true);
 
-    const response = await createWorkspaceAction({ name });
+    const response = await createWorkspaceAction({ name: workspaceName });
 
     setLoading(false);
 
@@ -44,15 +62,15 @@ export default function CreateWorkspaceModal({ onClose }: Props) {
     }
 
     if (response?.success) {
-      const workspaceName = response.workspace?.name ?? name;
+      const createdWorkspaceName = response.workspace?.name ?? workspaceName;
       const defaultFormTitle =
-        response.defaultForm?.title ?? `Formulario base - ${workspaceName}`;
+        response.defaultForm?.title ?? `Formulario base - ${createdWorkspaceName}`;
       const workspaceAdminPath = response.workspace?.typeformId
         ? `/admin/workspaces/${response.workspace.typeformId}`
         : "/admin/workspaces";
 
       toast.success("Workspace creado exitosamente", {
-        description: `Se creo ${workspaceName} con el formulario base ${defaultFormTitle}.`,
+        description: `Se creo ${createdWorkspaceName} con el formulario base ${defaultFormTitle}.`,
         action: {
           label: "Abrir",
           onClick: () => router.push(workspaceAdminPath),

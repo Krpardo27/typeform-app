@@ -7,6 +7,7 @@ import {
   LuUsers,
 } from "react-icons/lu";
 import Link from "next/link";
+import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import {
   getTypeformWorkspace,
   getWorkspaceForms,
@@ -87,8 +88,19 @@ export default async function WorkspaceDetailPage({
 
   return (
     <div>
-      <div className="mb-8 flex items-start justify-between gap-6">
-        <div>
+      <AdminPageHeader
+        eyebrow="Workspace Typeform"
+        title={typeformWorkspace.name ?? appWorkspace?.name ?? "Sin nombre"}
+        description={
+          <>
+            <span className="block">ID Typeform: {typeformWorkspace.id}</span>
+            <span className="mt-2 block">
+              Vista conectada directamente a Typeform. Prisma solo marca los
+              formularios creados por esta app.
+            </span>
+          </>
+        }
+        leading={
           <Link
             href="/admin/workspaces"
             className="mb-3 flex items-center gap-1.5 text-xs text-zinc-500 transition hover:text-zinc-300"
@@ -96,25 +108,9 @@ export default async function WorkspaceDetailPage({
             <LuArrowLeft className="size-3" />
             Volver a workspaces
           </Link>
-
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-            Workspace Typeform
-          </p>
-
-          <h1 className="mt-2 text-2xl font-bold text-white">
-            {typeformWorkspace.name ?? appWorkspace?.name ?? "Sin nombre"}
-          </h1>
-
-          <p className="mt-1 text-sm text-zinc-500">
-            ID Typeform: {typeformWorkspace.id}
-          </p>
-          <p className="mt-2 max-w-xl text-sm text-zinc-500">
-            Vista conectada directamente a Typeform. Prisma solo marca los
-            formularios creados por esta app.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap justify-end gap-3">
+        }
+        actions={
+          <>
           <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-400">
             {formCount} en Typeform
           </div>
@@ -125,8 +121,9 @@ export default async function WorkspaceDetailPage({
             <LuUsers className="size-4 text-[#C8A96E]" />
             {memberCount} miembros
           </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {typeformForms.items.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-800 py-16 text-center">

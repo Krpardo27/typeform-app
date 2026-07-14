@@ -26,7 +26,7 @@ export function AdminWorkspacesGrid({
 
   if (typeformWorkspaces.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-800 py-16 text-center">
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-800 px-4 py-12 text-center sm:py-16">
         <LuBriefcaseBusiness className="mb-3 size-8 text-zinc-700" />
         <p className="text-sm font-medium text-zinc-400">
           Typeform no devolvio workspaces
@@ -39,7 +39,7 @@ export function AdminWorkspacesGrid({
   }
 
   return (
-    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
       {typeformWorkspaces.map((typeformWorkspace) => (
         <WorkspaceCard
           key={typeformWorkspace.id}

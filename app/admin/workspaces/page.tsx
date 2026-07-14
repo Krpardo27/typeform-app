@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import WorkspacesPageClient from "@/features/admin/workspaces/components/WorkspacesPageClient";
 import { AdminWorkspacesGrid } from "@/features/admin/workspaces/components/AdminWorkspacesGrid";
 import { getTypeformWorkspaces } from "@/features/typeform/services/typeform.service";
@@ -23,32 +24,22 @@ export default async function AdminWorkspacesPage() {
 
   return (
     <>
-      <div className="mb-8 flex items-start justify-between gap-6">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-            Administración
-          </p>
-
-          <h1 className="mt-2 text-2xl font-bold text-white">
-            Workspaces disponibles
-          </h1>
-
-          <p className="mt-1 text-sm text-zinc-500">
-            Inventario completo de radios y marcas configuradas en la app.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
+      <AdminPageHeader
+        title="Workspaces disponibles"
+        description="Inventario completo de radios y marcas configuradas en la app."
+        actions={
+          <>
           <WorkspacesPageClient /> {/* ← botón Crear Workspace */}
 
           <Link
             href="/admin/users"
-            className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-300 transition hover:border-[#C8A96E] hover:text-[#C8A96E]"
+            className="inline-flex items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-300 transition hover:border-[#C8A96E] hover:text-[#C8A96E]"
           >
             Gestionar usuarios
           </Link>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <AdminWorkspacesGrid
         typeformWorkspaces={typeformWorkspaces.items}

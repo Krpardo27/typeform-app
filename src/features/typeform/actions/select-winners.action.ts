@@ -48,6 +48,7 @@ export async function selectWinnersAction(
     cookieName,
     JSON.stringify({
       tokens: winnerTokens,
+      reason,
       at: new Date().toISOString(),
       by: user.id,
     }),
@@ -72,23 +73,6 @@ export async function selectWinnersAction(
         winnerCount: winnerTokens.length,
         winnerTokens: winnerTokens.join(","),
         reason,
-      },
-    },
-  });
-
-  await createAuditLog({
-    action: "SENSITIVE_DATA_VIEWED",
-    actor: user,
-    target: { type: "form_winner_data", id: formId },
-    context: {
-      workspaceId: workspace.id,
-      workspaceName: workspace.name,
-      formId,
-      metadata: {
-        winnerCount: winnerTokens.length,
-        winnerTokens: winnerTokens.join(","),
-        reason,
-        scope: "winner_selection_flow",
       },
     },
   });

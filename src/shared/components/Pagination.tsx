@@ -90,7 +90,7 @@ export default function Pagination({
       <div className="flex items-center gap-3">
         {showPageSizeSelector && (
           <label className="flex items-center gap-2 text-xs text-zinc-400">
-            <span>Por pagina</span>
+            <span>Por página</span>
             <select
               value={itemsPerPage}
               onChange={(event) => setPageSize(Number(event.target.value))}

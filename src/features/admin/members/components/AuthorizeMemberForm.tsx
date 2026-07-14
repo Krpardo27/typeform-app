@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
+import Swal from "sweetalert2";
 import { LuLoader, LuUserPlus, LuCheck } from "react-icons/lu";
 import { authorizeMember } from "../actions/authorize-member.action";
 
@@ -45,11 +46,41 @@ export function AuthorizeMemberForm({ workspaces }: Props) {
 
   const canSubmit = Boolean(email.trim()) && assignments.length > 0;
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!canSubmit) {
       toast.error("Completa email y selecciona al menos 1 workspace");
+      return;
+    }
+
+    const selectedPreview = assignments
+      .slice(0, 3)
+      .map((assignment) => {
+        const workspace = workspaces.find(
+          (item) => item.id === assignment.workspaceId,
+        );
+
+        return `${workspace?.name ?? assignment.workspaceId} (${assignment.role})`;
+      })
+      .join("\n");
+
+    const result = await Swal.fire({
+      title: "Autorizar miembro",
+      text:
+        assignments.length > 3
+          ? `${email}\n${selectedPreview}\n... y ${assignments.length - 3} workspace(s) mas.`
+          : `${email}\n${selectedPreview}`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Si, autorizar",
+      cancelButtonText: "Cancelar",
+      background: "#111113",
+      color: "#f4f4f5",
+      confirmButtonColor: "#C8A96E",
+    });
+
+    if (!result.isConfirmed) {
       return;
     }
 
