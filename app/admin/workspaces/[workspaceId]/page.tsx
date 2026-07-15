@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import {
-  LuArrowLeft,
   LuArrowUpRight,
   LuFileText,
   LuUsers,
@@ -100,15 +99,8 @@ export default async function WorkspaceDetailPage({
             </span>
           </>
         }
-        leading={
-          <Link
-            href="/admin/workspaces"
-            className="mb-3 flex items-center gap-1.5 text-xs text-zinc-500 transition hover:text-zinc-300"
-          >
-            <LuArrowLeft className="size-3" />
-            Volver a workspaces
-          </Link>
-        }
+        backHref="/admin/workspaces"
+        backLabel="Volver a workspaces"
         actions={
           <>
           <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-400">

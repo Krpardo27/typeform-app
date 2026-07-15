@@ -52,6 +52,7 @@ export function WorkspaceSidebar({
               <Link
                 key={w.id}
                 href={`/workspaces/${w.id}`}
+                prefetch={false}
                 className={`block w-full rounded-md px-2 py-1.5 text-left text-sm transition ${
                   isActive
                     ? "bg-[#C8A96E]/10 text-[#C8A96E]"

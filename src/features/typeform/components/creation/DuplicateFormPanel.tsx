@@ -67,8 +67,8 @@ export function DuplicateFormPanel({
       const result = await Swal.fire({
         title: "Guardar y duplicar formulario",
         text: title
-          ? `Se creara una copia llamada \"${title}\".`
-          : "Se creara una copia del formulario base.",
+          ? `Se creará una copia llamada \"${title}\".`
+          : "Se creará una copia del formulario base.",
         icon: "question",
         showCancelButton: true,
         confirmButtonText: "Si, guardar y duplicar",
@@ -76,6 +76,8 @@ export function DuplicateFormPanel({
         background: "#111113",
         color: "#f4f4f5",
         confirmButtonColor: "#C8A96E",
+        scrollbarPadding: false,
+        heightAuto: false,
       });
 
       if (!result.isConfirmed) {
@@ -90,14 +92,14 @@ export function DuplicateFormPanel({
     <section className="mt-6 rounded-xl border border-zinc-800 bg-[#111113] p-5">
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
         <LuFilePlus2 className="size-3.5 text-[#C8A96E]" />
-        <span>Duplicacion</span>
+        <span>Duplicación</span>
       </div>
 
       <h2 className="mt-2 text-base font-semibold text-white">
         Crear nuevo formulario desde esta base
       </h2>
       <p className="mt-1 text-sm text-zinc-500">
-        Cambia el nombre y luego guardalo para crear el duplicado. El formulario actual no se modifica.
+        Cambia el nombre y luego guárdalo para crear el duplicado. El formulario actual no se modifica.
       </p>
 
       <form
@@ -116,7 +118,7 @@ export function DuplicateFormPanel({
             className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-[#C8A96E]"
           />
           <p className="mt-1 text-xs text-zinc-500">
-            Este nombre se aplicara al nuevo formulario al presionar Guardar y duplicar.
+            Este nombre se aplicará al nuevo formulario al presionar Guardar y duplicar.
           </p>
         </label>
 
