@@ -48,7 +48,7 @@ export function WorkspaceFormCard({ workspaceId, form }: Props) {
           {formatDate(form.last_updated_at)}
         </span>
         <span className="rounded-md border border-zinc-800 px-2 py-1 text-xs text-zinc-400">
-          {isPublic ? "Publico" : "Privado"}
+          {isPublic ? "Público" : "Privado"}
         </span>
       </div>
 
