@@ -22,10 +22,10 @@ export function WorkspaceFormStructurePanel({
           Pantallas de agradecimiento: {thankyouScreensCount}
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
-          Reglas de logica: {logicRulesCount}
+          Reglas de lógica: {logicRulesCount}
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
-          Estado: {isPublic ? "Publico" : "Privado"}
+          Estado: {isPublic ? "Público" : "Privado"}
         </div>
       </div>
     </section>
