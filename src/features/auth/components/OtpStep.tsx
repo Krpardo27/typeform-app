@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   LuKeyRound,
   LuMail,
@@ -14,6 +13,7 @@ import {
 import { verifyOtpAction, requestOtpAction } from "../actions/login.actions";
 import { loginCopy } from "./data";
 import { OtpInput } from "./OtpInput";
+import LoaderRedirect from "@/shared/ui/LoaderRedirect";
 
 type OtpStepProps = {
   email: string;
@@ -21,11 +21,10 @@ type OtpStepProps = {
 };
 
 export function OtpStep({ email, onBack }: OtpStepProps) {
-  const router = useRouter();
-
   const [otp, setOtp] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   async function onSubmit() {
     if (otp.length !== 6) {
@@ -38,8 +37,7 @@ export function OtpStep({ email, onBack }: OtpStepProps) {
 
     try {
       await verifyOtpAction(email, otp);
-      router.replace("/");
-      router.refresh();
+      setRedirecting(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : loginCopy.genericError);
       setIsLoading(false);
@@ -52,6 +50,16 @@ export function OtpStep({ email, onBack }: OtpStepProps) {
   }
 
   const maskedEmail = email.replace(/^(.{3}).*(@.*)$/, "$1••••••$2");
+
+  if (redirecting) {
+    return (
+      <LoaderRedirect
+        redirectTo="/workspaces/me"
+        title="Acceso verificado"
+        description="Estamos preparando tu espacio de trabajo."
+      />
+    );
+  }
 
   return (
     <div className="space-y-8">

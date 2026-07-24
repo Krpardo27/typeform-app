@@ -1,18 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { LuLoader, LuLogOut } from "react-icons/lu";
 import { authClient } from "@/lib/auth-client";
+import LoaderRedirect from "@/shared/ui/LoaderRedirect";
 
 type LogoutButtonProps = {
   variant?: "default" | "dock";
 };
 
 export function LogoutButton({ variant = "default" }: LogoutButtonProps) {
-  const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [redirecting, setRedirecting] = useState(false);
 
   async function handleLogout() {
     setIsPending(true);
@@ -26,8 +26,17 @@ export function LogoutButton({ variant = "default" }: LogoutButtonProps) {
       return;
     }
 
-    router.replace("/auth/login");
-    router.refresh();
+    setRedirecting(true);
+  }
+
+  if (redirecting) {
+    return (
+      <LoaderRedirect
+        redirectTo="/auth/login"
+        title="Hasta pronto"
+        description="Cerrando tu sesión de forma segura."
+      />
+    );
   }
 
   if (variant === "dock") {

@@ -4,7 +4,7 @@ export function AdminAuditHeader() {
   return (
     <AdminPageHeader
       title="Auditoria"
-      description="Trazabilidad de sesiones, codigos de acceso, clonado de formularios, autorizacion de miembros y visualizacion de datos sensibles."
+      description="Trazabilidad de sesiones, códigos de acceso, clonado de formularios, autorización de miembros y visualización de datos sensibles."
     />
   );
 }

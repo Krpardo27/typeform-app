@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-// IMPORTACIÓN DE ICONO
 import { LuClipboardPaste } from "react-icons/lu";
 
 import { EmailStep } from "./EmailStep";

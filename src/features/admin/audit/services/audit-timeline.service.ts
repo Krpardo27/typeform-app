@@ -62,7 +62,7 @@ function formatAction(action: string, metadata?: unknown) {
   }
 
   const labels: Record<string, string> = {
-    OTP_REQUESTED: "Codigo solicitado",
+    OTP_REQUESTED: "Código solicitado",
     FORM_CLONED: "Formulario clonado",
     SENSITIVE_DATA_VIEWED: "Datos sensibles vistos",
     WINNER_SELECTED: "Ganadores seleccionados",
@@ -95,7 +95,7 @@ export function buildAuditTimeline(
     ...sessions.map((session) => ({
       id: session.id,
       action: "LOGIN_SESSION_CREATED",
-      title: "Inicio de sesion",
+      title: "Inicio de sesión",
       actor: session.user.name ?? session.user.email,
       detail: session.user.email,
       ipAddress: session.ipAddress,
