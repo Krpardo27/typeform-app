@@ -18,7 +18,7 @@ export function AuditStatsGrid({ timeline, sessionCount, auditLogCount }: Props)
 
       <article className="rounded-xl border border-zinc-800 bg-[#111113] p-5">
         <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-          Inicios de sesion
+          Inicios de sesión
         </p>
         <p className="mt-3 text-2xl font-bold text-white">{sessionCount}</p>
       </article>

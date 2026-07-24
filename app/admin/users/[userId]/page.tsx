@@ -1,5 +1,4 @@
 import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { prisma } from "@/lib/prisma";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
@@ -59,14 +58,8 @@ export default async function AdminUserPage({
         eyebrow=""
         title={user.name || "Sin nombre"}
         description={user.email}
-        leading={
-          <Link
-            href="/admin/users"
-            className="mb-3 inline-flex rounded-md border border-zinc-800 px-3 py-2 text-sm text-zinc-500 transition hover:border-[#C8A96E] hover:text-[#C8A96E]"
-          >
-            Volver a usuarios
-          </Link>
-        }
+        backHref="/admin/users"
+        backLabel="Volver a usuarios"
         actions={
         <span className="rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-400">
           {user.globalRole}

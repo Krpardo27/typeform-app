@@ -1,9 +1,10 @@
+import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { prisma } from "@/lib/prisma";
 import { getAuthorizedWorkspace, getVisibleWorkspaces } from "./workspace-permissions";
 
-export async function getWorkspaceAccessContext(workspaceId: string) {
+export const getWorkspaceAccessContext = cache(async (workspaceId: string) => {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -40,4 +41,4 @@ export async function getWorkspaceAccessContext(workspaceId: string) {
     workspace,
     canCreateForms: user.globalRole !== "SUPER_ADMIN" && workspace.role === "EDITOR",
   };
-}
+});

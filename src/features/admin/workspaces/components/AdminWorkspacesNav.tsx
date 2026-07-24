@@ -13,7 +13,7 @@ import {
 export default function AdminWorkspacesNav() {
   const pathname = usePathname();
 
-  const isDashboard = pathname === "/admin";
+  const isDashboard = pathname === "/admin/dashboard";
   const isWorkspaces = pathname.startsWith("/admin/workspaces");
   const isUsers = pathname.startsWith("/admin/users");
   const isMembers = pathname.startsWith("/admin/miembros");
@@ -27,7 +27,7 @@ export default function AdminWorkspacesNav() {
 
       <nav className="space-y-1">
         <Link
-          href="/admin"
+          href="/admin/dashboard"
           className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition ${
             isDashboard
               ? "bg-[#C8A96E]/10 text-[#C8A96E]"

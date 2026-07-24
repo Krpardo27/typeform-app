@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LuFilePlus2, LuFileText } from "react-icons/lu";
+import { WorkspaceHeader } from "@/features/admin/workspaces/components/WorkspaceHeader";
 
 type Props = {
   workspaceId: string;
@@ -15,21 +16,17 @@ export function WorkspaceFormsHeader({
   canCreateForms,
 }: Props) {
   return (
-    <header className="border-b border-zinc-800/60 pb-6">
-      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
-        <LuFileText className="size-3.5 text-[#C8A96E]" />
-        <span className="truncate">{workspaceName}</span>
-      </div>
-
-      <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-white">Formularios</h1>
-          <p className="mt-1 max-w-2xl text-sm text-zinc-500">
-            Formularios recuperados desde Typeform para este workspace.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
+    <WorkspaceHeader
+      eyebrow={
+        <>
+          <LuFileText className="size-3.5 text-[#C8A96E]" />
+          <span className="truncate">{workspaceName}</span>
+        </>
+      }
+      title="Formularios"
+      description="Formularios recuperados desde Typeform para este workspace."
+      actions={
+        <>
           <p className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-400">
             {totalItems} total
           </p>
@@ -47,8 +44,8 @@ export function WorkspaceFormsHeader({
               Solo lectura
             </span>
           )}
-        </div>
-      </div>
-    </header>
+        </>
+      }
+    />
   );
 }

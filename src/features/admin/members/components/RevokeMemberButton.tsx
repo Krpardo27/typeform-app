@@ -17,10 +17,10 @@ export function RevokeMemberButton({ email }: Props) {
     startTransition(async () => {
       const confirmation = await Swal.fire({
         title: "Revocar miembro",
-        text: `Se quitara ${email} de whitelist, de todos sus workspaces y se cerraran sus sesiones activas.`,
+        text: `Se quitará ${email} de whitelist, de todos sus workspaces y se cerrarán sus sesiones activas.`,
         icon: "warning",
         showCancelButton: true,
-        confirmButtonText: "Si, revocar",
+        confirmButtonText: "Sí, revocar",
         cancelButtonText: "Cancelar",
         background: "#111113",
         color: "#f4f4f5",

@@ -1,5 +1,16 @@
 const TYPEFORM_API_BASE_URL =
   process.env.TYPEFORM_API_BASE_URL ?? "https://api.typeform.com";
+const TYPEFORM_RESOLVE_WORKSPACE_TTL_MS = 5 * 60 * 1000;
+const TYPEFORM_WORKSPACE_FORMS_TTL_MS = 60 * 1000;
+
+const resolvedWorkspaceIdCache = new Map<
+  string,
+  { value: string; expiresAt: number }
+>();
+const workspaceFormsCache = new Map<
+  string,
+  { value: TypeformFormsResponse; expiresAt: number }
+>();
 
 class TypeformApiError extends Error {
   status: number;
@@ -188,10 +199,20 @@ function normalizeWorkspaceKey(value: string) {
 }
 
 export async function resolveWorkspaceTypeformId(workspaceTypeformId: string) {
+  const cachedWorkspaceId = resolvedWorkspaceIdCache.get(workspaceTypeformId);
+  if (cachedWorkspaceId && cachedWorkspaceId.expiresAt > Date.now()) {
+    return cachedWorkspaceId.value;
+  }
+
   try {
     await typeformRequest<TypeformWorkspace>(
       `/workspaces/${encodeURIComponent(workspaceTypeformId)}`,
     );
+
+    resolvedWorkspaceIdCache.set(workspaceTypeformId, {
+      value: workspaceTypeformId,
+      expiresAt: Date.now() + TYPEFORM_RESOLVE_WORKSPACE_TTL_MS,
+    });
 
     return workspaceTypeformId;
   } catch (error) {
@@ -214,8 +235,17 @@ export async function resolveWorkspaceTypeformId(workspaceTypeformId: string) {
     console.warn(
       `Workspace Typeform resuelto desde '${workspaceTypeformId}' a '${matchedWorkspace.id}'.`,
     );
+    resolvedWorkspaceIdCache.set(workspaceTypeformId, {
+      value: matchedWorkspace.id,
+      expiresAt: Date.now() + TYPEFORM_RESOLVE_WORKSPACE_TTL_MS,
+    });
     return matchedWorkspace.id;
   }
+
+  resolvedWorkspaceIdCache.set(workspaceTypeformId, {
+    value: workspaceTypeformId,
+    expiresAt: Date.now() + TYPEFORM_RESOLVE_WORKSPACE_TTL_MS,
+  });
 
   return workspaceTypeformId;
 }
@@ -237,6 +267,11 @@ async function typeformRequest<T>(path: string) {
 }
 
 export async function getWorkspaceForms(workspaceTypeformId: string) {
+  const cachedForms = workspaceFormsCache.get(workspaceTypeformId);
+  if (cachedForms && cachedForms.expiresAt > Date.now()) {
+    return cachedForms.value;
+  }
+
   const resolvedWorkspaceTypeformId = await resolveWorkspaceTypeformId(
     workspaceTypeformId,
   );
@@ -271,6 +306,10 @@ export async function getWorkspaceForms(workspaceTypeformId: string) {
   }
 
   if (firstPage.page_count <= 1) {
+    workspaceFormsCache.set(workspaceTypeformId, {
+      value: firstPage,
+      expiresAt: Date.now() + TYPEFORM_WORKSPACE_FORMS_TTL_MS,
+    });
     return firstPage;
   }
 
@@ -283,13 +322,20 @@ export async function getWorkspaceForms(workspaceTypeformId: string) {
     }),
   );
 
-  return {
+  const mergedPages = {
     ...firstPage,
     items: [
       ...firstPage.items,
       ...remainingPages.flatMap((page) => page.items),
     ],
   };
+
+  workspaceFormsCache.set(workspaceTypeformId, {
+    value: mergedPages,
+    expiresAt: Date.now() + TYPEFORM_WORKSPACE_FORMS_TTL_MS,
+  });
+
+  return mergedPages;
 }
 
 export async function getTypeformWorkspaces() {

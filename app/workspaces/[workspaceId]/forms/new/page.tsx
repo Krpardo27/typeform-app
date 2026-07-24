@@ -1,10 +1,9 @@
 import { notFound } from "next/navigation";
-import { WorkspaceShell } from "@/features/admin/workspaces/components/WorkspaceShell";
 import { getWorkspaceAccessContext } from "@/features/admin/workspaces/services/workspace-access";
 import { createDefaultFormForWorkspaceAction } from "@/features/typeform/actions/create-default-form-for-workspace.action";
-import { BaseFormsGrid } from "@/features/typeform/components/BaseFormsGrid";
-import { EmptyBaseFormsState } from "@/features/typeform/components/EmptyBaseFormsState";
-import { NewWorkspaceFormHeader } from "@/features/typeform/components/NewWorkspaceFormHeader";
+import { BaseFormsGrid } from "@/features/typeform/components/creation/BaseFormsGrid";
+import { EmptyBaseFormsState } from "@/features/typeform/components/creation/EmptyBaseFormsState";
+import { NewWorkspaceFormHeader } from "@/features/typeform/components/creation/NewWorkspaceFormHeader";
 import { getWorkspaceForms } from "@/features/typeform/services/typeform.service";
 import Pagination from "@/shared/components/Pagination";
 
@@ -20,8 +19,7 @@ export default async function NewWorkspaceFormPage({
 }) {
   const { workspaceId } = await params;
   const { page, pageSize } = await searchParams;
-  const { user, workspaces, workspace, canCreateForms } =
-    await getWorkspaceAccessContext(workspaceId);
+  const { workspace, canCreateForms } = await getWorkspaceAccessContext(workspaceId);
 
   if (!canCreateForms) {
     notFound();
@@ -49,12 +47,7 @@ export default async function NewWorkspaceFormPage({
   );
 
   return (
-    <WorkspaceShell
-      user={user}
-      workspaces={workspaces}
-      currentWorkspaceId={workspace.id}
-      currentSection="forms"
-    >
+    <>
       <NewWorkspaceFormHeader
         workspaceId={workspace.id}
         workspaceName={workspace.name}
@@ -76,6 +69,6 @@ export default async function NewWorkspaceFormPage({
           />
         </section>
       )}
-    </WorkspaceShell>
+    </>
   );
 }

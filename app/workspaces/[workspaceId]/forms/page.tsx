@@ -1,13 +1,16 @@
-import { WorkspaceShell } from "@/features/admin/workspaces/components/WorkspaceShell";
 import { getWorkspaceAccessContext } from "@/features/admin/workspaces/services/workspace-access";
-import { EmptyWorkspaceFormsState } from "@/features/typeform/components/EmptyWorkspaceFormsState";
-import { WorkspaceFormsGrid } from "@/features/typeform/components/WorkspaceFormsGrid";
-import { WorkspaceFormsHeader } from "@/features/typeform/components/WorkspaceFormsHeader";
+import { EmptyWorkspaceFormsState } from "@/features/typeform/components/forms/EmptyWorkspaceFormsState";
+import { WorkspaceFormsGrid } from "@/features/typeform/components/forms/WorkspaceFormsGrid";
+import { WorkspaceFormsHeader } from "@/features/typeform/components/forms/WorkspaceFormsHeader";
 import { getWorkspaceForms } from "@/features/typeform/services/typeform.service";
 import Pagination from "@/shared/components/Pagination";
 
 const PAGE_SIZE_OPTIONS = [6, 12, 24, 48];
 const DEFAULT_PAGE_SIZE = 12;
+
+function looksLikeInternalWorkspaceId(value: string) {
+  return /^c[a-z0-9]{20,}$/i.test(value);
+}
 
 export default async function WorkspaceFormsPage({
   params,
@@ -18,9 +21,12 @@ export default async function WorkspaceFormsPage({
 }) {
   const { workspaceId } = await params;
   const { page, pageSize } = await searchParams;
-  const { user, workspaces, workspace, canCreateForms } =
-    await getWorkspaceAccessContext(workspaceId);
-  const forms = await getWorkspaceForms(workspace.typeformId);
+  const { workspace, canCreateForms } = await getWorkspaceAccessContext(workspaceId);
+  const initialWorkspaceLookupKey = looksLikeInternalWorkspaceId(workspace.typeformId)
+    ? workspace.name
+    : workspace.typeformId;
+
+  const forms = await getWorkspaceForms(initialWorkspaceLookupKey);
   const requestedPage = Number.parseInt(page ?? "1", 10) || 1;
   const requestedPageSize = Number.parseInt(
     pageSize ?? String(DEFAULT_PAGE_SIZE),
@@ -38,12 +44,7 @@ export default async function WorkspaceFormsPage({
   );
 
   return (
-    <WorkspaceShell
-      user={user}
-      workspaces={workspaces}
-      currentWorkspaceId={workspace.id}
-      currentSection="forms"
-    >
+    <>
       <WorkspaceFormsHeader
         workspaceId={workspace.id}
         workspaceName={workspace.name}
@@ -70,6 +71,6 @@ export default async function WorkspaceFormsPage({
           />
         </section>
       )}
-    </WorkspaceShell>
+    </>
   );
 }

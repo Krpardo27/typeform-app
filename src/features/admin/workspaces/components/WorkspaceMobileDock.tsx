@@ -40,7 +40,7 @@ export function WorkspaceMobileDock({
   };
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 bg-[#0b0b0d]/80 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 lg:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-40 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 lg:hidden">
       <div className="relative mx-auto max-w-xl overflow-visible rounded-[1.35rem] border border-[#dedede]/10 bg-[#111111] shadow-[0_-12px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-[#C8A96E]/70 to-transparent" />
         <nav className="grid grid-cols-5 gap-1 p-1.5">
@@ -103,6 +103,7 @@ export function WorkspaceMobileDock({
                   <Link
                     key={workspace.id}
                     href={`/workspaces/${workspace.id}`}
+                    prefetch={false}
                     onClick={triggerHapticFeedback}
                     className={`block rounded-lg px-3 py-2 text-sm transition ${
                       isActive
