@@ -7,6 +7,7 @@ import { AuthEmailService } from "@/emails/services/AuthEmailService";
 import { createAuditLog } from "@/features/admin/audit/services/audit-log.service";
 
 export const auth = betterAuth({
+  trustedOrigins: ["https://forms-cl.prisa.media"],
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
