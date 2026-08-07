@@ -48,7 +48,7 @@ export function LogoutButton({ variant = "default" }: LogoutButtonProps) {
           disabled={isPending}
           aria-label="Cerrar sesión"
           title="Cerrar sesión"
-          className="group relative flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl px-0.5 py-1 text-[9px] font-medium text-zinc-400 transition-colors hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50 min-[390px]:text-[10px]"
+          className="group relative cursor-pointer flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl px-0.5 py-1 text-[9px] font-medium text-zinc-400 transition-colors hover:text-red-300 disabled:opacity-50 min-[390px]:text-[10px]"
         >
           {isPending ? (
             <LuLoader className="h-4 w-4 shrink-0 animate-spin" />
@@ -69,7 +69,7 @@ export function LogoutButton({ variant = "default" }: LogoutButtonProps) {
         type="button"
         onClick={handleLogout}
         disabled={isPending}
-        className="w-full rounded-md border border-zinc-300 px-3 py-2 text-left text-sm font-medium text-zinc-800 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800"
+        className="w-full rounded-md cursor-pointer border border-zinc-300 px-3 py-2 text-left text-sm font-medium text-zinc-800 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800"
       >
         {isPending ? "Cerrando sesión..." : "Cerrar sesión"}
       </button>
