@@ -1,15 +1,10 @@
 const TYPEFORM_API_BASE_URL =
   process.env.TYPEFORM_API_BASE_URL ?? "https://api.typeform.com";
 const TYPEFORM_RESOLVE_WORKSPACE_TTL_MS = 5 * 60 * 1000;
-const TYPEFORM_WORKSPACE_FORMS_TTL_MS = 60 * 1000;
 
 const resolvedWorkspaceIdCache = new Map<
   string,
   { value: string; expiresAt: number }
->();
-const workspaceFormsCache = new Map<
-  string,
-  { value: TypeformFormsResponse; expiresAt: number }
 >();
 
 class TypeformApiError extends Error {
@@ -250,13 +245,14 @@ export async function resolveWorkspaceTypeformId(workspaceTypeformId: string) {
   return workspaceTypeformId;
 }
 
-async function typeformRequest<T>(path: string) {
+async function typeformRequest<T>(path: string, fetchInit?: RequestInit) {
   const response = await fetch(`${TYPEFORM_API_BASE_URL}${path}`, {
     headers: {
       Authorization: `Bearer ${getTypeformToken()}`,
       Accept: "application/json",
     },
     cache: "no-store",
+    ...fetchInit,
   });
 
   if (!response.ok) {
@@ -266,11 +262,12 @@ async function typeformRequest<T>(path: string) {
   return response.json() as Promise<T>;
 }
 
-export async function getWorkspaceForms(workspaceTypeformId: string) {
-  const cachedForms = workspaceFormsCache.get(workspaceTypeformId);
-  if (cachedForms && cachedForms.expiresAt > Date.now()) {
-    return cachedForms.value;
-  }
+export async function getWorkspaceForms(
+  workspaceTypeformId: string,
+  options?: { page?: number; pageSize?: number },
+) {
+  const page = Math.max(1, options?.page ?? 1);
+  const pageSize = Math.min(200, Math.max(1, options?.pageSize ?? 12));
 
   const resolvedWorkspaceTypeformId = await resolveWorkspaceTypeformId(
     workspaceTypeformId,
@@ -278,64 +275,26 @@ export async function getWorkspaceForms(workspaceTypeformId: string) {
 
   const searchParams = new URLSearchParams({
     workspace_id: resolvedWorkspaceTypeformId,
-    page_size: "200",
+    page_size: String(pageSize),
+    page: String(page),
     sort_by: "last_updated_at",
     order_by: "desc",
   });
 
-  let firstPage: TypeformFormsResponse;
-
   try {
-    firstPage = await typeformRequest<TypeformFormsResponse>(
+    return await typeformRequest<TypeformFormsResponse>(
       `/forms?${searchParams}`,
+      { next: { revalidate: 60 } } as RequestInit,
     );
   } catch (error) {
     if (error instanceof TypeformApiError && error.status === 404) {
       console.warn(
         `Typeform workspace_id invalido o inexistente: ${workspaceTypeformId} (resuelto: ${resolvedWorkspaceTypeformId})`,
       );
-
-      return {
-        total_items: 0,
-        page_count: 1,
-        items: [],
-      };
+      return { total_items: 0, page_count: 1, items: [] };
     }
-
     throw error;
   }
-
-  if (firstPage.page_count <= 1) {
-    workspaceFormsCache.set(workspaceTypeformId, {
-      value: firstPage,
-      expiresAt: Date.now() + TYPEFORM_WORKSPACE_FORMS_TTL_MS,
-    });
-    return firstPage;
-  }
-
-  const remainingPages = await Promise.all(
-    Array.from({ length: firstPage.page_count - 1 }, (_, index) => {
-      const pageParams = new URLSearchParams(searchParams);
-      pageParams.set("page", String(index + 2));
-
-      return typeformRequest<TypeformFormsResponse>(`/forms?${pageParams}`);
-    }),
-  );
-
-  const mergedPages = {
-    ...firstPage,
-    items: [
-      ...firstPage.items,
-      ...remainingPages.flatMap((page) => page.items),
-    ],
-  };
-
-  workspaceFormsCache.set(workspaceTypeformId, {
-    value: mergedPages,
-    expiresAt: Date.now() + TYPEFORM_WORKSPACE_FORMS_TTL_MS,
-  });
-
-  return mergedPages;
 }
 
 export async function getTypeformWorkspaces() {

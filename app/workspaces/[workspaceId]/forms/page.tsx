@@ -8,10 +8,6 @@ import Pagination from "@/shared/components/Pagination";
 const PAGE_SIZE_OPTIONS = [6, 12, 24, 48];
 const DEFAULT_PAGE_SIZE = 12;
 
-function looksLikeInternalWorkspaceId(value: string) {
-  return /^c[a-z0-9]{20,}$/i.test(value);
-}
-
 export default async function WorkspaceFormsPage({
   params,
   searchParams,
@@ -22,26 +18,21 @@ export default async function WorkspaceFormsPage({
   const { workspaceId } = await params;
   const { page, pageSize } = await searchParams;
   const { workspace, canCreateForms } = await getWorkspaceAccessContext(workspaceId);
-  const initialWorkspaceLookupKey = looksLikeInternalWorkspaceId(workspace.typeformId)
-    ? workspace.name
-    : workspace.typeformId;
 
-  const forms = await getWorkspaceForms(initialWorkspaceLookupKey);
   const requestedPage = Number.parseInt(page ?? "1", 10) || 1;
-  const requestedPageSize = Number.parseInt(
-    pageSize ?? String(DEFAULT_PAGE_SIZE),
-    10,
-  );
+  const requestedPageSize = Number.parseInt(pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
   const itemsPerPage = PAGE_SIZE_OPTIONS.includes(requestedPageSize)
     ? requestedPageSize
     : DEFAULT_PAGE_SIZE;
-  const totalItems = forms.items.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+
+  const forms = await getWorkspaceForms(workspace.typeformId, {
+    page: requestedPage,
+    pageSize: itemsPerPage,
+  });
+
+  const totalItems = forms.total_items;
+  const totalPages = Math.max(1, forms.page_count);
   const currentPage = Math.min(Math.max(requestedPage, 1), totalPages);
-  const paginatedForms = forms.items.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
-  );
 
   return (
     <>
@@ -58,7 +49,8 @@ export default async function WorkspaceFormsPage({
         <section className="space-y-6">
           <WorkspaceFormsGrid
             workspaceId={workspace.id}
-            forms={paginatedForms}
+            workspaceTypeformId={workspace.typeformId}
+            forms={forms.items}
           />
           <Pagination
             currentPage={currentPage}
