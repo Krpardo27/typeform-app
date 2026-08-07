@@ -37,7 +37,7 @@ export function DuplicateFormPanel({
     sessionStorage.setItem(toastKey, "1");
 
     toast.success("Formulario duplicado", {
-      description: "El formulario se clono correctamente desde la base seleccionada.",
+      description: "El formulario se clonó correctamente desde la base seleccionada.",
     });
 
     const params = new URLSearchParams(searchParams.toString());
@@ -71,7 +71,7 @@ export function DuplicateFormPanel({
           : "Se creará una copia del formulario base.",
         icon: "question",
         showCancelButton: true,
-        confirmButtonText: "Si, guardar y duplicar",
+        confirmButtonText: "Sí, guardar y duplicar",
         cancelButtonText: "Cancelar",
         background: "#111113",
         color: "#f4f4f5",

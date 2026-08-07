@@ -83,6 +83,7 @@ export default async function WorkspaceFormDetailPage({
 
       <WorkspaceFormMetaCards
         formId={form.id}
+        workspaceTypeformId={workspace.typeformId}
         fieldsCount={form.fields?.length ?? 0}
         hiddenFieldsCount={form.hidden?.length ?? 0}
         clonedFrom={clonedFrom}
