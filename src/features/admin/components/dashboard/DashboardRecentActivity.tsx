@@ -43,27 +43,55 @@ export function DashboardRecentActivity({ timeline }: Props) {
           Todavía no hay eventos registrados.
         </p>
       ) : (
-        <div className="divide-y divide-zinc-800/70">
-          {timeline.map((event) => (
-            <div
-              key={`${event.source}-${event.id}`}
-              className="flex items-center gap-4 px-6 py-3.5 hover:bg-zinc-900/40 transition"
-            >
-              <span
-                className={`shrink-0 rounded-md border px-2 py-0.5 text-xs font-medium ${getEventBadgeClass(event.action, event.metadata)}`}
+        <>
+          {/* Mobile: Cards */}
+          <div className="grid gap-3 p-4 sm:p-5 grid-cols-1 sm:grid-cols-2 lg:hidden auto-rows-max">
+            {timeline.map((event) => (
+              <div
+                key={`${event.source}-${event.id}`}
+                className="flex flex-col gap-2 rounded-lg border border-zinc-700/50 bg-zinc-900/30 p-3 transition hover:bg-zinc-900/60 hover:border-zinc-700"
               >
-                {event.title}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm text-zinc-300">{event.detail}</p>
-                <p className="truncate text-xs text-zinc-500">{event.actor}</p>
+                <div className="flex items-center justify-between">
+                  <span
+                    className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium ${getEventBadgeClass(event.action, event.metadata)}`}
+                  >
+                    {event.title}
+                  </span>
+                  <span className="text-xs text-zinc-600">
+                    {formatDate(event.createdAt)}
+                  </span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="line-clamp-2 text-sm text-zinc-300">{event.detail}</p>
+                  <p className="mt-1 truncate text-xs text-zinc-500">{event.actor}</p>
+                </div>
               </div>
-              <span className="shrink-0 text-xs text-zinc-600">
-                {formatDate(event.createdAt)}
-              </span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          {/* Desktop: List */}
+          <div className="hidden lg:block divide-y divide-zinc-800/70">
+            {timeline.map((event) => (
+              <div
+                key={`${event.source}-${event.id}`}
+                className="flex items-center gap-4 px-6 py-3.5 hover:bg-zinc-900/40 transition"
+              >
+                <span
+                  className={`shrink-0 rounded-md border px-2 py-0.5 text-xs font-medium ${getEventBadgeClass(event.action, event.metadata)}`}
+                >
+                  {event.title}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm text-zinc-300">{event.detail}</p>
+                  <p className="truncate text-xs text-zinc-500">{event.actor}</p>
+                </div>
+                <span className="shrink-0 text-xs text-zinc-600">
+                  {formatDate(event.createdAt)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
