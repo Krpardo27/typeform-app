@@ -118,79 +118,163 @@ function getWinnerCount(event: AuditTimelineEvent) {
 
 export function AuditTimeline({ timeline }: Props) {
   return (
-    <section className="mt-8 overflow-hidden rounded-xl border border-zinc-800 bg-[#111113]">
-      <div className="overflow-x-auto">
-        <div className="min-w-230">
-          <div className="grid grid-cols-[160px_1.1fr_1fr_160px_220px] gap-4 border-b border-zinc-800 px-5 py-3 text-xs font-medium uppercase tracking-wider text-zinc-500">
-            <span>Evento</span>
-            <span>Actor</span>
-            <span>Detalle</span>
-            <span>IP</span>
-            <span>Fecha</span>
-          </div>
+    <section className="mt-8 rounded-xl border border-zinc-800 bg-[#111113]">
+      {timeline.length === 0 ? (
+        <div className="px-5 py-10 text-center text-sm text-zinc-500">
+          Todavia no hay eventos de auditoria.
+        </div>
+      ) : (
+        <>
+          {/* Mobile: Cards */}
+          <div className="grid gap-4 sm:gap-3 p-5 md:p-6 grid-cols-1 sm:grid-cols-2 lg:hidden auto-rows-max">
+            {timeline.map((event) => {
+              const Icon =
+                event.action === "LOGIN_SESSION_CREATED"
+                  ? LuLogIn
+                  : getActionIcon(event.action, event.metadata);
+              const style = getActionStyle(event.action, event.metadata);
+              const winnerCount = getWinnerCount(event);
 
-          {timeline.length === 0 ? (
-            <div className="px-5 py-10 text-center text-sm text-zinc-500">
-              Todavia no hay eventos de auditoria.
-            </div>
-          ) : (
-            <div className="max-h-[70vh] divide-y divide-zinc-800 overflow-y-auto">
-              {timeline.map((event) => {
-                const Icon =
-                  event.action === "LOGIN_SESSION_CREATED"
-                    ? LuLogIn
-                    : getActionIcon(event.action, event.metadata);
-                const style = getActionStyle(event.action, event.metadata);
-                const winnerCount = getWinnerCount(event);
-
-                return (
-                  <div
-                    key={`${event.source}-${event.id}`}
-                    className={`relative grid grid-cols-[160px_1.1fr_1fr_160px_220px] items-center gap-4 px-5 py-4 text-sm text-zinc-400 transition hover:bg-zinc-900/40 before:absolute before:inset-y-2 before:left-2 before:w-0.5 before:rounded-full ${style.accent}`}
-                  >
-                    <div className="flex items-center gap-2 text-zinc-200">
-                      <Icon className={`size-4 ${style.icon}`} />
+              return (
+                <div
+                  key={`${event.source}-${event.id}`}
+                  className={`relative flex flex-col gap-3 rounded-lg border border-zinc-700/50 bg-zinc-900/30 p-4 transition hover:bg-zinc-900/60 hover:border-zinc-700 before:absolute before:inset-y-0 before:left-3 before:w-0.5 before:rounded-full ${style.accent}`}
+                >
+                  <div className="ml-8">
+                    {/* Evento Badge */}
+                    <div className="flex items-center gap-2">
+                      <Icon className={`size-4 shrink-0 ${style.icon}`} />
                       <span
-                        className={`inline-flex max-w-full items-center truncate rounded-md border px-2 py-1 text-xs font-medium ${style.badge}`}
+                        className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium ${style.badge}`}
                       >
                         {event.title}
                       </span>
                     </div>
 
+                    {/* Actor */}
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-white">
+                      <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                        Actor
+                      </p>
+                      <p className="mt-1 truncate font-medium text-white">
                         {event.actor}
                       </p>
                       {event.userAgent && (
-                        <p className="mt-1 truncate text-xs text-zinc-600">
+                        <p className="mt-1 line-clamp-2 text-xs text-zinc-600">
                           {event.userAgent}
                         </p>
                       )}
                     </div>
 
+                    {/* Detalle */}
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-zinc-200">
+                      <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                        Detalle
+                      </p>
+                      <p className="mt-1 line-clamp-2 font-medium text-zinc-200">
                         {event.detail}
                       </p>
                       {winnerCount && (
-                        <p className="mt-1 text-xs text-emerald-300">
-                          {winnerCount} ganador(es) seleccionados
+                        <p className="mt-2 text-xs text-emerald-300">
+                          ✓ {winnerCount} ganador(es) seleccionados
                         </p>
                       )}
                     </div>
-                    <p className="truncate text-xs text-zinc-500">
-                      {event.ipAddress ?? "Sin IP"}
-                    </p>
-                    <p className="text-xs text-zinc-500">
-                      {formatDate(event.createdAt)}
-                    </p>
+
+                    {/* IP y Fecha */}
+                    <div className="mt-1 flex items-center justify-between gap-2 border-t border-zinc-800/50 pt-3">
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                          IP
+                        </p>
+                        <p className="mt-0.5 truncate text-xs text-zinc-400">
+                          {event.ipAddress ?? "—"}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                          Fecha
+                        </p>
+                        <p className="mt-0.5 text-xs text-zinc-400 whitespace-nowrap">
+                          {formatDate(event.createdAt)}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                );
-              })}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop: Table */}
+          <div className="hidden lg:block overflow-x-auto">
+            <div className="min-w-230">
+              <div className="grid grid-cols-[160px_1.1fr_1fr_160px_220px] gap-4 border-b border-zinc-800 px-5 py-3 text-xs font-medium uppercase tracking-wider text-zinc-500">
+                <span>Evento</span>
+                <span>Actor</span>
+                <span>Detalle</span>
+                <span>IP</span>
+                <span>Fecha</span>
+              </div>
+
+              <div className="max-h-[70vh] divide-y divide-zinc-800 overflow-y-auto">
+                {timeline.map((event) => {
+                  const Icon =
+                    event.action === "LOGIN_SESSION_CREATED"
+                      ? LuLogIn
+                      : getActionIcon(event.action, event.metadata);
+                  const style = getActionStyle(event.action, event.metadata);
+                  const winnerCount = getWinnerCount(event);
+
+                  return (
+                    <div
+                      key={`${event.source}-${event.id}`}
+                      className={`relative grid grid-cols-[160px_1.1fr_1fr_160px_220px] items-center gap-4 px-5 py-4 text-sm text-zinc-400 transition hover:bg-zinc-900/40 before:absolute before:inset-y-2 before:left-2 before:w-0.5 before:rounded-full ${style.accent}`}
+                    >
+                      <div className="flex items-center gap-2 text-zinc-200">
+                        <Icon className={`size-4 ${style.icon}`} />
+                        <span
+                          className={`inline-flex max-w-full items-center truncate rounded-md border px-2 py-1 text-xs font-medium ${style.badge}`}
+                        >
+                          {event.title}
+                        </span>
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-white">
+                          {event.actor}
+                        </p>
+                        {event.userAgent && (
+                          <p className="mt-1 truncate text-xs text-zinc-600">
+                            {event.userAgent}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-zinc-200">
+                          {event.detail}
+                        </p>
+                        {winnerCount && (
+                          <p className="mt-1 text-xs text-emerald-300">
+                            {winnerCount} ganador(es) seleccionados
+                          </p>
+                        )}
+                      </div>
+                      <p className="truncate text-xs text-zinc-500">
+                        {event.ipAddress ?? "Sin IP"}
+                      </p>
+                      <p className="text-xs text-zinc-500">
+                        {formatDate(event.createdAt)}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          )}
-        </div>
-      </div>
+          </div>
+        </>
+      )}
     </section>
   );
 }
