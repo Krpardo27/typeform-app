@@ -27,5 +27,5 @@ export default function LoaderRedirect({
     return () => window.clearTimeout(timer);
   }, [delayMs, redirectTo, router]);
 
-  return <LoaderScreen title={title} description={description} badgeText="Verificando" />;
+  return <LoaderScreen title={title} description={description} />;
 }

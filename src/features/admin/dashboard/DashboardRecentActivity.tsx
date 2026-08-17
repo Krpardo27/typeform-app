@@ -18,6 +18,8 @@ function getEventBadgeClass(action: string, metadata: unknown) {
       return "border-emerald-400/40 bg-emerald-400/10 text-emerald-300";
     if (eventType === "MEMBER_REVOKED")
       return "border-red-400/40 bg-red-400/10 text-red-300";
+    if (eventType === "OTP_RATE_LIMITED")
+      return "border-amber-400/40 bg-amber-400/10 text-amber-300";
   }
   const map: Record<string, string> = {
     WINNER_SELECTED: "border-emerald-400/40 bg-emerald-400/10 text-emerald-300",

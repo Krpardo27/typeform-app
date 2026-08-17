@@ -268,7 +268,7 @@ export function UserWorkspaceForm({
           type="button"
           disabled={isPending || !hasChanges}
           onClick={handleSubmit}
-          className="flex items-center gap-2 rounded-lg bg-[#C8A96E] px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-[#d7b979] disabled:opacity-50"
+          className="flex items-center cursor-pointer gap-2 rounded-lg bg-[#C8A96E] px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-[#d7b979] disabled:opacity-50"
         >
           {isPending && <LuLoader className="size-4 animate-spin" />}
 

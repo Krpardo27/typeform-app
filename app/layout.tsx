@@ -1,15 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Toaster } from "sonner";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Roboto_Serif } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const robotoSerif = Roboto_Serif({
+  variable: "--font-roboto-serif",
   subsets: ["latin"],
 });
 
@@ -22,7 +17,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#0b0b0d",
+  themeColor: "#F7F7F8",
 };
 
 export default function RootLayout({
@@ -33,9 +28,9 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} min-h-dvh w-full overflow-hidden antialiased`}
+      className={`${robotoSerif.variable} min-h-dvh w-full overflow-x-hidden antialiased`}
     >
-      <body className="min-h-dvh w-full bg-[#0b0b0d] text-zinc-100">
+      <body className="min-h-dvh w-full overflow-x-hidden bg-[#F7F7F8] text-zinc-900">
         {children}
         <Toaster position="top-right" richColors />
       </body>

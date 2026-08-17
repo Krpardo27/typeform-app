@@ -12,10 +12,12 @@ export async function selectWinnersAction(
   formId: string,
   formData: FormData,
 ) {
-  const { user, workspace, canCreateForms } =
-    await getWorkspaceAccessContext(workspaceId);
+  const { user, workspace } = await getWorkspaceAccessContext(workspaceId);
 
-  if (!canCreateForms) {
+  const canSelectWinners =
+    user.globalRole === "SUPER_ADMIN" || workspace.role === "EDITOR";
+
+  if (!canSelectWinners) {
     redirect(`/workspaces/${workspaceId}/forms/${formId}/responses?winnerError=forbidden`);
   }
 

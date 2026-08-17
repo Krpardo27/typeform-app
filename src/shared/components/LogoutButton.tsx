@@ -6,7 +6,7 @@ import { authClient } from "@/lib/auth-client";
 import LoaderRedirect from "@/shared/ui/LoaderRedirect";
 
 type LogoutButtonProps = {
-  variant?: "default" | "dock";
+  variant?: "default" | "dock" | "workspace-dock";
 };
 
 export function LogoutButton({ variant = "default" }: LogoutButtonProps) {
@@ -34,32 +34,47 @@ export function LogoutButton({ variant = "default" }: LogoutButtonProps) {
       <LoaderRedirect
         redirectTo="/auth/login"
         title="Hasta pronto"
-        description="Cerrando tu sesión de forma segura."
+        description="Cerrando tu sesión..."
       />
     );
   }
 
-  if (variant === "dock") {
+  if (variant === "dock" || variant === "workspace-dock") {
+    const isWorkspaceDock = variant === "workspace-dock";
+
     return (
-      <>
-        <button
-          type="button"
-          onClick={handleLogout}
-          disabled={isPending}
-          aria-label="Cerrar sesión"
-          title="Cerrar sesión"
-          className="group relative cursor-pointer flex min-h-14 flex-col items-center justify-center gap-1 rounded-2xl px-0.5 py-1 text-[9px] font-medium text-zinc-400 transition-colors hover:text-red-300 disabled:opacity-50 min-[390px]:text-[10px]"
-        >
+      <button
+        type="button"
+        onClick={handleLogout}
+        disabled={isPending}
+        aria-label="Cerrar sesión"
+        title="Cerrar sesión"
+        className={
+          isWorkspaceDock
+            ? "group relative flex min-h-14 cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1 text-[9px] font-medium text-black/45 transition-colors duration-200 hover:text-[#FF5C35] disabled:cursor-not-allowed disabled:opacity-50 min-[390px]:text-[10px]"
+            : "group relative flex min-h-14 cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1 text-[9px] font-medium text-zinc-400 transition-colors duration-200 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 min-[390px]:text-[10px]"
+        }
+      >
+        <span className="flex size-7 items-center justify-center">
           {isPending ? (
-            <LuLoader className="h-4 w-4 shrink-0 animate-spin" />
+            <LuLoader className="size-4 animate-spin" />
           ) : (
-            <LuLogOut className="h-4 w-4 shrink-0" />
+            <LuLogOut className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
           )}
-          <span className="max-w-full truncate leading-none">
-            {isPending ? "Saliendo" : "Salir"}
-          </span>
-        </button>
-      </>
+        </span>
+
+        <span className="max-w-full truncate leading-none">
+          {isPending ? "Saliendo" : "Salir"}
+        </span>
+
+        <span
+          className={
+            isWorkspaceDock
+              ? "absolute bottom-1 left-1/2 h-0.5 w-0 -translate-x-1/2 rounded-full bg-[#FF5C35] opacity-0 transition-all duration-200 group-hover:w-4 group-hover:opacity-100"
+              : "absolute bottom-1 left-1/2 h-0.5 w-0 -translate-x-1/2 rounded-full bg-[#C8A96E] opacity-0 transition-all duration-200 group-hover:w-4 group-hover:opacity-100"
+          }
+        />
+      </button>
     );
   }
 
@@ -69,11 +84,18 @@ export function LogoutButton({ variant = "default" }: LogoutButtonProps) {
         type="button"
         onClick={handleLogout}
         disabled={isPending}
-        className="w-full rounded-md cursor-pointer border border-zinc-300 px-3 py-2 text-left text-sm font-medium text-zinc-800 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800"
+        className="group flex w-full cursor-pointer items-center gap-2.5 bg-[#FF5C35] px-3.5 py-2.5 text-left text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-[#f4512b] hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {isPending ? "Cerrando sesión..." : "Cerrar sesión"}
+        {isPending ? (
+          <LuLoader className="size-4 shrink-0 animate-spin" />
+        ) : (
+          <LuLogOut className="size-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
+        )}
+
+        <span>{isPending ? "Cerrando sesión..." : "Cerrar sesión"}</span>
       </button>
-      {error ? <p className="text-xs text-red-500">{error}</p> : null}
+
+      {error && <p className="px-3 text-xs leading-5 text-rose-500">{error}</p>}
     </div>
   );
 }

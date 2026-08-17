@@ -61,6 +61,10 @@ function formatAction(action: string, metadata?: unknown) {
     return "Miembro revocado";
   }
 
+  if (eventType === "OTP_RATE_LIMITED") {
+    return "OTP bloqueado por rate limit";
+  }
+
   const labels: Record<string, string> = {
     OTP_REQUESTED: "Código solicitado",
     FORM_CLONED: "Formulario clonado",

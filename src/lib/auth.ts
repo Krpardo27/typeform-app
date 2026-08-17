@@ -5,9 +5,20 @@ import { prisma } from "@/lib/prisma";
 import { emailOTP } from "better-auth/plugins";
 import { AuthEmailService } from "@/emails/services/AuthEmailService";
 import { createAuditLog } from "@/features/admin/audit/services/audit-log.service";
+import { getAllowedOrigins } from "@/lib/security/http";
 
 export const auth = betterAuth({
-  trustedOrigins: ["https://forms-cl.prisa.media"],
+  trustedOrigins: getAllowedOrigins(),
+  rateLimit: {
+    enabled: true,
+    window: 300,
+    max: 5,
+    customRules: {
+      "/email-otp/send-verification-otp": { window: 300, max: 5 },
+      "/sign-in/email-otp": { window: 300, max: 5 },
+      "/email-otp/check-verification-otp": { window: 300, max: 5 },
+    },
+  },
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
@@ -19,7 +30,11 @@ export const auth = betterAuth({
     emailOTP({
       otpLength: 6,
       expiresIn: 300,
-      allowedAttempts: 3,
+      allowedAttempts: 5,
+      rateLimit: {
+        window: 300,
+        max: 5,
+      },
       disableSignUp: false,
 
       async sendVerificationOTP({ email, otp, type }) {

@@ -8,13 +8,16 @@ export default async function WorkspacePage({
   params: Promise<{ workspaceId: string }>;
 }) {
   const { workspaceId } = await params;
-  const { workspace, canCreateForms } = await getWorkspaceAccessContext(workspaceId);
+  const { user, workspace, canCreateForms } = await getWorkspaceAccessContext(
+    workspaceId,
+  );
 
   return (
     <>
       <WorkspaceHomeHeader
         workspaceName={workspace.name}
         workspaceRole={workspace.role}
+        currentUserLabel={user.name ?? user.email}
       />
       <WorkspaceHomeActions
         workspaceId={workspace.id}

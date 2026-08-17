@@ -77,30 +77,30 @@ export default function Pagination({
   }
 
   return (
-    <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
-      <p className="text-sm text-zinc-400">
+    <div className="flex w-full flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-center text-sm text-[#000000]/55 sm:text-left">
         Mostrando{" "}
-        <span className="font-medium text-zinc-200">
+        <span className="font-medium text-[#000000]">
           {from}-{to}
         </span>{" "}
-        de <span className="font-medium text-zinc-200">{totalItems}</span>{" "}
+        de <span className="font-medium text-[#000000]">{totalItems}</span>{" "}
         {itemLabel}
       </p>
 
-      <div className="flex items-center gap-3">
+      <div className="flex w-full flex-col items-center gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
         {showPageSizeSelector && (
-          <label className="flex items-center gap-2 text-xs text-zinc-400">
-            <span>Por página</span>
+          <label className="flex items-center gap-2 text-[#000000]/55 sm:text-xs">
+            <span className="whitespace-nowrap">Por página</span>
             <select
               value={itemsPerPage}
               onChange={(event) => setPageSize(Number(event.target.value))}
-              className="rounded-md border border-white/10 cursor-pointer px-2 py-1 text-xs text-white outline-none transition focus:border-[#C8A96E]"
+              className="cursor-pointer rounded-md border border-[#F5F5F5] bg-[#FFFFFF] px-2 py-1 text-[#000000] outline-none transition focus:border-[#FF5C35] sm:text-xs"
             >
               {pageSizeOptions.map((option) => (
                 <option
                   key={option}
                   value={option}
-                  className="bg-[#111113] text-white"
+                  className="bg-[#FFFFFF] text-[#000000]"
                 >
                   {option}
                 </option>
@@ -110,20 +110,20 @@ export default function Pagination({
         )}
 
         {hasMultiplePages && (
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center justify-center gap-1">
             <button
               type="button"
               onClick={() => goToPage(currentPage - 1)}
               disabled={currentPage === 1}
               aria-label="Ir a la pagina anterior"
-              className="flex h-9 w-9 items-center cursor-pointer justify-center rounded-lg border border-white/10 bg-white/5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-[#F5F5F5] bg-[#FFFFFF] text-[#000000]/60 transition-colors hover:border-[#000000]/20 hover:text-[#000000] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <FiChevronLeft className="h-4 w-4" />
             </button>
 
             {getPageRange().map((page, index) =>
               page === "..." ? (
-                <span key={`dots-${index}`} className="px-2 text-zinc-500">
+                <span key={`dots-${index}`} className="px-2 text-[#000000]/40">
                   ...
                 </span>
               ) : (
@@ -133,10 +133,10 @@ export default function Pagination({
                   onClick={() => goToPage(page)}
                   aria-current={currentPage === page ? "page" : undefined}
                   aria-label={`Ir a la pagina ${page}`}
-                  className={`flex h-9 w-9 items-center cursor-pointer justify-center rounded-lg border text-sm font-medium transition-colors ${
+                  className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border text-sm font-medium transition-colors ${
                     currentPage === page
-                      ? "border-[#C8A96E] bg-[#C8A96E]/10 text-[#C8A96E]"
-                      : "border-white/10 bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white"
+                      ? "border-[#FF5C35] bg-[#FF5C35]/10 text-[#FF5C35]"
+                      : "border-[#F5F5F5] bg-[#FFFFFF] text-[#000000]/60 hover:border-[#000000]/20 hover:text-[#000000]"
                   }`}
                 >
                   {page}
@@ -149,7 +149,7 @@ export default function Pagination({
               onClick={() => goToPage(currentPage + 1)}
               disabled={currentPage === totalPages}
               aria-label="Ir a la pagina siguiente"
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-zinc-400 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#F5F5F5] bg-[#FFFFFF] text-[#000000]/60 transition-colors hover:border-[#000000]/20 hover:text-[#000000] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <FiChevronRight className="h-4 w-4" />
             </button>
