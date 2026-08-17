@@ -1,10 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import {
-  LuArrowUpRight,
-  LuFileText,
-  LuUsers,
-} from "react-icons/lu";
+import { LuArrowUpRight, LuFileText, LuUsers } from "react-icons/lu";
 import Link from "next/link";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import {
@@ -93,26 +89,22 @@ export default async function WorkspaceDetailPage({
         description={
           <>
             <span className="block">ID Typeform: {typeformWorkspace.id}</span>
-            <span className="mt-2 block">
-              Vista conectada directamente a Typeform. Prisma solo marca los
-              formularios creados por esta app.
-            </span>
           </>
         }
         backHref="/admin/workspaces"
         backLabel="Volver a workspaces"
         actions={
           <>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-400">
-            {formCount} en Typeform
-          </div>
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-400">
-            {appForms.length} creados por la app
-          </div>
-          <div className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-400">
-            <LuUsers className="size-4 text-[#C8A96E]" />
-            {memberCount} miembros
-          </div>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-400">
+              {formCount} en Typeform
+            </div>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-400">
+              {appForms.length} creados por la app
+            </div>
+            <div className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-400">
+              <LuUsers className="size-4 text-[#C8A96E]" />
+              {memberCount} miembros
+            </div>
           </>
         }
       />
@@ -174,7 +166,7 @@ export default async function WorkspaceDetailPage({
                     )}
                   </div>
 
-                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-zinc-600">
+                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-white">
                     <span>
                       Actualizado{" "}
                       {form.last_updated_at
@@ -198,14 +190,11 @@ export default async function WorkspaceDetailPage({
                   {appForm && (
                     <div className="mt-2 text-xs text-zinc-600">
                       Registrado en app{" "}
-                      {new Date(appForm.createdAt).toLocaleDateString(
-                        "es-CL",
-                        {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        },
-                      )}
+                      {new Date(appForm.createdAt).toLocaleDateString("es-CL", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
                     </div>
                   )}
                 </article>

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { buildAuditTimeline } from "@/features/admin/audit/services/audit-timeline.service";
-import { DashboardRecentActivity } from "@/features/admin/components/dashboard/DashboardRecentActivity";
-import { DashboardStatsGrid } from "@/features/admin/components/dashboard/DashboardStatsGrid";
+import { DashboardRecentActivity } from "@/features/admin/dashboard/DashboardRecentActivity";
+import { DashboardStatsGrid } from "@/features/admin/dashboard/DashboardStatsGrid";
 
 export default async function AdminDashboardPage() {
   const [auditLogs, sessions] = await Promise.all([

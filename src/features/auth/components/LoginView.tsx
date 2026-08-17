@@ -10,40 +10,71 @@ export function LoginView() {
   const [email, setEmail] = useState<string | null>(null);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0f0f0f] px-4 font-sans antialiased text-zinc-100">
-      <div className="w-full max-w-md rounded-3xl border border-zinc-800/50 bg-[#141414] p-8 shadow-2xl shadow-black/30">
-        <div className="mb-8 border-b border-zinc-800/50 pb-6">
+    <main className="flex min-h-screen items-center justify-center bg-[#F7F7F6] px-4 text-[#111111]">
+      <section
+        className="
+          w-full
+          max-w-md
+          rounded-3xl
+          border border-[#E8E8E6]
+          bg-white
+          p-8
+          shadow-[0_20px_50px_-24px_rgba(0,0,0,0.22)]
+        "
+      >
+        <div className="mb-8 border-b border-[#E8E8E6] pb-6">
           <div className="mb-5 flex items-center gap-4">
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-zinc-900 border border-zinc-800">
-              <LuClipboardPaste className="size-6 text-[#C8A96E]" />
+            <div
+              className="
+                flex size-12
+                items-center justify-center
+                rounded-2xl
+                border border-[#FFE1D7]
+                bg-[#FFF1EC]
+              "
+            >
+              <LuClipboardPaste className="size-6 text-[#FF5C35]" />
             </div>
 
-            <div>
-              <h1 className="text-xl font-bold text-white tracking-tight">
-                Plataforma de Formularios
-              </h1>
-              <p className="text-sm text-zinc-400">
-                Administración interna Typeform
-              </p>
-            </div>
+            <h1 className="text-xl font-bold uppercase tracking-tight text-[#111111]">
+              Plataforma de Formularios
+            </h1>
           </div>
 
           <div className="mt-6 flex gap-2.5">
-            <div className="h-1.5 flex-1 rounded-full bg-[#C8A96E] shadow-sm shadow-[#C8A96E]/20" />
             <div
-              className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
-                email ? "bg-[#C8A96E] shadow-sm shadow-[#C8A96E]/20" : "bg-zinc-800"
-              }`}
+              className="
+                h-1.5 flex-1
+                rounded-full
+                bg-[#FF5C35]
+                shadow-[0_2px_8px_-3px_rgba(255,92,53,0.5)]
+              "
+            />
+
+            <div
+              className={`
+                h-1.5 flex-1
+                rounded-full
+                transition-all duration-300
+                ${
+                  email
+                    ? "bg-[#FF5C35] shadow-[0_2px_8px_-3px_rgba(255,92,53,0.5)]"
+                    : "bg-[#E8E8E6]"
+                }
+              `}
             />
           </div>
         </div>
 
         {email ? (
-          <OtpStep email={email} onBack={() => setEmail(null)} />
+          <OtpStep
+            email={email}
+            onBack={() => setEmail(null)}
+          />
         ) : (
           <EmailStep onSuccess={setEmail} />
         )}
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

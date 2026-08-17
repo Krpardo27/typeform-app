@@ -2,7 +2,7 @@ export const loginCopy = {
   title: "Acceso a la plataforma",
   subtitle: "Ingresá tu correo para recibir un código de acceso",
   emailLabel: "Correo electrónico",
-  emailPlaceholder: "nombre@cl.prisa.media",
+  emailPlaceholder: "nombre@prisamedia.com",
   emailSubmit: "Enviar código",
   otpTitle: "Revisá tu correo",
   otpSubtitle: (email: string) =>
@@ -12,4 +12,6 @@ export const loginCopy = {
   otpBack: "Usar otro correo",
   otpResend: "Reenviar código",
   genericError: "Si tu correo está autorizado, vas a recibir un código.",
+  tooManyAttempts: (seconds: number) =>
+    `Demasiados intentos. intenta nuevamente en ${seconds} segundos.`,
 };

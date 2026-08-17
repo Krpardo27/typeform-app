@@ -32,11 +32,8 @@ function getWinnerLabel(
     );
   });
 
-  const shortToken = response.token.slice(-6);
-
   return {
     label: preferred?.value ?? `Participante ${index + 1}`,
-    detail: `Ref ${shortToken}`,
   };
 }
 
@@ -159,12 +156,13 @@ export default async function FormResponsesPage({
           winnerSelection={winnerSelection}
           winnerError={winnerError}
           candidates={maskedResponses.map((response, index) => {
-            const { label, detail } = getWinnerLabel(response, index);
+            const { label } = getWinnerLabel(response, index);
+            const participantNumber = (currentPage - 1) * itemsPerPage + index + 1;
 
             return {
               token: response.token,
               label,
-              detail,
+              participantNumber,
               selected: revealedWinnerTokens.has(response.token),
             };
           })}
@@ -172,16 +170,16 @@ export default async function FormResponsesPage({
       )}
 
       {maskedResponses.length === 0 ? (
-        <section className="mt-8 rounded-xl border border-zinc-800 bg-[#111113] p-6">
-          <h2 className="text-base font-semibold text-white">Sin respuestas</h2>
-          <p className="mt-1 text-sm text-zinc-500">
+        <section className="mt-8 rounded-xl border border-[#F5F5F5] bg-[#FFFFFF] p-6">
+          <h2 className="text-base font-semibold text-[#000000]">Sin respuestas</h2>
+          <p className="mt-1 text-sm text-[#000000]/55">
             Typeform no devolvio participantes para este formulario.
           </p>
         </section>
       ) : (
         <WorkspaceFormResponsesList
           responses={maskedResponses}
-          revealedWinnerTokens={revealedWinnerTokens}
+          revealedWinnerTokens={Array.from(revealedWinnerTokens)}
           currentPage={currentPage}
           totalPages={responses.page_count}
           totalItems={responses.total_items}

@@ -23,7 +23,7 @@ export function WorkspaceFormDetailHeader({
       backLabel="Volver a formularios"
       eyebrow={
         <>
-          <LuFileText className="size-3.5 text-[#C8A96E]" />
+          <LuFileText className="size-3.5 text-[#FF5C35]" />
           <span>{workspaceName}</span>
         </>
       }
@@ -33,7 +33,7 @@ export function WorkspaceFormDetailHeader({
         <>
           <Link
             href={`/workspaces/${workspaceId}/forms/${formId}/responses`}
-            className="inline-flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-300 transition hover:border-[#C8A96E] hover:text-[#C8A96E]"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#7C3AED]/35 bg-[#7C3AED]/7 px-3 py-2 text-sm text-[#7C3AED] transition-colors hover:border-[#7C3AED]/22 hover:bg-[#7C3AED]/4 hover:text-[#7C3AED]/80"
           >
             Ver respuestas
             <LuInbox className="size-4" />
@@ -44,7 +44,7 @@ export function WorkspaceFormDetailHeader({
               href={displayUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-300 transition hover:border-[#C8A96E] hover:text-[#C8A96E]"
+              className="inline-flex items-center gap-2 rounded-lg border border-[#FF5C35]/35 bg-[#FF5C35]/7 px-3 py-2 text-sm text-[#FF5C35] transition-colors hover:border-[#FF5C35]/22 hover:bg-[#FF5C35]/4 hover:text-[#FF5C35]/80"
             >
               Abrir Typeform
               <LuExternalLink className="size-4" />

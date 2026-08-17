@@ -8,7 +8,14 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LuLoader, LuSearch, LuUserRound, LuRadio, LuFileText, LuTrophy } from "react-icons/lu";
+import {
+  LuLoader,
+  LuSearch,
+  LuUserRound,
+  LuRadio,
+  LuFileText,
+  LuTrophy,
+} from "react-icons/lu";
 
 interface Props {
   onResults?: (results: GlobalSearchResult | null) => void;
@@ -145,7 +152,9 @@ export default function GlobalSearchForm({
       } catch (err) {
         if (isCancelled) return;
         const message =
-          err instanceof Error ? err.message : "No se pudo ejecutar la búsqueda";
+          err instanceof Error
+            ? err.message
+            : "No se pudo ejecutar la búsqueda";
         setError(message);
         setResults(null);
         setActiveIndex(-1);
@@ -242,7 +251,8 @@ export default function GlobalSearchForm({
   return (
     <div ref={containerRef} className="relative w-full max-w-2xl">
       <div className="relative">
-        <LuSearch className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
+        <LuSearch className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#000000]/45" />
+
         <input
           type="text"
           placeholder={placeholder}
@@ -255,14 +265,34 @@ export default function GlobalSearchForm({
           onKeyDown={handleInputKeyDown}
           autoComplete="off"
           aria-label="Buscador global"
-          className="w-full rounded-lg border border-[#dedede]/10 bg-[#111113] py-2 pl-9 pr-4 outline-none transition focus:border-[#C8A96E]/50"
+          className="
+      w-full
+      border border-[#E8E8E6]
+      bg-white
+      py-2.5
+      pl-9
+      pr-4
+      text-sm
+      text-[#000000]/85
+      outline-none
+      transition-all
+      duration-200
+      placeholder:text-[#000000]/40
+      hover:border-[#DCDCD9]
+      hover:shadow-[0_4px_14px_-10px_rgba(0,0,0,0.25)]
+      focus:border-[#FF5C35]/40
+      focus:bg-white
+      focus:ring-4
+      focus:ring-[#FF5C35]/8
+      focus:shadow-[0_6px_18px_-10px_rgba(255,92,53,0.25)]
+    "
         />
       </div>
 
       {showPanel && (
-        <div className="absolute z-40 mt-2 w-full overflow-hidden rounded-xl border border-zinc-800 bg-[#111113] shadow-2xl shadow-black/40">
+        <div className="absolute z-40 mt-2 w-full overflow-hidden rounded-xl border border-[#F5F5F5] bg-[#FFFFFF] shadow-2xl shadow-black/10">
           {isLoading && (
-            <div className="flex items-center gap-2 px-4 py-3 text-sm text-zinc-400">
+            <div className="flex items-center gap-2 px-4 py-3 text-sm text-[#000000]/55">
               <LuLoader className="size-4 animate-spin" />
               Buscando...
             </div>
@@ -275,8 +305,8 @@ export default function GlobalSearchForm({
           {!isLoading && !error && results && (
             <div className="max-h-96 overflow-y-auto">
               {results.workspaces.length > 0 && (
-                <div className="border-b border-zinc-800/70 p-2">
-                  <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                <div className="border-b border-[#F5F5F5] p-2">
+                  <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#000000]/45">
                     Workspaces
                   </p>
                   <ul className="space-y-1">
@@ -295,18 +325,18 @@ export default function GlobalSearchForm({
                             );
                             setActiveIndex(index);
                           }}
-                          className={`flex items-center justify-between rounded-lg px-2 py-2 text-sm text-zinc-200 transition hover:bg-zinc-900 ${
+                          className={`flex items-center justify-between rounded-lg px-2 py-2 text-sm text-[#000000]/80 transition-colors hover:bg-[#F5F5F5] ${
                             searchableItems[activeIndex]?.id ===
                             `workspace:${workspace.id}`
-                              ? "bg-zinc-900"
+                              ? "bg-[#F5F5F5]"
                               : ""
                           }`}
                         >
                           <span className="flex items-center gap-2 min-w-0">
-                            <LuRadio className="size-4 shrink-0 text-[#C8A96E]" />
+                            <LuRadio className="size-4 shrink-0 text-[#7C3AED]" />
                             <span className="truncate">{workspace.name}</span>
                           </span>
-                          <span className="ml-2 shrink-0 rounded-md border border-zinc-700 px-2 py-0.5 text-[10px] text-zinc-400">
+                          <span className="ml-2 shrink-0 rounded-md border border-[#000000]/12 px-2 py-0.5 text-[10px] text-[#000000]/55">
                             {workspace.role}
                           </span>
                         </Link>
@@ -317,8 +347,8 @@ export default function GlobalSearchForm({
               )}
 
               {results.forms.length > 0 && (
-                <div className="border-b border-zinc-800/70 p-2">
-                  <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                <div className="border-b border-[#F5F5F5] p-2">
+                  <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#000000]/45">
                     Formularios
                   </p>
                   <ul className="space-y-1">
@@ -333,17 +363,18 @@ export default function GlobalSearchForm({
                             );
                             setActiveIndex(index);
                           }}
-                          className={`flex items-center justify-between rounded-lg px-2 py-2 text-sm text-zinc-200 transition hover:bg-zinc-900 ${
-                            searchableItems[activeIndex]?.id === `form:${form.id}`
-                              ? "bg-zinc-900"
+                          className={`flex items-center justify-between rounded-lg px-2 py-2 text-sm text-[#000000]/80 transition-colors hover:bg-[#F5F5F5] ${
+                            searchableItems[activeIndex]?.id ===
+                            `form:${form.id}`
+                              ? "bg-[#F5F5F5]"
                               : ""
                           }`}
                         >
                           <span className="flex min-w-0 items-center gap-2">
-                            <LuFileText className="size-4 shrink-0 text-[#C8A96E]" />
+                            <LuFileText className="size-4 shrink-0 text-[#FF5C35]" />
                             <span className="truncate">{form.title}</span>
                           </span>
-                          <span className="ml-2 shrink-0 rounded-md border border-zinc-700 px-2 py-0.5 text-[10px] text-zinc-400">
+                          <span className="ml-2 shrink-0 rounded-md border border-[#000000]/12 px-2 py-0.5 text-[10px] text-[#000000]/55">
                             {form.id}
                           </span>
                         </Link>
@@ -354,47 +385,55 @@ export default function GlobalSearchForm({
               )}
 
               {results.participants.length > 0 && (
-                <div className="border-b border-zinc-800/70 p-2">
-                  <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                <div className="border-b border-[#F5F5F5] p-2">
+                  <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#000000]/45">
                     Participantes y ganadores
                   </p>
                   <ul className="space-y-1">
-                    {results.participants.map((participant: ParticipantSearchResult) => (
-                      <li key={participant.token}>
-                        <Link
-                          href={`/workspaces/${participant.workspaceId}/forms/${participant.formId}/responses`}
-                          onClick={handleSelectResult}
-                          onMouseEnter={() => {
-                            const index = searchableItems.findIndex(
-                              (item) => item.id === `participant:${participant.token}`,
-                            );
-                            setActiveIndex(index);
-                          }}
-                          className={`flex items-center justify-between rounded-lg px-2 py-2 text-sm text-zinc-200 transition hover:bg-zinc-900 ${
-                            searchableItems[activeIndex]?.id ===
-                            `participant:${participant.token}`
-                              ? "bg-zinc-900"
-                              : ""
-                          }`}
-                        >
-                          <span className="flex min-w-0 items-center gap-2">
-                            <LuUserRound className="size-4 shrink-0 text-[#C8A96E]" />
-                            <span className="truncate">{participant.label}</span>
-                          </span>
-                          <span className="ml-2 inline-flex shrink-0 items-center gap-1 rounded-md border border-zinc-700 px-2 py-0.5 text-[10px] text-zinc-400">
-                            {participant.isWinner && <LuTrophy className="size-3 text-[#C8A96E]" />}
-                            {participant.detail}
-                          </span>
-                        </Link>
-                      </li>
-                    ))}
+                    {results.participants.map(
+                      (participant: ParticipantSearchResult) => (
+                        <li key={participant.token}>
+                          <Link
+                            href={`/workspaces/${participant.workspaceId}/forms/${participant.formId}/responses`}
+                            onClick={handleSelectResult}
+                            onMouseEnter={() => {
+                              const index = searchableItems.findIndex(
+                                (item) =>
+                                  item.id ===
+                                  `participant:${participant.token}`,
+                              );
+                              setActiveIndex(index);
+                            }}
+                            className={`flex items-center justify-between rounded-lg px-2 py-2 text-sm text-[#000000]/80 transition-colors hover:bg-[#F5F5F5] ${
+                              searchableItems[activeIndex]?.id ===
+                              `participant:${participant.token}`
+                                ? "bg-[#F5F5F5]"
+                                : ""
+                            }`}
+                          >
+                            <span className="flex min-w-0 items-center gap-2">
+                              <LuUserRound className="size-4 shrink-0 text-[#00BFA5]" />
+                              <span className="truncate">
+                                {participant.label}
+                              </span>
+                            </span>
+                            <span className="ml-2 inline-flex shrink-0 items-center gap-1 rounded-md border border-[#000000]/12 px-2 py-0.5 text-[10px] text-[#000000]/55">
+                              {participant.isWinner && (
+                                <LuTrophy className="size-3 text-[#FF5C35]" />
+                              )}
+                              {participant.detail}
+                            </span>
+                          </Link>
+                        </li>
+                      ),
+                    )}
                   </ul>
                 </div>
               )}
 
               {results.authorizedUsers.length > 0 && (
                 <div className="p-2">
-                  <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                  <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#000000]/45">
                     Usuarios autorizados
                   </p>
                   <ul className="space-y-1">
@@ -410,28 +449,32 @@ export default function GlobalSearchForm({
                               );
                               setActiveIndex(index);
                             }}
-                            className={`flex items-center justify-between rounded-lg px-2 py-2 text-sm text-zinc-200 transition hover:bg-zinc-900 ${
+                            className={`flex items-center justify-between rounded-lg px-2 py-2 text-sm text-[#000000]/80 transition-colors hover:bg-[#F5F5F5] ${
                               searchableItems[activeIndex]?.id ===
                               `user:${allowedUser.id}`
-                                ? "bg-zinc-900"
+                                ? "bg-[#F5F5F5]"
                                 : ""
                             }`}
                           >
                             <span className="flex min-w-0 items-center gap-2">
-                              <LuUserRound className="size-4 shrink-0 text-[#C8A96E]" />
-                              <span className="truncate">{allowedUser.email}</span>
+                              <LuUserRound className="size-4 shrink-0 text-[#7C3AED]" />
+                              <span className="truncate">
+                                {allowedUser.email}
+                              </span>
                             </span>
-                            <span className="ml-2 shrink-0 rounded-md border border-zinc-700 px-2 py-0.5 text-[10px] text-zinc-400">
+                            <span className="ml-2 shrink-0 rounded-md border border-[#000000]/12 px-2 py-0.5 text-[10px] text-[#000000]/55">
                               {allowedUser.user.globalRole}
                             </span>
                           </Link>
                         ) : (
-                          <div className="flex items-center justify-between rounded-lg px-2 py-2 text-sm text-zinc-300">
+                          <div className="flex items-center justify-between rounded-lg px-2 py-2 text-sm text-[#000000]/65">
                             <span className="flex min-w-0 items-center gap-2">
-                              <LuUserRound className="size-4 shrink-0 text-zinc-500" />
-                              <span className="truncate">{allowedUser.email}</span>
+                              <LuUserRound className="size-4 shrink-0 text-[#000000]/40" />
+                              <span className="truncate">
+                                {allowedUser.email}
+                              </span>
                             </span>
-                            <span className="ml-2 shrink-0 rounded-md border border-zinc-700 px-2 py-0.5 text-[10px] text-zinc-500">
+                            <span className="ml-2 shrink-0 rounded-md border border-[#000000]/12 px-2 py-0.5 text-[10px] text-[#000000]/45">
                               Sin cuenta
                             </span>
                           </div>
@@ -443,8 +486,10 @@ export default function GlobalSearchForm({
               )}
 
               {totalResults === 0 && (
-                <div className="px-4 py-4 text-sm text-zinc-500">
-                  No se encontraron resultados para {"\""}{query}{"\""}.
+                <div className="px-4 py-4 text-sm text-[#000000]/55">
+                  No se encontraron resultados para {'"'}
+                  {query}
+                  {'"'}.
                 </div>
               )}
             </div>

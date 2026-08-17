@@ -12,18 +12,18 @@ function Slot(props: SlotProps) {
     <div
       className={`
         relative flex h-12 w-12 items-center justify-center
-        rounded-xl border text-xl font-semibold text-white
+        rounded-xl border text-xl font-semibold text-[#000000]
         transition-all duration-200
         ${props.isActive 
-          ? "border-[#C8A96E] ring-4 ring-[#C8A96E]/20 bg-[#C8A96E]/5 scale-105" 
-          : "border-zinc-800 bg-zinc-900/50 hover:border-zinc-700"
+          ? "border-[#FF5C35] ring-4 ring-[#FF5C35]/20 bg-[#FF5C35]/5 scale-105" 
+          : "border-slate-300 bg-[#FFFFFF] hover:border-[#FF5C35]/40"
         }
       `}
     >
       {props.char ?? ""}
       {/* Efecto de cursor parpadeante moderno si está activo y vacío */}
       {props.isActive && !props.char && (
-        <div className="absolute pointer-events-none h-5 w-0.5 bg-[#C8A96E] animate-pulse rounded-full" />
+        <div className="absolute pointer-events-none h-5 w-0.5 rounded-full bg-[#FF5C35] animate-pulse" />
       )}
     </div>
   );

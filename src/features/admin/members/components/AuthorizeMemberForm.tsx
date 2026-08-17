@@ -219,7 +219,7 @@ export function AuthorizeMemberForm({ workspaces }: Props) {
         <button
           type="submit"
           disabled={isPending || !canSubmit}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#C8A96E] px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-[#d7b979] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center cursor-pointer gap-2 rounded-lg bg-[#C8A96E] px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-[#d7b979] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPending ? (
             <>

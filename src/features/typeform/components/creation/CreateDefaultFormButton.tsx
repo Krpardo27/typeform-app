@@ -28,9 +28,9 @@ export function CreateDefaultFormButton({ action }: Props) {
         showCancelButton: true,
         confirmButtonText: "Si, crear",
         cancelButtonText: "Cancelar",
-        background: "#111113",
-        color: "#f4f4f5",
-        confirmButtonColor: "#C8A96E",
+        background: "#FFFFFF",
+        color: "#000000",
+        confirmButtonColor: "#FF5C35",
       });
 
       if (!result.isConfirmed) {
@@ -45,7 +45,7 @@ export function CreateDefaultFormButton({ action }: Props) {
     <form ref={formRef} action={action} onSubmit={handleSubmit} className="mt-5">
       <button
         type="submit"
-        className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#C8A96E] px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-[#d7b87b]"
+        className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#FF5C35] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
       >
         <LuFilePlus2 className="size-4" />
         Crear formulario base ahora

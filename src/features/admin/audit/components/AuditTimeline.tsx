@@ -29,6 +29,7 @@ function getActionIcon(action: string, metadata?: unknown) {
 
   if (eventType === "MEMBER_AUTHORIZED") return LuUserPlus;
   if (eventType === "MEMBER_REVOKED") return LuUserMinus;
+  if (eventType === "OTP_RATE_LIMITED") return LuShieldCheck;
 
   if (action === "OTP_REQUESTED") return LuKeyRound;
   if (action === "FORM_CLONED") return LuFilePlus2;
@@ -53,6 +54,14 @@ function getActionStyle(action: string, metadata?: unknown) {
       badge: "border-red-400/40 bg-red-400/10 text-red-300",
       icon: "text-red-300",
       accent: "before:bg-red-300/60",
+    };
+  }
+
+  if (eventType === "OTP_RATE_LIMITED") {
+    return {
+      badge: "border-amber-400/40 bg-amber-400/10 text-amber-300",
+      icon: "text-amber-300",
+      accent: "before:bg-amber-300/60",
     };
   }
 

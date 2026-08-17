@@ -34,3 +34,21 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Typeform Responses Flow
+
+Este proyecto consume respuestas de Typeform usando el endpoint oficial de responses:
+
+- Retrieve responses: https://www.typeform.com/developers/responses/reference/retrieve-responses/
+
+Implementacion actual en el codigo:
+
+- Servicio: `getTypeformFormResponses` en `src/features/typeform/services/typeform.service.ts`
+- Endpoint usado: `/forms/{formId}/responses?page=...&page_size=...`
+
+Notas del flujo de ganadores:
+
+- Se puede seleccionar uno o mas ganadores desde la vista de participantes.
+- Fuera de ese flujo, la data sensible permanece enmascarada.
+- La visualizacion completa se habilita solo para tokens seleccionados del usuario actual.
+- Se registra auditoria para `WINNER_SELECTED` y `SENSITIVE_DATA_VIEWED`.

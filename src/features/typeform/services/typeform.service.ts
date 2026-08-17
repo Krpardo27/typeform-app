@@ -245,14 +245,25 @@ export async function resolveWorkspaceTypeformId(workspaceTypeformId: string) {
   return workspaceTypeformId;
 }
 
-async function typeformRequest<T>(path: string, fetchInit?: RequestInit) {
+type TypeformRequestInit = RequestInit & {
+  next?: {
+    revalidate?: number;
+    tags?: string[];
+  };
+};
+
+async function typeformRequest<T>(path: string, fetchInit?: TypeformRequestInit) {
+  const hasExplicitCacheStrategy =
+    typeof fetchInit?.cache !== "undefined" ||
+    typeof fetchInit?.next?.revalidate !== "undefined";
+
   const response = await fetch(`${TYPEFORM_API_BASE_URL}${path}`, {
     headers: {
       Authorization: `Bearer ${getTypeformToken()}`,
       Accept: "application/json",
     },
-    cache: "no-store",
     ...fetchInit,
+    ...(hasExplicitCacheStrategy ? {} : { cache: "no-store" }),
   });
 
   if (!response.ok) {
@@ -284,7 +295,7 @@ export async function getWorkspaceForms(
   try {
     return await typeformRequest<TypeformFormsResponse>(
       `/forms?${searchParams}`,
-      { next: { revalidate: 60 } } as RequestInit,
+      { next: { revalidate: 60 } },
     );
   } catch (error) {
     if (error instanceof TypeformApiError && error.status === 404) {
