@@ -138,7 +138,7 @@ export default function CreateWorkspaceModal({ onClose }: Props) {
             <button
               type="submit"
               disabled={loading}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#C8A96E] py-2.5 text-sm font-medium text-black transition hover:bg-[#d4b87a] disabled:opacity-50"
+              className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#C8A96E] py-2.5 text-sm font-medium text-black transition hover:bg-[#d4b87a] disabled:opacity-50"
             >
               {loading && <LuLoader className="size-4 animate-spin" />}
 

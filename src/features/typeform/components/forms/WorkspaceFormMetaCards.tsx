@@ -76,7 +76,7 @@ export function WorkspaceFormMetaCards({
     <section className="mt-8 grid gap-4 lg:grid-cols-[2fr_1fr] lg:grid-rows-2">
       <EmbedCodeCard code={code} label={label} clonedFrom={clonedFrom} />
       <StatCard label="Campos" value={fieldsCount} />
-      <StatCard label="Hidden fields" value={hiddenFieldsCount} />
+      <StatCard label="Campos ocultos" value={hiddenFieldsCount} />
     </section>
   );
 }

@@ -275,20 +275,16 @@ export function WorkspaceFormResponsesList({
                 hover:shadow-[0_12px_35px_-20px_rgba(0,0,0,0.22)]
               "
             >
-              <button
-                type="button"
-                onClick={() => toggleToken(response.token)}
+              <div
                 className="
-                  flex w-full flex-wrap
+                  flex flex-wrap
                   items-start justify-between
                   gap-4
                   border-b border-[#E8E8E6]
                   pb-4
-                  text-left
                 "
-                aria-expanded={isExpanded}
               >
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p
                     className="
                       inline-flex items-center gap-1.5
@@ -304,11 +300,11 @@ export function WorkspaceFormResponsesList({
                     Participante #{responseNumber}
                   </p>
 
-                  <p className="mt-2 truncate text-sm font-semibold text-[#111111]">
+                  <p className="mt-2 text-sm font-semibold text-[#111111]">
                     Token: {response.token}
                   </p>
 
-                  <p className="mt-1 truncate text-xs text-[#000000]/55">
+                  <p className="mt-1 text-xs text-[#000000]/55">
                     Contacto: {participantContact}
                   </p>
 
@@ -322,7 +318,7 @@ export function WorkspaceFormResponsesList({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-2">
                   <span
                     className={`
                       inline-flex items-center gap-1.5
@@ -348,16 +344,23 @@ export function WorkspaceFormResponsesList({
                       : "Datos sensibles ocultos"}
                   </span>
 
-                  <LuChevronDown
-                    className={`
-                      size-4 shrink-0
-                      text-[#000000]/45
-                      transition-transform
-                      ${isExpanded ? "rotate-180" : "rotate-0"}
-                    `}
-                  />
+                  <button
+                    type="button"
+                    onClick={() => toggleToken(response.token)}
+                    aria-expanded={isExpanded}
+                    aria-label={isExpanded ? "Contraer respuesta" : "Expandir respuesta"}
+                    className="flex size-7 items-center justify-center rounded-lg border border-[#E8E8E6] bg-[#F7F7F6] text-[#000000]/45 transition hover:bg-[#E8E8E6]"
+                  >
+                    <LuChevronDown
+                      className={`
+                        size-4 shrink-0
+                        transition-transform
+                        ${isExpanded ? "rotate-180" : "rotate-0"}
+                      `}
+                    />
+                  </button>
                 </div>
-              </button>
+              </div>
 
               {isExpanded && (
                 <div className="mt-4 grid gap-4 lg:grid-cols-2">

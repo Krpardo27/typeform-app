@@ -43,72 +43,63 @@ function getActionStyle(action: string, metadata?: unknown) {
 
   if (eventType === "MEMBER_AUTHORIZED") {
     return {
-      badge: "border-emerald-400/40 bg-emerald-400/10 text-emerald-300",
-      icon: "text-emerald-300",
-      accent: "before:bg-emerald-300/60",
+      badge: "bg-emerald-950 text-emerald-400",
+      icon: "text-emerald-400",
     };
   }
 
   if (eventType === "MEMBER_REVOKED") {
     return {
-      badge: "border-red-400/40 bg-red-400/10 text-red-300",
-      icon: "text-red-300",
-      accent: "before:bg-red-300/60",
+      badge: "bg-red-950 text-red-400",
+      icon: "text-red-400",
     };
   }
 
   if (eventType === "OTP_RATE_LIMITED") {
     return {
-      badge: "border-amber-400/40 bg-amber-400/10 text-amber-300",
-      icon: "text-amber-300",
-      accent: "before:bg-amber-300/60",
+      badge: "bg-amber-950 text-amber-400",
+      icon: "text-amber-400",
     };
   }
 
   if (action === "WINNER_SELECTED") {
     return {
-      badge: "border-emerald-400/40 bg-emerald-400/10 text-emerald-300",
-      icon: "text-emerald-300",
-      accent: "before:bg-emerald-300/60",
+      badge: "bg-emerald-950 text-emerald-400",
+      icon: "text-emerald-400",
     };
   }
 
   if (action === "SENSITIVE_DATA_VIEWED") {
     return {
-      badge: "border-rose-400/40 bg-rose-400/10 text-rose-300",
-      icon: "text-rose-300",
-      accent: "before:bg-rose-300/60",
+      badge: "bg-rose-950 text-rose-400",
+      icon: "text-rose-400",
     };
   }
 
   if (action === "FORM_CLONED") {
     return {
-      badge: "border-sky-400/40 bg-sky-400/10 text-sky-300",
-      icon: "text-sky-300",
-      accent: "before:bg-sky-300/60",
+      badge: "bg-sky-950 text-sky-400",
+      icon: "text-sky-400",
     };
   }
 
   if (action === "OTP_REQUESTED") {
     return {
-      badge: "border-violet-400/40 bg-violet-400/10 text-violet-300",
-      icon: "text-violet-300",
-      accent: "before:bg-violet-300/60",
+      badge: "bg-violet-950 text-violet-400",
+      icon: "text-violet-400",
     };
   }
 
   if (action === "LOGIN_SESSION_CREATED") {
     return {
-      badge: "border-sky-400/40 bg-sky-400/10 text-sky-300",
-      icon: "text-sky-300",
-      accent: "before:bg-sky-300/60",
+      badge: "bg-sky-950 text-sky-400",
+      icon: "text-sky-400",
     };
   }
 
   return {
-    badge: "border-zinc-700 bg-zinc-900 text-zinc-300",
-    icon: "text-zinc-300",
-    accent: "before:bg-zinc-400/40",
+    badge: "bg-zinc-800 text-zinc-400",
+    icon: "text-zinc-400",
   };
 }
 
@@ -130,12 +121,12 @@ export function AuditTimeline({ timeline }: Props) {
     <section className="mt-8 rounded-xl border border-zinc-800 bg-[#111113]">
       {timeline.length === 0 ? (
         <div className="px-5 py-10 text-center text-sm text-zinc-500">
-          Todavia no hay eventos de auditoria.
+          Todavía no hay eventos de auditoría.
         </div>
       ) : (
         <>
           {/* Mobile: Cards */}
-          <div className="grid gap-4 sm:gap-3 p-5 md:p-6 grid-cols-1 sm:grid-cols-2 lg:hidden auto-rows-max">
+          <div className="divide-y divide-zinc-800 lg:hidden">
             {timeline.map((event) => {
               const Icon =
                 event.action === "LOGIN_SESSION_CREATED"
@@ -147,69 +138,36 @@ export function AuditTimeline({ timeline }: Props) {
               return (
                 <div
                   key={`${event.source}-${event.id}`}
-                  className={`relative flex flex-col gap-3 rounded-lg border border-zinc-700/50 bg-zinc-900/30 p-4 transition hover:bg-zinc-900/60 hover:border-zinc-700 before:absolute before:inset-y-0 before:left-3 before:w-0.5 before:rounded-full ${style.accent}`}
+                  className="flex flex-col gap-3 px-5 py-4"
                 >
-                  <div className="ml-8">
-                    {/* Evento Badge */}
-                    <div className="flex items-center gap-2">
-                      <Icon className={`size-4 shrink-0 ${style.icon}`} />
-                      <span
-                        className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium ${style.badge}`}
-                      >
-                        {event.title}
-                      </span>
-                    </div>
-
-                    {/* Actor */}
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                        Actor
-                      </p>
-                      <p className="mt-1 truncate font-medium text-white">
-                        {event.actor}
-                      </p>
-                      {event.userAgent && (
-                        <p className="mt-1 line-clamp-2 text-xs text-zinc-600">
-                          {event.userAgent}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Detalle */}
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                        Detalle
-                      </p>
-                      <p className="mt-1 line-clamp-2 font-medium text-zinc-200">
-                        {event.detail}
-                      </p>
-                      {winnerCount && (
-                        <p className="mt-2 text-xs text-emerald-300">
-                          ✓ {winnerCount} ganador(es) seleccionados
-                        </p>
-                      )}
-                    </div>
-
-                    {/* IP y Fecha */}
-                    <div className="mt-1 flex items-center justify-between gap-2 border-t border-zinc-800/50 pt-3">
-                      <div className="min-w-0">
-                        <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                          IP
-                        </p>
-                        <p className="mt-0.5 truncate text-xs text-zinc-400">
-                          {event.ipAddress ?? "—"}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                          Fecha
-                        </p>
-                        <p className="mt-0.5 text-xs text-zinc-400 whitespace-nowrap">
-                          {formatDate(event.createdAt)}
-                        </p>
-                      </div>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <Icon className={`size-4 shrink-0 ${style.icon}`} />
+                    <span
+                      className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${style.badge}`}
+                    >
+                      {event.title}
+                    </span>
+                    <span className="ml-auto text-xs text-zinc-500 whitespace-nowrap">
+                      {formatDate(event.createdAt)}
+                    </span>
                   </div>
+
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-white">{event.actor}</p>
+                    <p className="mt-0.5 line-clamp-2 text-sm text-zinc-400">{event.detail}</p>
+                    {winnerCount && (
+                      <p className="mt-1 text-xs text-emerald-400">
+                        {winnerCount} ganador(es) seleccionados
+                      </p>
+                    )}
+                    {event.userAgent && (
+                      <p className="mt-1 line-clamp-1 text-xs text-zinc-600">{event.userAgent}</p>
+                    )}
+                  </div>
+
+                  {event.ipAddress && (
+                    <p className="text-xs text-zinc-600">{event.ipAddress}</p>
+                  )}
                 </div>
               );
             })}
@@ -238,12 +196,12 @@ export function AuditTimeline({ timeline }: Props) {
                   return (
                     <div
                       key={`${event.source}-${event.id}`}
-                      className={`relative grid grid-cols-[160px_1.1fr_1fr_160px_220px] items-center gap-4 px-5 py-4 text-sm text-zinc-400 transition hover:bg-zinc-900/40 before:absolute before:inset-y-2 before:left-2 before:w-0.5 before:rounded-full ${style.accent}`}
+                      className="relative grid grid-cols-[160px_1.1fr_1fr_160px_220px] items-center gap-4 px-5 py-4 text-sm text-zinc-400 transition hover:bg-zinc-900/40"
                     >
                       <div className="flex items-center gap-2 text-zinc-200">
                         <Icon className={`size-4 ${style.icon}`} />
                         <span
-                          className={`inline-flex max-w-full items-center truncate rounded-md border px-2 py-1 text-xs font-medium ${style.badge}`}
+                          className={`inline-flex max-w-full items-center truncate rounded px-2 py-0.5 text-xs font-medium ${style.badge}`}
                         >
                           {event.title}
                         </span>

@@ -20,8 +20,8 @@ export default function AdminWorkspacesNav() {
   const isAudit = pathname.startsWith("/admin/auditoria");
 
   return (
-    <div className="px-4 py-6 text-zinc-200">
-      <p className="text-xs text-zinc-500 mb-3 font-medium uppercase tracking-wider">
+    <div className="text-zinc-200">
+      <p className="mb-3 px-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
         Administración
       </p>
 
@@ -83,7 +83,7 @@ export default function AdminWorkspacesNav() {
           }`}
         >
           <LuClipboardList className="size-4" />
-          Auditoria
+          Auditoría
         </Link>
       </nav>
     </div>
