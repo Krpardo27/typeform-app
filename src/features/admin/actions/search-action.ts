@@ -245,7 +245,7 @@ async function searchFormParticipants(
     pageSize: 100,
   });
   const maskedResponses = mapMaskedTypeformResponses(form, responses.items, {
-    maskSensitive: false,
+    maskSensitive: true,
     unmaskTokens: winnerTokens,
   });
   const queryLower = options.query.toLowerCase();

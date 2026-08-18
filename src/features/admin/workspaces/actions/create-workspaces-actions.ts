@@ -2,6 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/getCurrentUser";
 import { CreateWorkspaceSchema } from "../schemas/workspace.schema";
 import {
   createDefaultTypeformFormForWorkspace,
@@ -9,6 +11,12 @@ import {
 } from "@/features/typeform/services/typeform.service";
 
 export async function createWorkspaceAction(data: unknown) {
+  const user = await getCurrentUser();
+
+  if (!user || user.globalRole !== "SUPER_ADMIN") {
+    redirect("/auth/login");
+  }
+
   const result = CreateWorkspaceSchema.safeParse(data);
 
   if (!result.success) {

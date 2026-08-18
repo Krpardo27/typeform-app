@@ -37,14 +37,14 @@ export function WorkspaceHomeHeader({
         {/* Workspace context */}
         <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:w-auto sm:flex-nowrap sm:gap-4">
           <div className="flex items-center gap-1.5">
-            <span className="text-black/40">Rol</span>
+            <span className="text-black/40 text-md">Rol</span>
             <span className="font-semibold text-black/75">{workspaceRole}</span>
           </div>
 
           <span className="hidden h-3.5 w-px bg-black/10 sm:block" />
 
           <div className="flex min-w-0 items-center gap-1.5">
-            <span className="text-black/40">Usuario</span>
+            <span className="text-black/40 text-md">Usuario</span>
             <span
               className="max-w-[180px] truncate font-medium text-black/65 sm:max-w-56"
               title={currentUserLabel}

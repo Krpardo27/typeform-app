@@ -30,7 +30,7 @@ export default function RootLayout({
       lang="es"
       className={`${robotoSerif.variable} min-h-dvh w-full overflow-x-hidden antialiased`}
     >
-      <body className="min-h-dvh w-full overflow-x-hidden bg-[#F7F7F8] text-zinc-900">
+      <body className="min-h-dvh w-full overflow-x-hidden text-zinc-900">
         {children}
         <Toaster position="top-right" richColors />
       </body>

@@ -226,7 +226,7 @@ export function OtpStep({ email, onBack }: OtpStepProps) {
       </button>
 
       {/* RESEND */}
-      <div className="flex flex-col items-center gap-2 text-center">
+      <div className="flex items-center justify-between gap-2 text-center">
         <span className="text-xs text-black/40">¿No recibiste el código?</span>
 
         <button

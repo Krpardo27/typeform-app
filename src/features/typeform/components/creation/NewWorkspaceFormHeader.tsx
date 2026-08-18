@@ -18,7 +18,7 @@ export function NewWorkspaceFormHeader({ workspaceId, workspaceName }: Props) {
         </>
       }
       title="Crear formulario"
-      description="Puedes usar cualquier formulario como base para crear una nueva version."
+      description="Puedes usar cualquier formulario como base para crear una nueva versión."
     />
   );
 }
