@@ -19,6 +19,10 @@ class TypeformApiError extends Error {
   }
 }
 
+export function isTypeformNotFoundError(error: unknown) {
+  return error instanceof TypeformApiError && error.status === 404;
+}
+
 type TypeformLinks = {
   display?: string;
   responses?: string;
