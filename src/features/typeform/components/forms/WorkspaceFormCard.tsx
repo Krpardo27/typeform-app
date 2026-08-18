@@ -3,11 +3,13 @@ import { LuArrowUpRight, LuCalendarClock, LuInbox } from "react-icons/lu";
 import type { TypeformFormSummary } from "@/features/typeform/services/typeform.service";
 import { CopyButton } from "@/shared/components/CopyButton";
 import { WORKSPACE_EMBED_CONFIG } from "@/features/typeform/utils/embed-info";
+import { WorkspaceFormDuplicateButton } from "./WorkspaceFormDuplicateButton";
 
 type Props = {
   workspaceId: string;
   workspaceTypeformId: string;
   form: TypeformFormSummary;
+  canCreateForms: boolean;
 };
 
 function formatDate(value?: string) {
@@ -23,6 +25,7 @@ export function WorkspaceFormCard({
   workspaceId,
   workspaceTypeformId,
   form,
+  canCreateForms,
 }: Props) {
   const embedConfig = WORKSPACE_EMBED_CONFIG[workspaceTypeformId];
 
@@ -85,24 +88,34 @@ export function WorkspaceFormCard({
           </div>
         </div>
 
-        <Link
-          href={`/workspaces/${workspaceId}/forms/${form.id}`}
-          className="
-            flex size-11 shrink-0 items-center justify-center
-            rounded-xl
-            border border-[#E8E8E6]
-            bg-[#F7F7F6]
-            text-[#000000]/60
-            transition-all
-            hover:border-[#FF5C35]/30
-            hover:bg-white
-            hover:text-[#FF5C35]
-            sm:size-9
-          "
-          aria-label={`Abrir ${form.title}`}
-        >
-          <LuArrowUpRight className="size-4" />
-        </Link>
+        <div className="flex shrink-0 flex-col gap-2">
+          {canCreateForms && (
+            <WorkspaceFormDuplicateButton
+              workspaceId={workspaceId}
+              formId={form.id}
+              formTitle={form.title}
+            />
+          )}
+
+          <Link
+            href={`/workspaces/${workspaceId}/forms/${form.id}`}
+            className="
+              flex size-11 shrink-0 items-center justify-center
+              rounded-xl
+              border border-[#E8E8E6]
+              bg-[#F7F7F6]
+              text-[#000000]/60
+              transition-all
+              hover:border-[#FF5C35]/30
+              hover:bg-white
+              hover:text-[#FF5C35]
+              sm:size-9
+            "
+            aria-label={`Abrir ${form.title}`}
+          >
+            <LuArrowUpRight className="size-4" />
+          </Link>
+        </div>
       </div>
 
       <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-[#000000]/65">

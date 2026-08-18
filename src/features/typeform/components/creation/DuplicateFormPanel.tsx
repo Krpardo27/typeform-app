@@ -1,27 +1,29 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Swal from "sweetalert2";
-import { LuFilePlus2 } from "react-icons/lu";
+import { LuFilePlus2, LuLoaderCircle } from "react-icons/lu";
 import { toast } from "sonner";
 
 type DuplicateFormPanelProps = {
   action: (formData: FormData) => void | Promise<void>;
   defaultTitle: string;
+  redirectTo: string;
   clonedFrom?: string;
 };
 
 export function DuplicateFormPanel({
   action,
   defaultTitle,
+  redirectTo,
   clonedFrom,
 }: DuplicateFormPanelProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const formRef = useRef<HTMLFormElement>(null);
-  const submitConfirmedRef = useRef(false);
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     if (!clonedFrom) {
@@ -52,12 +54,11 @@ export function DuplicateFormPanel({
   const handleSubmit: NonNullable<
     React.ComponentProps<"form">["onSubmit"]
   > = async (event) => {
-    if (submitConfirmedRef.current) {
-      submitConfirmedRef.current = false;
+    event.preventDefault();
+
+    if (isPending) {
       return;
     }
-
-    event.preventDefault();
 
     const form = formRef.current;
 
@@ -70,6 +71,12 @@ export function DuplicateFormPanel({
     ) as HTMLInputElement | null;
 
     const title = titleInput?.value?.trim() ?? "";
+
+    if (!title) {
+      toast.error("Ingresa un nombre para el formulario duplicado.");
+      titleInput?.focus();
+      return;
+    }
 
     const result = await Swal.fire({
       title: "Guardar y duplicar formulario",
@@ -91,12 +98,19 @@ export function DuplicateFormPanel({
       return;
     }
 
-    submitConfirmedRef.current = true;
-    form.requestSubmit();
+    const formData = new FormData(form);
+    formData.set("_skipRedirect", "1");
+
+    startTransition(() => {
+      void action(formData);
+    });
+
+    router.push(redirectTo);
   };
 
   return (
     <section
+      aria-busy={isPending}
       className="
         mt-6
         rounded-2xl
@@ -134,6 +148,7 @@ export function DuplicateFormPanel({
             type="text"
             required
             defaultValue={defaultTitle}
+            readOnly={isPending}
             className="
               w-full
               rounded-xl
@@ -148,6 +163,8 @@ export function DuplicateFormPanel({
               focus:bg-white
               focus:ring-2
               focus:ring-[#FF5C35]/10
+              read-only:cursor-wait
+              read-only:opacity-70
             "
           />
 
@@ -162,7 +179,9 @@ export function DuplicateFormPanel({
 
         <button
           type="submit"
+          disabled={isPending}
           className="
+            cursor-pointer
             inline-flex
             items-center
             justify-center
@@ -177,10 +196,22 @@ export function DuplicateFormPanel({
             hover:-translate-y-0.5
             hover:opacity-90
             active:translate-y-0
+            disabled:cursor-wait
+            disabled:opacity-70
+            disabled:hover:translate-y-0
           "
         >
-          <LuFilePlus2 className="size-4" />
-          Guardar y duplicar
+          {isPending ? (
+            <>
+              <LuLoaderCircle className="size-4 animate-spin" />
+              Redirigiendo...
+            </>
+          ) : (
+            <>
+              <LuFilePlus2 className="size-4" />
+              Guardar y duplicar
+            </>
+          )}
         </button>
       </form>
     </section>
