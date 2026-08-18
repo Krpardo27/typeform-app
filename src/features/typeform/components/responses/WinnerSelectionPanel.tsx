@@ -49,22 +49,24 @@ export function WinnerSelectionPanel({
     const normalizedQuery = normalized.replace(/^#/, "");
     const isNumericQuery = /^\d+$/.test(normalizedQuery);
 
-    if (isNumericQuery) {
-      return candidates.filter((candidate) => {
-        const participantNumber = String(candidate.participantNumber ?? "")
-          .replace(/^#/, "")
-          .trim()
-          .toLowerCase();
-
-        return participantNumber === normalizedQuery;
-      });
-    }
-
     return candidates.filter((candidate) => {
       const participantNumber = String(candidate.participantNumber ?? "")
         .replace(/^#/, "")
+        .trim()
         .toLowerCase();
-      const haystack = `${candidate.label} ${candidate.token} ${participantNumber}`.toLowerCase();
+      const detail = String(candidate.detail ?? "")
+        .replace(/^#/, "")
+        .toLowerCase();
+      const haystack = `${candidate.label} ${detail} ${participantNumber}`.toLowerCase();
+
+      if (isNumericQuery) {
+        return (
+          participantNumber === normalizedQuery ||
+          detail === normalizedQuery ||
+          haystack.includes(normalizedQuery)
+        );
+      }
+
       return haystack.includes(normalizedQuery);
     });
   }, [candidates, query]);

@@ -10,16 +10,33 @@ import NewWorkspaceFormPage from "../new/page";
 import {
   formBelongsToWorkspace,
   getTypeformForm,
+  isTypeformNotFoundError,
   resolveWorkspaceTypeformId,
 } from "@/features/typeform/services/typeform.service";
 import { getSuggestedDuplicateTitle } from "@/features/typeform/utils/duplicate-title";
+
+async function getExistingTypeformForm(formId: string) {
+  try {
+    return await getTypeformForm(formId);
+  } catch (error) {
+    if (isTypeformNotFoundError(error)) {
+      notFound();
+    }
+
+    throw error;
+  }
+}
 
 export default async function WorkspaceFormDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ workspaceId: string; formId: string }>;
-  searchParams: Promise<{ clonedFrom?: string; page?: string; pageSize?: string }>;
+  searchParams: Promise<{
+    clonedFrom?: string;
+    page?: string;
+    pageSize?: string;
+  }>;
 }) {
   const { workspaceId, formId } = await params;
   const { clonedFrom, page, pageSize } = await searchParams;
@@ -34,7 +51,7 @@ export default async function WorkspaceFormDetailPage({
   }
 
   const { workspace, canCreateForms } = await getWorkspaceAccessContext(workspaceId);
-  const form = await getTypeformForm(formId);
+  const form = await getExistingTypeformForm(formId);
   const resolvedWorkspaceTypeformId = await resolveWorkspaceTypeformId(
     workspace.typeformId,
   );
