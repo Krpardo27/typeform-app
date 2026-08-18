@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getWorkspaceAccessContext } from "@/features/admin/workspaces/services/workspace-access";
 import { createDefaultTypeformFormForWorkspace } from "@/features/typeform/services/typeform.service";
 import { prisma } from "@/lib/prisma";
+import { getWorkspaceFormsListPath } from "@/features/typeform/utils/form-redirect";
 
 export async function createDefaultFormForWorkspaceAction(workspaceId: string) {
   const { workspace, canCreateForms } = await getWorkspaceAccessContext(workspaceId);
@@ -50,7 +51,5 @@ export async function createDefaultFormForWorkspaceAction(workspaceId: string) {
   revalidatePath(`/workspaces/${workspace.id}/forms/new`);
   revalidatePath(`/admin/workspaces/${workspace.typeformId}`);
 
-  redirect(
-    `/workspaces/${workspace.id}/forms/${duplicated.createdForm.id}?clonedFrom=${baseFormId}`,
-  );
+  redirect(getWorkspaceFormsListPath(workspace.id));
 }

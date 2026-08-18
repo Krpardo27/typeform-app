@@ -6,6 +6,7 @@ import { getWorkspaceAccessContext } from "@/features/admin/workspaces/services/
 import { duplicateTypeformForm } from "@/features/typeform/services/typeform.service";
 import { prisma } from "@/lib/prisma";
 import { createAuditLog } from "@/features/admin/audit/services/audit-log.service";
+import { getWorkspaceFormsListPath } from "@/features/typeform/utils/form-redirect";
 
 export async function duplicateFormAction(
   workspaceId: string,
@@ -73,7 +74,10 @@ export async function duplicateFormAction(
 
   revalidatePath(`/workspaces/${workspace.id}/forms`);
   revalidatePath(`/admin/workspaces/${workspace.typeformId}`);
-  redirect(
-    `/workspaces/${workspace.id}/forms/${duplicated.createdForm.id}?clonedFrom=${formId}`,
-  );
+
+  if (formData.get("_skipRedirect") === "1") {
+    return;
+  }
+
+  redirect(getWorkspaceFormsListPath(workspace.id));
 }

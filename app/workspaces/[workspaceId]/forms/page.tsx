@@ -51,6 +51,7 @@ export default async function WorkspaceFormsPage({
             workspaceId={workspace.id}
             workspaceTypeformId={workspace.typeformId}
             forms={forms.items}
+            canCreateForms={canCreateForms}
           />
           <Pagination
             currentPage={currentPage}

@@ -12,22 +12,7 @@ import {
   getTypeformForm,
   resolveWorkspaceTypeformId,
 } from "@/features/typeform/services/typeform.service";
-
-function getSuggestedDuplicateTitle(title: string) {
-  const normalized = title.trim();
-  const numberedMatch = normalized.match(/^(.*)\s\((\d+)\)$/);
-
-  if (numberedMatch) {
-    const baseTitle = numberedMatch[1]?.trim();
-    const currentNumber = Number(numberedMatch[2]);
-
-    if (baseTitle && Number.isFinite(currentNumber)) {
-      return `${baseTitle} (${currentNumber + 1})`;
-    }
-  }
-
-  return `${normalized} (2)`;
-}
+import { getSuggestedDuplicateTitle } from "@/features/typeform/utils/duplicate-title";
 
 export default async function WorkspaceFormDetailPage({
   params,
@@ -77,6 +62,7 @@ export default async function WorkspaceFormDetailPage({
         <DuplicateFormPanel
           action={duplicateForm}
           defaultTitle={getSuggestedDuplicateTitle(form.title)}
+          redirectTo={`/workspaces/${workspace.id}/forms`}
           clonedFrom={clonedFrom}
         />
       )}
