@@ -102,15 +102,15 @@ export function UserWorkspaceForm({
       title: "Guardar permisos",
       text:
         assignments.length > 3
-          ? `${selectedPreview}\n... y ${assignments.length - 3} workspace(s) mas.`
-          : selectedPreview || "El usuario quedara sin workspaces asignados.",
+          ? `${selectedPreview}\n... y ${assignments.length - 3} workspace(s) más.`
+          : selectedPreview || "El usuario quedará sin workspaces asignados.",
       icon: "question",
       showCancelButton: true,
-      confirmButtonText: "Si, guardar",
+      confirmButtonText: "Sí, guardar",
       cancelButtonText: "Cancelar",
-      background: "#111113",
-      color: "#f4f4f5",
-      confirmButtonColor: "#C8A96E",
+      background: "#FFFFFF",
+      color: "#171717",
+      confirmButtonColor: "#18181B",
     });
 
     if (!result.isConfirmed) {
@@ -145,29 +145,29 @@ export function UserWorkspaceForm({
   const selectedCount = assignments.length;
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-[#111113]">
+    <div className="rounded-xl border border-[#E5E5E5] bg-[#FFFFFF]">
       {/* HEADER */}
-      <div className="border-b border-zinc-800 px-5 py-4">
-        <h2 className="text-lg font-semibold text-white">
+      <div className="border-b border-[#E5E5E5] px-5 py-4">
+        <h2 className="text-lg font-semibold text-[#171717]">
           Workspaces autorizados
         </h2>
 
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-1 text-sm text-[#737373]">
           Selecciona las radios o marcas y el rol dentro de cada una.
         </p>
 
-        <div className="mt-3 grid gap-2 rounded-lg border border-zinc-800 bg-zinc-950/60 p-3 text-xs text-zinc-400 md:grid-cols-2">
+        <div className="mt-3 grid gap-2 rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] p-3 text-xs text-[#737373] md:grid-cols-2">
           <p>
-            <span className="font-semibold text-zinc-200">Viewer:</span> solo
+            <span className="font-semibold text-[#171717]">Viewer:</span> solo
             lectura de formularios y respuestas.
           </p>
           <p>
-            <span className="font-semibold text-zinc-200">Editor:</span> puede
+            <span className="font-semibold text-[#171717]">Editor:</span> puede
             crear y duplicar formularios en su workspace.
           </p>
         </div>
 
-        <div className="mt-3 inline-flex rounded-md border border-[#C8A96E]/30 bg-[#C8A96E]/10 px-3 py-1 text-sm text-[#C8A96E]">
+        <div className="mt-3 inline-flex rounded-md border border-[#18181B]/30 bg-[#18181B]/10 px-3 py-1 text-sm text-[#18181B]">
           {selectedCount} workspace{selectedCount !== 1 ? "s" : ""} asignado
           {selectedCount !== 1 ? "s" : ""}
         </div>
@@ -176,7 +176,7 @@ export function UserWorkspaceForm({
       {/* GRID */}
       <div className="space-y-4 p-5">
         <label className="block">
-          <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-zinc-500">
+          <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-[#737373]">
             Seleccionar workspaces
           </span>
           <select
@@ -197,7 +197,7 @@ export function UserWorkspaceForm({
               toRemove.forEach((id) => toggleWorkspace(id));
               toAdd.forEach((id) => toggleWorkspace(id));
             }}
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-[#C8A96E] focus:ring-2 focus:ring-[#C8A96E]/20"
+            className="w-full rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] px-3 py-2 text-sm text-[#171717] outline-none transition focus:border-[#18181B] focus:ring-2 focus:ring-[#18181B]/20"
           >
             {workspaces.map((workspace) => (
               <option key={workspace.id} value={workspace.id}>
@@ -205,14 +205,14 @@ export function UserWorkspaceForm({
               </option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-[#737373]">
             Usa Ctrl+Click para multi-selección.
           </p>
         </label>
 
         {assignments.length > 0 && (
-          <div className="rounded-lg border border-zinc-700 bg-zinc-900/30 p-4">
-            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-zinc-500">
+            <div className="rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] p-4">
+            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[#737373]">
               Roles por workspace
             </p>
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -225,14 +225,14 @@ export function UserWorkspaceForm({
                 return (
                   <div
                     key={assignment.workspaceId}
-                    className="rounded-lg border border-[#C8A96E]/20 bg-[#C8A96E]/5 p-3 transition hover:border-[#C8A96E]/40 hover:bg-[#C8A96E]/10"
+                    className="rounded-lg border border-[#18181B]/20 bg-[#18181B]/5 p-3 transition hover:border-[#18181B]/40 hover:bg-[#18181B]/10"
                   >
                     <div className="mb-2 flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium text-[#C8A96E]">
+                        <p className="truncate font-medium text-[#18181B]">
                           {workspace.name}
                         </p>
-                        <p className="truncate text-xs text-zinc-500">
+                        <p className="truncate text-xs text-[#737373]">
                           {workspace.typeformId}
                         </p>
                       </div>
@@ -245,7 +245,7 @@ export function UserWorkspaceForm({
                           event.target.value as WorkspaceRole,
                         )
                       }
-                      className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-2 text-xs font-medium text-zinc-100 outline-none transition focus:border-[#C8A96E] focus:ring-1 focus:ring-[#C8A96E]/50"
+                      className="w-full rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] px-2.5 py-2 text-xs font-medium text-[#171717] outline-none transition focus:border-[#18181B] focus:ring-1 focus:ring-[#18181B]/50"
                     >
                       <option value="VIEWER">Viewer (lectura)</option>
                       <option value="EDITOR">Editor (crear/duplicar)</option>
@@ -259,8 +259,8 @@ export function UserWorkspaceForm({
       </div>
 
       {/* FOOTER */}
-      <div className="flex items-center justify-between border-t border-zinc-800 px-5 py-4">
-        <p className="text-xs text-zinc-500">
+      <div className="flex items-center justify-between border-t border-[#E5E5E5] px-5 py-4">
+        <p className="text-xs text-[#737373]">
           {hasChanges ? "Tienes cambios sin guardar" : "Sin cambios pendientes"}
         </p>
 
@@ -268,7 +268,7 @@ export function UserWorkspaceForm({
           type="button"
           disabled={isPending || !hasChanges}
           onClick={handleSubmit}
-          className="flex items-center cursor-pointer gap-2 rounded-lg bg-[#C8A96E] px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-[#d7b979] disabled:opacity-50"
+          className="flex items-center cursor-pointer gap-2 rounded-lg bg-[#18181B] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#27272A] disabled:opacity-50"
         >
           {isPending && <LuLoader className="size-4 animate-spin" />}
 

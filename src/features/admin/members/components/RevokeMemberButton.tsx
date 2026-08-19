@@ -22,9 +22,9 @@ export function RevokeMemberButton({ email }: Props) {
         showCancelButton: true,
         confirmButtonText: "Sí, revocar",
         cancelButtonText: "Cancelar",
-        background: "#111113",
-        color: "#f4f4f5",
-        confirmButtonColor: "#ef4444",
+        background: "#FFFFFF",
+        color: "#171717",
+        confirmButtonColor: "#DC2626",
       });
 
       if (!confirmation.isConfirmed) {
@@ -47,7 +47,7 @@ export function RevokeMemberButton({ email }: Props) {
       type="button"
       disabled={isPending}
       onClick={handleRevoke}
-      className="inline-flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 text-xs font-medium text-red-300 transition hover:bg-red-500/20 disabled:opacity-50"
+      className="inline-flex items-center gap-2 rounded-lg border border-[#DC2626]/30 bg-[#DC2626]/10 px-2.5 py-1.5 text-xs font-medium text-[#DC2626] transition hover:bg-[#DC2626]/20 disabled:opacity-50"
     >
       {isPending ? <LuLoader className="size-3.5 animate-spin" /> : <LuUserMinus className="size-3.5" />}
       Revocar

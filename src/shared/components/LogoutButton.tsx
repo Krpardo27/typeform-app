@@ -6,7 +6,7 @@ import { authClient } from "@/lib/auth-client";
 import LoaderRedirect from "@/shared/ui/LoaderRedirect";
 
 type LogoutButtonProps = {
-  variant?: "default" | "dock" | "workspace-dock";
+  variant?: "default" | "dock" | "workspace-dock" | "admin";
 };
 
 export function LogoutButton({ variant = "default" }: LogoutButtonProps) {
@@ -52,7 +52,7 @@ export function LogoutButton({ variant = "default" }: LogoutButtonProps) {
         className={
           isWorkspaceDock
             ? "group relative flex min-h-14 cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1 text-[9px] font-medium text-black/45 transition-colors duration-200 hover:text-[#FF5C35] disabled:cursor-not-allowed disabled:opacity-50 min-[390px]:text-[10px]"
-            : "group relative flex min-h-14 cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1 text-[9px] font-medium text-zinc-400 transition-colors duration-200 hover:text-white disabled:cursor-not-allowed disabled:opacity-50 min-[390px]:text-[10px]"
+            : "group relative flex min-h-14 cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1 text-[9px] font-medium text-[#737373] transition-colors duration-200 hover:text-[#171717] disabled:cursor-not-allowed disabled:opacity-50 min-[390px]:text-[10px]"
         }
       >
         <span className="flex size-7 items-center justify-center">
@@ -71,10 +71,31 @@ export function LogoutButton({ variant = "default" }: LogoutButtonProps) {
           className={
             isWorkspaceDock
               ? "absolute bottom-1 left-1/2 h-0.5 w-0 -translate-x-1/2 rounded-full bg-[#FF5C35] opacity-0 transition-all duration-200 group-hover:w-4 group-hover:opacity-100"
-              : "absolute bottom-1 left-1/2 h-0.5 w-0 -translate-x-1/2 rounded-full bg-[#C8A96E] opacity-0 transition-all duration-200 group-hover:w-4 group-hover:opacity-100"
+              : "absolute bottom-1 left-1/2 h-0.5 w-0 -translate-x-1/2 rounded-full bg-[#18181B] opacity-0 transition-all duration-200 group-hover:w-4 group-hover:opacity-100"
           }
         />
       </button>
+    );
+  }
+
+  if (variant === "admin") {
+    return (
+      <div className="space-y-2">
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={isPending}
+          className="group flex w-full cursor-pointer items-center gap-2.5 rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] px-3.5 py-2.5 text-left text-sm font-medium text-[#171717] transition-all duration-200 hover:bg-[#27272A] hover:text-white active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isPending ? (
+            <LuLoader className="size-4 shrink-0 animate-spin" />
+          ) : (
+            <LuLogOut className="size-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
+          )}
+          <span>{isPending ? "Cerrando sesión..." : "Cerrar sesión"}</span>
+        </button>
+        {error && <p className="px-3 text-xs leading-5 text-[#DC2626]">{error}</p>}
+      </div>
     );
   }
 

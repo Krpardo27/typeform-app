@@ -75,9 +75,9 @@ export function AuthorizeMemberForm({ workspaces }: Props) {
       showCancelButton: true,
       confirmButtonText: "Si, autorizar",
       cancelButtonText: "Cancelar",
-      background: "#111113",
-      color: "#f4f4f5",
-      confirmButtonColor: "#C8A96E",
+      background: "#FFFFFF",
+      color: "#171717",
+      confirmButtonColor: "#18181B",
     });
 
     if (!result.isConfirmed) {
@@ -109,15 +109,15 @@ export function AuthorizeMemberForm({ workspaces }: Props) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-xl border border-zinc-800 bg-[#111113] p-5 space-y-4"
+      className="rounded-xl border border-[#E5E5E5] bg-[#FFFFFF] p-5 space-y-4"
     >
-      <div className="mb-4 flex items-center gap-2 text-sm font-medium text-zinc-200">
-        <LuUserPlus className="size-4 text-[#C8A96E]" />
+      <div className="mb-4 flex items-center gap-2 text-sm font-medium text-[#171717]">
+        <LuUserPlus className="size-4 text-[#18181B]" />
         Autorizar miembro
       </div>
 
       <label className="block">
-        <span className="mb-1 block text-xs uppercase tracking-wide text-zinc-500">
+        <span className="mb-1 block text-xs uppercase tracking-wide text-[#737373]">
           Email
         </span>
         <input
@@ -125,14 +125,14 @@ export function AuthorizeMemberForm({ workspaces }: Props) {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           placeholder="pepito@empresa.com"
-          className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-[#C8A96E]"
+          className="w-full rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] px-3 py-2 text-sm text-[#171717] outline-none transition focus:border-[#18181B]"
           required
         />
       </label>
 
       <div className="space-y-3">
         <label className="block">
-          <span className="mb-1 block text-xs uppercase tracking-wide text-zinc-500">
+          <span className="mb-1 block text-xs uppercase tracking-wide text-[#737373]">
             Workspaces
           </span>
           <select
@@ -153,7 +153,7 @@ export function AuthorizeMemberForm({ workspaces }: Props) {
               toRemove.forEach((id) => toggleWorkspace(id));
               toAdd.forEach((id) => toggleWorkspace(id));
             }}
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-[#C8A96E] focus:ring-2 focus:ring-[#C8A96E]/20"
+            className="w-full rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] px-3 py-2 text-sm text-[#171717] outline-none transition focus:border-[#18181B] focus:ring-2 focus:ring-[#18181B]/20"
           >
             {workspaces.map((workspace) => (
               <option key={workspace.id} value={workspace.id}>
@@ -161,15 +161,15 @@ export function AuthorizeMemberForm({ workspaces }: Props) {
               </option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-[#737373]">
             Selecciona uno o más workspaces. Usa Ctrl+Click para
             multi-selección.
           </p>
         </label>
 
         {assignments.length > 0 && (
-          <div className="rounded-lg border border-zinc-700 bg-zinc-900/30 p-4">
-            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-zinc-500">
+            <div className="rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] p-4">
+            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[#737373]">
               Roles por workspace
             </p>
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -182,14 +182,14 @@ export function AuthorizeMemberForm({ workspaces }: Props) {
                 return (
                   <div
                     key={assignment.workspaceId}
-                    className="rounded-lg border border-[#C8A96E]/20 bg-[#C8A96E]/5 p-3 transition hover:border-[#C8A96E]/40 hover:bg-[#C8A96E]/10"
+                    className="rounded-lg border border-[#18181B]/20 bg-[#18181B]/5 p-3 transition hover:border-[#18181B]/40 hover:bg-[#18181B]/10"
                   >
                     <div className="mb-2 flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium text-[#C8A96E]">
+                        <p className="truncate font-medium text-[#18181B]">
                           {workspace.name}
                         </p>
-                        <p className="truncate text-xs text-zinc-500">
+                        <p className="truncate text-xs text-[#737373]">
                           {workspace.typeformId}
                         </p>
                       </div>
@@ -202,7 +202,7 @@ export function AuthorizeMemberForm({ workspaces }: Props) {
                           event.target.value as "VIEWER" | "EDITOR",
                         )
                       }
-                      className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 py-2 text-xs font-medium text-zinc-100 outline-none transition focus:border-[#C8A96E] focus:ring-1 focus:ring-[#C8A96E]/50"
+                      className="w-full rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] px-2.5 py-2 text-xs font-medium text-[#171717] outline-none transition focus:border-[#18181B] focus:ring-1 focus:ring-[#18181B]/50"
                     >
                       <option value="VIEWER">Viewer (lectura)</option>
                       <option value="EDITOR">Editor (crear/duplicar)</option>
@@ -219,7 +219,7 @@ export function AuthorizeMemberForm({ workspaces }: Props) {
         <button
           type="submit"
           disabled={isPending || !canSubmit}
-          className="inline-flex items-center cursor-pointer gap-2 rounded-lg bg-[#C8A96E] px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-[#d7b979] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center cursor-pointer gap-2 rounded-lg bg-[#18181B] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#27272A] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPending ? (
             <>

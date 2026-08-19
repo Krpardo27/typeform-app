@@ -11,9 +11,9 @@ interface DashboardStatCardProps {
 }
 
 const badgeClasses = {
-  success: "text-emerald-400 bg-emerald-400/10",
-  warning: "text-amber-400 bg-amber-400/10",
-  neutral: "text-zinc-400 bg-zinc-800",
+  success: "text-[#16A34A] bg-[#16A34A]/10",
+  warning: "text-[#CA8A04] bg-[#CA8A04]/10",
+  neutral: "text-[#737373] bg-[#F5F5F5]",
 };
 
 export function DashboardStatCard({
@@ -23,18 +23,18 @@ export function DashboardStatCard({
   icon,
 }: DashboardStatCardProps) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-zinc-800 bg-[#0f0f0f] p-6 shadow-sm">
+    <div className="flex flex-col gap-3 rounded-xl border border-[#E5E5E5] bg-[#FFFFFF] p-6 shadow-sm">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-zinc-400">{title}</p>
+        <p className="text-sm font-medium text-[#737373]">{title}</p>
 
         {icon && (
-          <span className="flex size-5 items-center justify-center text-zinc-600">
+          <span className="flex size-5 items-center justify-center text-[#737373]">
             {icon}
           </span>
         )}
       </div>
 
-      <p className="text-3xl font-bold tracking-tight text-zinc-100">
+      <p className="text-3xl font-bold tracking-tight text-[#171717]">
         {value}
       </p>
 

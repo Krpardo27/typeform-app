@@ -13,10 +13,10 @@ type Props = {
 };
 
 const swalTheme = {
-  background: "#111113",
-  color: "#f4f4f5",
-  confirmButtonColor: "#ef4444",
-  cancelButtonColor: "#3f3f46",
+  background: "#FFFFFF",
+  color: "#171717",
+  confirmButtonColor: "#DC2626",
+  cancelButtonColor: "#737373",
 };
 
 export function DeleteUserButton({ userId, userName, disabled }: Props) {
@@ -77,7 +77,7 @@ export function DeleteUserButton({ userId, userName, disabled }: Props) {
         onClick={handleDelete}
         disabled={disabled || isPending}
         title={disabled ? "No puedes eliminar tu propia cuenta" : "Eliminar usuario"}
-        className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-400 transition hover:border-red-500/50 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-zinc-800 disabled:hover:text-zinc-400"
+        className="flex items-center gap-1.5 cursor-pointer rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] px-3 py-1.5 text-xs text-[#737373] transition hover:border-[#DC2626]/40 hover:text-[#DC2626] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[#E5E5E5] disabled:hover:text-[#737373]"
       >
         {isPending ? (
           <LuLoaderCircle className="size-3.5 animate-spin" />

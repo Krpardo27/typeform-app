@@ -21,6 +21,30 @@ type WinnerSelectionPanelProps = {
   winnerError?: string;
 };
 
+function getParticipantReference(candidate?: WinnerCandidate, fallback?: string) {
+  const rawNumber = String(candidate?.participantNumber ?? candidate?.detail ?? "")
+    .replace(/^#/, "")
+    .trim();
+
+  if (rawNumber) {
+    return `#${rawNumber}`;
+  }
+
+  return fallback ?? "Participante";
+}
+
+function formatParticipantReferences(references: string[]) {
+  if (references.length <= 1) {
+    return references[0] ?? "";
+  }
+
+  if (references.length === 2) {
+    return `${references[0]} y ${references[1]}`;
+  }
+
+  return `${references.slice(0, -1).join(", ")} y ${references.at(-1)}`;
+}
+
 export function WinnerSelectionPanel({
   action,
   candidates,
@@ -99,21 +123,23 @@ export function WinnerSelectionPanel({
         return;
       }
 
-      const selectedPreview = selectedInputs
+      const selectedReferences = selectedInputs
         .slice(0, 3)
         .map((input) => {
           const candidate = candidates.find((item) => item.token === input.value);
-          return candidate?.label ?? input.value;
-        })
-        .join("\n");
+          return getParticipantReference(candidate, input.value);
+        });
+      const selectedPreview = formatParticipantReferences(selectedReferences);
 
       const hasMore = selectedCount > 3;
+      const participantLabel = selectedCount === 1 ? "Participante" : "Participantes";
+      const participantText = hasMore
+        ? `${participantLabel}: ${selectedPreview} y ${selectedCount - 3} participante(s) más.`
+        : `${participantLabel}: ${selectedPreview}`;
 
       const result = await Swal.fire({
-        title: "Confirmar ganadores",
-        text: hasMore
-          ? `${selectedPreview}\n... y ${selectedCount - 3} participante(s) más.`
-          : selectedPreview,
+        title: selectedCount === 1 ? "Confirmar ganador" : "Confirmar ganadores",
+        text: participantText,
         icon: "question",
         showCancelButton: true,
         confirmButtonText: "Confirmar selección",
@@ -202,7 +228,7 @@ export function WinnerSelectionPanel({
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar por nombre, token o # participante"
+            placeholder="Buscar por nombre o # participante"
             className="w-full rounded-xl border border-[#F5F5F5] bg-[#FFFFFF] py-2.5 pl-10 pr-3 text-sm text-[#000000] placeholder:text-[#000000]/40 outline-none transition focus:border-[#00BFA5]"
           />
         </label>

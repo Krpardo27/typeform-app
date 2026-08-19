@@ -14,13 +14,13 @@ export function AdminWorkspacesGridSkeleton({ count }: Props) {
       {Array.from({ length: skeletonCount }).map((_, index) => (
         <article
           key={index}
-          className="rounded-xl border border-zinc-800 bg-[#111113] p-5 animate-pulse"
+          className="rounded-xl border border-[#E5E5E5] bg-[#FFFFFF] p-5 animate-pulse"
         >
-          <div className="h-5 w-2/3 rounded-md bg-zinc-800" />
-          <div className="mt-2 h-3 w-1/2 rounded-md bg-zinc-900" />
-          <div className="mt-4 h-3 w-full rounded-md bg-zinc-900" />
-          <div className="mt-2 h-3 w-5/6 rounded-md bg-zinc-900" />
-          <div className="mt-5 h-9 w-28 rounded-lg bg-zinc-800" />
+          <div className="h-5 w-2/3 rounded-md bg-[#E5E5E5]" />
+          <div className="mt-2 h-3 w-1/2 rounded-md bg-[#F5F5F5]" />
+          <div className="mt-4 h-3 w-full rounded-md bg-[#F5F5F5]" />
+          <div className="mt-2 h-3 w-5/6 rounded-md bg-[#F5F5F5]" />
+          <div className="mt-5 h-9 w-28 rounded-lg bg-[#E5E5E5]" />
         </article>
       ))}
     </section>

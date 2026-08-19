@@ -7,10 +7,17 @@ if (!process.env.DATABASE_URL) {
 
 const globalForPrisma = global as unknown as {
   prisma: PrismaClient | undefined;
+  prismaListenerAttached?: boolean;
 };
 
 type PrismaClientWithAuditLog = PrismaClient & {
   auditLog?: unknown;
+};
+
+type QueryEvent = {
+  query: string;
+  params: string;
+  duration: number;
 };
 
 function createPrismaClient() {
@@ -18,10 +25,26 @@ function createPrismaClient() {
     connectionString: process.env.DATABASE_URL!,
   });
 
-  return new PrismaClient({
+  const client = new PrismaClient({
     adapter,
-    log: ["error", "warn"],
+    log: process.env.NODE_ENV === "production"
+      ? ["error", "warn"]
+      : ["error", "warn", { emit: "event", level: "query" }],
   });
+
+  if (process.env.NODE_ENV !== "production" && !globalForPrisma.prismaListenerAttached) {
+    globalForPrisma.prismaListenerAttached = true;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (client as any).$on("query", (e: QueryEvent) => {
+      if (e.duration > 50) {
+        console.warn(`[Prisma slow query ${e.duration}ms]\n  ${e.query}\n  params: ${e.params}`);
+      } else {
+        console.log(`[Prisma ${e.duration}ms] ${e.query}`);
+      }
+    });
+  }
+
+  return client;
 }
 
 const cachedPrisma = globalForPrisma.prisma as PrismaClientWithAuditLog | undefined;

@@ -59,9 +59,9 @@ export default function AdminMobileDock() {
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 lg:hidden">
-      <div className="relative mx-auto max-w-xl overflow-hidden rounded-[1.35rem] border border-white/10 bg-[#111111]/95 shadow-[0_-12px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+      <div className="relative mx-auto max-w-xl overflow-hidden rounded-[1.35rem] border border-[#E5E5E5] bg-[#FFFFFF] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] backdrop-blur-xl">
         {/* Top accent */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-[#C8A96E]/70 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-[#18181B]/20 to-transparent" />
 
         <nav className="grid grid-cols-[repeat(6,minmax(0,1fr))] gap-0.5 p-1.5">
           {ADMIN_MOBILE_ROUTES.map((route) => {
@@ -75,15 +75,15 @@ export default function AdminMobileDock() {
                 onClick={triggerHapticFeedback}
                 className={`group relative flex min-w-0 min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 transition-colors duration-200 ${
                   active
-                    ? "text-white"
-                    : "text-white/55 hover:text-white"
+                    ? "text-[#171717]"
+                    : "text-[#737373] hover:text-[#171717]"
                 }`}
               >
                 <Icon
                   className={`size-[17px] shrink-0 transition-transform duration-200 ${
                     active
-                      ? "text-[#C8A96E]"
-                      : "group-hover:text-white"
+                      ? "text-[#18181B]"
+                      : "group-hover:text-[#171717]"
                   }`}
                   strokeWidth={active ? 2.2 : 1.8}
                 />
@@ -91,8 +91,8 @@ export default function AdminMobileDock() {
                 <span
                   className={`w-full truncate text-center text-[10px] leading-none tracking-[-0.01em] ${
                     active
-                      ? "font-semibold text-white"
-                      : "font-medium text-white/60"
+                      ? "font-semibold text-[#171717]"
+                      : "font-medium text-[#737373]"
                   }`}
                 >
                   {route.label}
@@ -101,8 +101,8 @@ export default function AdminMobileDock() {
                 <span
                   className={
                     active
-                      ? "absolute bottom-1 left-1/2 h-0.5 w-5 -translate-x-1/2 rounded-full bg-[#C8A96E]"
-                      : "absolute bottom-1 left-1/2 h-0.5 w-0 -translate-x-1/2 rounded-full bg-[#C8A96E] opacity-0 transition-all duration-200 group-hover:w-4 group-hover:opacity-100"
+                      ? "absolute bottom-1 left-1/2 h-0.5 w-5 -translate-x-1/2 rounded-full bg-[#18181B]"
+                      : "absolute bottom-1 left-1/2 h-0.5 w-0 -translate-x-1/2 rounded-full bg-[#18181B] opacity-0 transition-all duration-200 group-hover:w-4 group-hover:opacity-100"
                   }
                 />
               </Link>

@@ -8,9 +8,9 @@ export default function FormSubmit(props: Props) {
       {...props}
       type="submit"
       className="
-        rounded-xl bg-[#DB4444] px-8 py-3 text-sm font-medium text-white
+        rounded-xl bg-[#DC2626] px-8 py-3 text-sm font-medium text-white
         transition-all duration-200
-        hover:bg-zinc-800
+        hover:bg-[#b91c1c]
         active:scale-[0.98]
         disabled:cursor-not-allowed disabled:opacity-60
         focus:outline-hidden focus:ring-2 focus:ring-zinc-400 focus:ring-offset-2
