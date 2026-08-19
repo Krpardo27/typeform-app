@@ -95,14 +95,14 @@ export default async function WorkspaceDetailPage({
         backLabel="Volver a workspaces"
         actions={
           <>
-            <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-400">
+            <div className="rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] px-3 py-2 text-sm text-[#737373]">
               {formCount} en Typeform
             </div>
-            <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-400">
+            <div className="rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] px-3 py-2 text-sm text-[#737373]">
               {appForms.length} creados por la app
             </div>
-            <div className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-400">
-              <LuUsers className="size-4 text-[#C8A96E]" />
+            <div className="flex items-center gap-2 rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] px-3 py-2 text-sm text-[#737373]">
+              <LuUsers className="size-4 text-[#18181B]" />
               {memberCount} miembros
             </div>
           </>
@@ -110,12 +110,12 @@ export default async function WorkspaceDetailPage({
       />
 
       {typeformForms.items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-800 py-16 text-center">
-          <LuFileText className="mb-3 size-8 text-zinc-700" />
-          <p className="text-sm font-medium text-zinc-400">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#E5E5E5] py-16 text-center">
+          <LuFileText className="mb-3 size-8 text-[#737373]" />
+          <p className="text-sm font-medium text-[#737373]">
             No hay formularios en este workspace
           </p>
-          <p className="mt-1 text-xs text-zinc-600">
+          <p className="mt-1 text-xs text-[#737373]">
             Typeform no devolvio formularios para este workspace.
           </p>
         </div>
@@ -128,28 +128,28 @@ export default async function WorkspaceDetailPage({
               return (
                 <article
                   key={form.id}
-                  className="rounded-xl border border-zinc-800 bg-[#111113] p-5"
+                  className="rounded-xl border border-[#E5E5E5] bg-[#FFFFFF] p-5"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="truncate text-base font-semibold text-white">
+                        <h2 className="truncate text-base font-semibold text-[#171717]">
                           {form.title}
                         </h2>
                         {appForm && (
-                          <span className="rounded-md border border-[#C8A96E]/40 px-2 py-0.5 text-[11px] font-medium text-[#C8A96E]">
+                          <span className="rounded-md border border-[#18181B]/30 px-2 py-0.5 text-[11px] font-medium text-[#18181B]">
                             App
                           </span>
                         )}
                       </div>
 
                       {appForm?.description && (
-                        <p className="mt-1 line-clamp-2 text-xs text-zinc-500">
+                        <p className="mt-1 line-clamp-2 text-xs text-[#737373]">
                           {appForm.description}
                         </p>
                       )}
 
-                      <p className="mt-2 truncate text-xs text-zinc-600">
+                      <p className="mt-2 truncate text-xs text-[#737373]">
                         ID: {form.id}
                       </p>
                     </div>
@@ -159,14 +159,14 @@ export default async function WorkspaceDetailPage({
                         href={form._links.display}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="rounded-lg border border-zinc-800 p-2 text-zinc-400 transition hover:border-[#C8A96E] hover:text-[#C8A96E]"
+                        className="rounded-lg border border-[#E5E5E5] p-2 text-[#737373] transition hover:border-[#18181B] hover:text-[#18181B]"
                       >
                         <LuArrowUpRight className="size-4" />
                       </a>
                     )}
                   </div>
 
-                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-white">
+                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-[#737373]">
                     <span>
                       Actualizado{" "}
                       {form.last_updated_at
@@ -188,7 +188,7 @@ export default async function WorkspaceDetailPage({
                   </div>
 
                   {appForm && (
-                    <div className="mt-2 text-xs text-zinc-600">
+                    <div className="mt-2 text-xs text-[#737373]">
                       Registrado en app{" "}
                       {new Date(appForm.createdAt).toLocaleDateString("es-CL", {
                         day: "numeric",

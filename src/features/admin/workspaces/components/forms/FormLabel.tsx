@@ -12,7 +12,7 @@ export default function FormLabel({
     <label
       {...props}
       className={clsx(
-        "block text-sm font-medium text-white py-1",
+        "block text-sm font-medium text-[#171717] py-1",
         className
       )}
     >

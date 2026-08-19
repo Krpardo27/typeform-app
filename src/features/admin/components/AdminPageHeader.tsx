@@ -24,7 +24,7 @@ export function AdminPageHeader({
   const topLeading = backHref && backLabel ? (
     <Link
       href={backHref}
-      className="group inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-zinc-600 transition-colors hover:text-[#C8A96E]"
+      className="group inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-[#737373] transition-colors hover:text-[#18181B]"
     >
       <LuArrowLeft className="size-3.5 transition-transform duration-200 group-hover:-translate-x-0.5" />
       {backLabel}
@@ -37,14 +37,14 @@ export function AdminPageHeader({
 
   return (
     <header className="relative mb-8 pb-8">
-      <div className="absolute left-0 top-0 h-px w-16 bg-linear-to-r from-[#C8A96E] to-transparent" />
+      <div className="absolute left-0 top-0 h-px w-16 bg-linear-to-r from-[#18181B] to-transparent" />
 
       {hasTopRow && (
         <div className="flex items-center gap-3 pt-5">
           {topLeading}
           {eyebrow && (
             <p
-              className={`${topLeading ? "ml-auto" : ""} text-xs font-medium uppercase tracking-wider text-zinc-500`}
+              className={`${topLeading ? "ml-auto" : ""} text-xs font-medium uppercase tracking-wider text-[#737373]`}
             >
               {eyebrow}
             </p>
@@ -56,9 +56,9 @@ export function AdminPageHeader({
         className={`${hasTopRow ? "mt-4" : "pt-5"} flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6`}
       >
         <div className="min-w-0">
-          <h1 className="text-3xl font-bold tracking-tight text-white">{title}</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-[#171717]">{title}</h1>
           {description && (
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-500">
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#737373]">
               {description}
             </p>
           )}
@@ -69,7 +69,7 @@ export function AdminPageHeader({
         )}
       </div>
 
-      <div className="mt-6 h-px w-full bg-linear-to-r from-zinc-800 via-zinc-800/40 to-transparent" />
+      <div className="mt-6 h-px w-full bg-linear-to-r from-[#E5E5E5] via-[#E5E5E5]/40 to-transparent" />
     </header>
   );
 }

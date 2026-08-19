@@ -11,7 +11,7 @@ export default function WorkspacesPageClient() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-lg bg-[#C8A96E] px-3 py-2 text-sm font-medium text-black transition hover:bg-[#d4b87a]"
+        className="flex items-center gap-2 cursor-pointer rounded-lg bg-[#18181B] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#27272A]"
       >
         <LuPlus className="size-4" />
         Crear workspace

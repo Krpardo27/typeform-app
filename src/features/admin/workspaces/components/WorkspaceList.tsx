@@ -16,7 +16,7 @@ export function WorkspaceList({ workspaces }: Props) {
         <Link
           key={workspace.id}
           href={`/workspaces/${workspace.id}`}
-          className="rounded-xl border border-zinc-800 p-5 hover:border-[#C8A96E]"
+          className="rounded-xl border border-[#E5E5E5] p-5 hover:border-[#18181B]"
         >
           <h3>{workspace.name}</h3>
         </Link>

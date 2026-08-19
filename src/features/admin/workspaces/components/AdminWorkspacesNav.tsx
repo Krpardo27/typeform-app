@@ -20,8 +20,8 @@ export default function AdminWorkspacesNav() {
   const isAudit = pathname.startsWith("/admin/auditoria");
 
   return (
-    <div className="text-zinc-200">
-      <p className="mb-3 px-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
+    <div className="text-[#171717]">
+      <p className="mb-3 px-2 text-xs font-medium uppercase tracking-wider text-[#737373]">
         Administración
       </p>
 
@@ -30,8 +30,8 @@ export default function AdminWorkspacesNav() {
           href="/admin/dashboard"
           className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition ${
             isDashboard
-              ? "bg-[#C8A96E]/10 text-[#C8A96E]"
-              : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+              ? "bg-[#18181B]/10 text-[#18181B]"
+              : "text-[#737373] hover:bg-[#F5F5F5] hover:text-[#171717]"
           }`}
         >
           <LuChartPie className="size-4" />
@@ -42,8 +42,8 @@ export default function AdminWorkspacesNav() {
           href="/admin/workspaces"
           className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition ${
             isWorkspaces
-              ? "bg-[#C8A96E]/10 text-[#C8A96E]"
-              : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+              ? "bg-[#18181B]/10 text-[#18181B]"
+              : "text-[#737373] hover:bg-[#F5F5F5] hover:text-[#171717]"
           }`}
         >
           <LuFolder className="size-4" />
@@ -54,8 +54,8 @@ export default function AdminWorkspacesNav() {
           href="/admin/users"
           className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition ${
             isUsers
-              ? "bg-[#C8A96E]/10 text-[#C8A96E]"
-              : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+              ? "bg-[#18181B]/10 text-[#18181B]"
+              : "text-[#737373] hover:bg-[#F5F5F5] hover:text-[#171717]"
           }`}
         >
           <LuUsers className="size-4" />
@@ -66,8 +66,8 @@ export default function AdminWorkspacesNav() {
           href="/admin/miembros"
           className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition ${
             isMembers
-              ? "bg-[#C8A96E]/10 text-[#C8A96E]"
-              : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+              ? "bg-[#18181B]/10 text-[#18181B]"
+              : "text-[#737373] hover:bg-[#F5F5F5] hover:text-[#171717]"
           }`}
         >
           <LuUserPlus className="size-4" />
@@ -78,8 +78,8 @@ export default function AdminWorkspacesNav() {
           href="/admin/auditoria"
           className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition ${
             isAudit
-              ? "bg-[#C8A96E]/10 text-[#C8A96E]"
-              : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+              ? "bg-[#18181B]/10 text-[#18181B]"
+              : "text-[#737373] hover:bg-[#F5F5F5] hover:text-[#171717]"
           }`}
         >
           <LuClipboardList className="size-4" />
