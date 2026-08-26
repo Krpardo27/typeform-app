@@ -47,7 +47,8 @@ export async function selectWinnersAction(
     canSelectWinners: effectiveWorkspaceRole === "EDITOR",
   });
 
-  const canSelectWinners = effectiveWorkspaceRole === "EDITOR";
+  const canSelectWinners =
+    user.globalRole === "SUPER_ADMIN" || effectiveWorkspaceRole === "EDITOR";
 
   if (!canSelectWinners) {
     console.log("[WINNER_PERMISSION_DENIED]", {
