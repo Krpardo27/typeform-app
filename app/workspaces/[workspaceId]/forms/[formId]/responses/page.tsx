@@ -16,6 +16,7 @@ import {
   resolveWorkspaceTypeformId,
 } from "@/features/typeform/services/typeform.service";
 import { createAuditLog } from "@/features/admin/audit/services/audit-log.service";
+import { prisma } from "@/lib/prisma";
 
 const WINNER_CANDIDATES_PAGE_SIZE = 100;
 
@@ -78,28 +79,64 @@ async function getExistingTypeformForm(formId: string) {
   }
 }
 
-async function getWinnerCandidateResponses(formId: string) {
-  const firstPage = await getTypeformFormResponses(formId, {
-    page: 1,
-    pageSize: WINNER_CANDIDATES_PAGE_SIZE,
-  });
+function deduplicateByToken<T extends { token: string }>(items: T[]) {
+  const seen = new Set<string>();
 
-  if (firstPage.page_count <= 1) {
-    return firstPage.items;
+  return items.filter((item) => {
+    if (seen.has(item.token)) {
+      return false;
+    }
+
+    seen.add(item.token);
+    return true;
+  });
+}
+
+async function getWinnerCandidateResponses(formId: string) {
+  const allResponses: Awaited<
+    ReturnType<typeof getTypeformFormResponses>
+  >["items"] = [];
+
+  let before: string | undefined;
+  let expectedTotal: number | null = null;
+
+  while (true) {
+    const pageResult = await getTypeformFormResponses(formId, {
+      pageSize: WINNER_CANDIDATES_PAGE_SIZE,
+      before,
+    });
+
+    if (expectedTotal === null) {
+      expectedTotal = pageResult.total_items;
+    }
+
+    if (pageResult.items.length === 0) {
+      break;
+    }
+
+    allResponses.push(...pageResult.items);
+
+    if (pageResult.items.length < WINNER_CANDIDATES_PAGE_SIZE) {
+      break;
+    }
+
+    if (expectedTotal !== null && allResponses.length >= expectedTotal) {
+      break;
+    }
+
+    const lastToken = pageResult.items.at(-1)?.token;
+    if (!lastToken || lastToken === before) {
+      break;
+    }
+
+    before = lastToken;
   }
 
-  const remainingPages = await Promise.all(
-    Array.from({ length: firstPage.page_count - 1 }, (_, index) =>
-      getTypeformFormResponses(formId, {
-        page: index + 2,
-        pageSize: WINNER_CANDIDATES_PAGE_SIZE,
-      }),
-    ),
-  );
+  return deduplicateByToken(allResponses);
+}
 
-  return [firstPage, ...remainingPages].flatMap(
-    (pageResult) => pageResult.items,
-  );
+async function getAllFormResponses(formId: string) {
+  return getWinnerCandidateResponses(formId);
 }
 
 export default async function FormResponsesPage({
@@ -115,22 +152,66 @@ export default async function FormResponsesPage({
   }>;
 }) {
   const { workspaceId, formId } = await params;
+  console.log("🚀 FormResponsesPage params:", { workspaceId});
+
   const { page, pageSize, winnerSelection, winnerError } = await searchParams;
   const { user, workspace } = await getWorkspaceAccessContext(workspaceId);
+  console.log("🚀 user:", { user });
+
+  const userWorkspaceMembership = await prisma.userWorkspace.findUnique({
+    where: {
+      userId_workspaceId: {
+        userId: user.id,
+        workspaceId,
+      },
+    },
+    select: {
+      role: true,
+    },
+  });
+
   const canSelectWinners =
-    user.globalRole === "SUPER_ADMIN" || workspace.role === "EDITOR";
+    user.globalRole === "SUPER_ADMIN" ||
+    userWorkspaceMembership?.role === "EDITOR" ||
+    workspace.role === "EDITOR";
   const currentPage = Math.max(1, Number.parseInt(page ?? "1", 10) || 1);
+  const showAllResponses = (pageSize ?? "").toLowerCase() === "all";
   const requestedPageSize = Number.parseInt(pageSize ?? "20", 10) || 20;
-  const itemsPerPage = [10, 20, 50, 100].includes(requestedPageSize)
+  const selectedItemsPerPage = [10, 20, 50, 100].includes(requestedPageSize)
     ? requestedPageSize
     : 20;
   const form = await getExistingTypeformForm(formId);
+
+  const localForm = await prisma.form.findUnique({
+    where: { typeformId: form.id },
+    select: { id: true },
+  });
+
+  const persistedWinnerTokens = new Set<string>();
+  const persistedWinnerRows = localForm
+    ? await prisma.formWinner.findMany({
+        where: {
+          formId: localForm.id,
+          workspaceId: workspace.id,
+        },
+        select: {
+          responseToken: true,
+          reason: true,
+          selectedByUserId: true,
+        },
+      })
+    : [];
+
+  for (const winner of persistedWinnerRows) {
+    persistedWinnerTokens.add(winner.responseToken);
+  }
+
   const winnerCookieName = `winner_selection:${workspace.id}:${form.id}`;
   const winnerCookieRaw = (await cookies()).get(winnerCookieName)?.value;
-  let revealedWinnerTokens = new Set<string>();
+  let revealedWinnerTokens = new Set<string>(persistedWinnerTokens);
   let winnerSelectionReason: string | null = null;
 
-  if (winnerCookieRaw) {
+  if (winnerCookieRaw && persistedWinnerTokens.size === 0) {
     try {
       const parsed = JSON.parse(winnerCookieRaw) as {
         tokens?: string[];
@@ -155,16 +236,29 @@ export default async function FormResponsesPage({
     notFound();
   }
 
-  const responses = await getTypeformFormResponses(form.id, {
-    page: currentPage,
-    pageSize: itemsPerPage,
-  });
+  const allResponses = showAllResponses ? await getAllFormResponses(form.id) : null;
+  const allResponsesSafe = allResponses ?? [];
+  const responses = showAllResponses
+    ? {
+        page_count: 1,
+        total_items: allResponsesSafe.length,
+        items: allResponsesSafe,
+      }
+    : await getTypeformFormResponses(form.id, {
+        page: currentPage,
+        pageSize: selectedItemsPerPage,
+      });
+  const itemsPerPage = showAllResponses
+    ? Math.max(1, responses.total_items)
+    : selectedItemsPerPage;
   const totalResponsePages = Math.max(1, responses.page_count);
   const isPageOutOfRange =
     responses.total_items > 0 && currentPage > totalResponsePages;
   const winnerCandidateResponses =
     canSelectWinners && !isPageOutOfRange
-      ? await getWinnerCandidateResponses(form.id)
+      ? showAllResponses
+        ? deduplicateByToken(allResponsesSafe)
+        : await getWinnerCandidateResponses(form.id)
       : [];
 
   const selectWinners = selectWinnersAction.bind(null, workspace.id, form.id);
@@ -256,6 +350,7 @@ export default async function FormResponsesPage({
             action={selectWinners}
             currentPage={currentPage}
             itemsPerPage={itemsPerPage}
+            pageSizeValue={showAllResponses ? "all" : String(itemsPerPage)}
             winnerSelection={winnerSelection}
             winnerError={winnerError}
             candidates={maskedWinnerCandidateResponses.map(
@@ -285,7 +380,7 @@ export default async function FormResponsesPage({
             Sin respuestas
           </h2>
           <p className="mt-1 text-sm text-[#000000]/55">
-            Typeform no devolvio participantes para este formulario.
+            Typeform no devolvió participantes para este formulario.
           </p>
         </section>
       ) : !isPageOutOfRange ? (

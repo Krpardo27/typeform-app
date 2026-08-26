@@ -12,6 +12,9 @@ interface PaginationProps {
   showPageSizeSelector?: boolean;
   pageSizeOptions?: number[];
   pageSizeParamName?: string;
+  showAllPageSizeOption?: boolean;
+  allPageSizeLabel?: string;
+  showLastPageButton?: boolean;
 }
 
 export default function Pagination({
@@ -23,6 +26,9 @@ export default function Pagination({
   showPageSizeSelector = false,
   pageSizeOptions = [10, 20, 50, 100],
   pageSizeParamName = "pageSize",
+  showAllPageSizeOption = false,
+  allPageSizeLabel = "Todos",
+  showLastPageButton = false,
 }: PaginationProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -34,9 +40,14 @@ export default function Pagination({
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  const setPageSize = (nextPageSize: number) => {
+  const selectedPageSizeValue =
+    searchParams.get(pageSizeParamName) === "all"
+      ? "all"
+      : String(itemsPerPage);
+
+  const setPageSize = (nextPageSize: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set(pageSizeParamName, String(nextPageSize));
+    params.set(pageSizeParamName, nextPageSize);
     params.set("page", "1");
     router.push(`${pathname}?${params.toString()}`);
   };
@@ -77,53 +88,58 @@ export default function Pagination({
   }
 
   return (
-    <div className="flex w-full flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <p className="text-center text-sm text-[#000000]/55 sm:text-left">
-        Mostrando{" "}
-        <span className="font-medium text-[#000000]">
-          {from}-{to}
-        </span>{" "}
-        de <span className="font-medium text-[#000000]">{totalItems}</span>{" "}
-        {itemLabel}
-      </p>
+    <div className="flex w-full flex-col gap-3 border-t border-[#E5E5E5] pt-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center gap-2 text-sm text-[#171717]/55">
+        <span>Mostrando</span>
+        <span className="font-medium text-[#171717]">{from}-{to}</span>
+        <span>de</span>
+        <span className="font-medium text-[#171717]">{totalItems}</span>
+        <span>{itemLabel}</span>
+      </div>
 
-      <div className="flex w-full flex-col items-center gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
+      <div className="flex flex-wrap items-center gap-2">
         {showPageSizeSelector && (
-          <label className="flex items-center gap-2 text-[#000000]/55 sm:text-xs">
-            <span className="whitespace-nowrap">Por página</span>
+          <label className="flex items-center gap-2 rounded-md border border-[#E5E5E5] bg-white px-3 py-2 text-sm text-[#171717]/60">
+            <span>Mostrar</span>
             <select
-              value={itemsPerPage}
-              onChange={(event) => setPageSize(Number(event.target.value))}
-              className="cursor-pointer rounded-md border border-[#F5F5F5] bg-[#FFFFFF] px-2 py-1 text-[#000000] outline-none transition focus:border-[#FF5C35] sm:text-xs"
+              value={selectedPageSizeValue}
+              onChange={(event) => setPageSize(event.target.value)}
+              className="bg-transparent font-medium text-[#171717] outline-none"
             >
               {pageSizeOptions.map((option) => (
-                <option
-                  key={option}
-                  value={option}
-                  className="bg-[#FFFFFF] text-[#000000]"
-                >
+                <option key={option} value={option}>
                   {option}
                 </option>
               ))}
+
+              {showAllPageSizeOption && (
+                <option value="all">{allPageSizeLabel}</option>
+              )}
             </select>
           </label>
         )}
 
         {hasMultiplePages && (
-          <div className="flex flex-wrap items-center justify-center gap-1">
+          <nav
+            aria-label="Paginación"
+            className="inline-flex items-center overflow-hidden rounded-md border border-[#E5E5E5] bg-white"
+          >
             <button
               type="button"
               onClick={() => goToPage(currentPage - 1)}
               disabled={currentPage === 1}
-              aria-label="Ir a la pagina anterior"
-              className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-[#F5F5F5] bg-[#FFFFFF] text-[#000000]/60 transition-colors hover:border-[#000000]/20 hover:text-[#000000] disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Ir a la página anterior"
+              className="flex h-9 w-9 items-center justify-center border-r border-[#E5E5E5] text-[#171717]/55 transition-colors hover:bg-[#F7F7F6] hover:text-[#171717] disabled:pointer-events-none disabled:opacity-30"
             >
               <FiChevronLeft className="h-4 w-4" />
             </button>
 
             {getPageRange().map((page, index) =>
               page === "..." ? (
-                <span key={`dots-${index}`} className="px-2 text-[#000000]/40">
+                <span
+                  key={`dots-${index}`}
+                  className="flex h-9 w-9 items-center justify-center border-r border-[#E5E5E5] text-sm text-[#171717]/35"
+                >
                   ...
                 </span>
               ) : (
@@ -132,11 +148,11 @@ export default function Pagination({
                   key={page}
                   onClick={() => goToPage(page)}
                   aria-current={currentPage === page ? "page" : undefined}
-                  aria-label={`Ir a la pagina ${page}`}
-                  className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border text-sm font-medium transition-colors ${
+                  aria-label={`Ir a la página ${page}`}
+                  className={`flex h-9 min-w-9 cursor-pointer items-center justify-center border-r border-[#E5E5E5] px-3 text-sm transition-colors ${
                     currentPage === page
-                      ? "border-[#FF5C35] bg-[#FF5C35]/10 text-[#FF5C35]"
-                      : "border-[#F5F5F5] bg-[#FFFFFF] text-[#000000]/60 hover:border-[#000000]/20 hover:text-[#000000]"
+                      ? "bg-[#171717] font-medium text-white"
+                      : "text-[#171717]/60 hover:bg-[#F7F7F6] hover:text-[#171717]"
                   }`}
                 >
                   {page}
@@ -148,12 +164,23 @@ export default function Pagination({
               type="button"
               onClick={() => goToPage(currentPage + 1)}
               disabled={currentPage === totalPages}
-              aria-label="Ir a la pagina siguiente"
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#F5F5F5] bg-[#FFFFFF] text-[#000000]/60 transition-colors hover:border-[#000000]/20 hover:text-[#000000] disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Ir a la página siguiente"
+              className="flex h-9 w-9 items-center justify-center text-[#171717]/55 transition-colors hover:bg-[#F7F7F6] hover:text-[#171717] disabled:pointer-events-none disabled:opacity-30"
             >
               <FiChevronRight className="h-4 w-4" />
             </button>
-          </div>
+
+            {showLastPageButton && (
+              <button
+                type="button"
+                onClick={() => goToPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="border-l border-[#E5E5E5] px-3 text-xs font-medium text-[#171717]/60 transition-colors hover:bg-[#F7F7F6] hover:text-[#171717] disabled:pointer-events-none disabled:opacity-30"
+              >
+                Última
+              </button>
+            )}
+          </nav>
         )}
       </div>
     </div>

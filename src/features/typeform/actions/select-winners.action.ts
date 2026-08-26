@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getWorkspaceAccessContext } from "@/features/admin/workspaces/services/workspace-access";
 import { createAuditLog } from "@/features/admin/audit/services/audit-log.service";
+import { prisma } from "@/lib/prisma";
 
 const WINNER_COOKIE_PREFIX = "winner_selection";
 
@@ -14,10 +15,50 @@ export async function selectWinnersAction(
 ) {
   const { user, workspace } = await getWorkspaceAccessContext(workspaceId);
 
-  const canSelectWinners =
-    user.globalRole === "SUPER_ADMIN" || workspace.role === "EDITOR";
+  const dbAccess = await prisma.userWorkspace.findUnique({
+    where: {
+      userId_workspaceId: {
+        userId: user.id,
+        workspaceId,
+      },
+    },
+    select: {
+      userId: true,
+      workspaceId: true,
+      role: true,
+      createdAt: true,
+    },
+  });
+
+  const effectiveWorkspaceRole = dbAccess?.role ?? workspace.role;
+
+  console.log("[WINNER_PERMISSION_CHECK]", {
+    workspaceId,
+    formId,
+    currentUserId: user.id,
+    currentUserEmail: user.email,
+    currentUserGlobalRole: user.globalRole,
+    computedWorkspaceRole: workspace.role,
+    dbWorkspaceRole: dbAccess?.role ?? null,
+    effectiveWorkspaceRole,
+    dbUserWorkspace: dbAccess,
+    workspaceName: workspace.name,
+    workspaceTypeformId: workspace.typeformId,
+    canSelectWinners: effectiveWorkspaceRole === "EDITOR",
+  });
+
+  const canSelectWinners = effectiveWorkspaceRole === "EDITOR";
 
   if (!canSelectWinners) {
+    console.log("[WINNER_PERMISSION_DENIED]", {
+      workspaceId,
+      formId,
+      currentUserId: user.id,
+      currentUserEmail: user.email,
+      currentUserGlobalRole: user.globalRole,
+      workspaceRole: workspace.role,
+      workspaceName: workspace.name,
+    });
     redirect(`/workspaces/${workspaceId}/forms/${formId}/responses?winnerError=forbidden`);
   }
 
@@ -42,6 +83,70 @@ export async function selectWinnersAction(
     typeof formData.get("reason") === "string" && formData.get("reason")
       ? String(formData.get("reason"))
       : "Seleccion manual de ganadores";
+
+  const localForm = await prisma.form.findUnique({
+    where: { typeformId: formId },
+    select: { id: true },
+  });
+
+  if (!localForm) {
+    redirect(`/workspaces/${workspaceId}/forms/${formId}/responses?winnerError=forbidden`);
+  }
+
+  const existingWinnerRows = await prisma.formWinner.findMany({
+    where: {
+      formId: localForm.id,
+      workspaceId,
+    },
+    select: {
+      responseToken: true,
+    },
+  });
+
+  const existingWinnerTokens = new Set(
+    existingWinnerRows.map((winner) => winner.responseToken),
+  );
+  const tokensToRemove = [...existingWinnerTokens].filter(
+    (token) => !winnerTokens.includes(token),
+  );
+
+  if (tokensToRemove.length > 0) {
+    await prisma.formWinner.deleteMany({
+      where: {
+        formId: localForm.id,
+        workspaceId,
+        responseToken: {
+          in: tokensToRemove,
+        },
+      },
+    });
+  }
+
+  await Promise.all(
+    winnerTokens.map(async (token) => {
+      await prisma.formWinner.upsert({
+        where: {
+          formId_responseToken: {
+            formId: localForm.id,
+            responseToken: token,
+          },
+        },
+        update: {
+          reason,
+          selectedByUserId: user.id,
+          selectedAt: new Date(),
+        },
+        create: {
+          formId: localForm.id,
+          workspaceId,
+          responseToken: token,
+          reason,
+          selectedByUserId: user.id,
+          selectedAt: new Date(),
+        },
+      });
+    }),
+  );
 
   const cookieStore = await cookies();
   const cookieName = `${WINNER_COOKIE_PREFIX}:${workspaceId}:${formId}`;

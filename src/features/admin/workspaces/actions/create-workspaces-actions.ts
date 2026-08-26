@@ -45,6 +45,23 @@ export async function createWorkspaceAction(data: unknown) {
       },
     });
 
+    await prisma.userWorkspace.upsert({
+      where: {
+        userId_workspaceId: {
+          userId: user.id,
+          workspaceId: workspace.id,
+        },
+      },
+      update: {
+        role: "EDITOR",
+      },
+      create: {
+        userId: user.id,
+        workspaceId: workspace.id,
+        role: "EDITOR",
+      },
+    });
+
     const duplicated = await createDefaultTypeformFormForWorkspace({
       baseFormId,
       workspaceTypeformId: typeformWorkspace.id,

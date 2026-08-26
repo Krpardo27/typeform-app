@@ -51,6 +51,7 @@ export default function GlobalSearchForm({
   const effectiveWorkspaceHrefMode =
     workspaceHrefMode ??
     (pathname?.startsWith("/workspaces") ? "workspaces" : "admin");
+  const canRequestParticipantResults = effectiveWorkspaceHrefMode === "admin";
   const responseRouteMatch = pathname?.match(
     /^\/workspaces\/([^/]+)\/forms\/([^/]+)\/responses\/?$/,
   );
@@ -120,7 +121,9 @@ export default function GlobalSearchForm({
                   workspaceId: currentWorkspaceId,
                 }
               : {}),
-            ...(currentResponseWorkspaceId && currentResponseFormId
+            ...(canRequestParticipantResults &&
+            currentResponseWorkspaceId &&
+            currentResponseFormId
               ? {
                   includeParticipants: "1",
                   workspaceId: currentResponseWorkspaceId,
@@ -175,6 +178,7 @@ export default function GlobalSearchForm({
     currentResponseFormId,
     currentResponseWorkspaceId,
     currentWorkspaceId,
+    canRequestParticipantResults,
     effectiveWorkspaceHrefMode,
     includeForms,
     minLength,

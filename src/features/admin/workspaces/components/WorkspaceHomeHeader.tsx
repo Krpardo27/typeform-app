@@ -12,7 +12,7 @@ export function WorkspaceHomeHeader({
   currentUserLabel,
 }: WorkspaceHomeHeaderProps) {
 
-  console.log(workspaceRole)
+  console.log('Editor', workspaceRole)
 
   return (
     <header className="mt-6 border-b border-[#F5F5F5] pb-6 sm:mt-8 sm:pb-7">

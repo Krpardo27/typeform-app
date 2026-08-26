@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import { LuSearch, LuTrophy } from "react-icons/lu";
+import FormSubmit from "../forms/FormSubmit";
 
 type WinnerCandidate = {
   token: string;
@@ -17,12 +18,33 @@ type WinnerSelectionPanelProps = {
   candidates: WinnerCandidate[];
   currentPage: number;
   itemsPerPage: number;
+  pageSizeValue?: string;
   winnerSelection?: string;
   winnerError?: string;
 };
 
-function getParticipantReference(candidate?: WinnerCandidate, fallback?: string) {
-  const rawNumber = String(candidate?.participantNumber ?? candidate?.detail ?? "")
+export function deduplicateWinnerCandidates(candidates: WinnerCandidate[]) {
+  const seen = new Set<string>();
+
+  return candidates.filter((candidate) => {
+    const key = `${candidate.token}|${candidate.label}|${candidate.detail ?? ""}|${candidate.participantNumber ?? ""}`;
+
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+}
+
+function getParticipantReference(
+  candidate?: WinnerCandidate,
+  fallback?: string,
+) {
+  const rawNumber = String(
+    candidate?.participantNumber ?? candidate?.detail ?? "",
+  )
     .replace(/^#/, "")
     .trim();
 
@@ -50,30 +72,45 @@ export function WinnerSelectionPanel({
   candidates,
   currentPage,
   itemsPerPage,
+  pageSizeValue,
   winnerSelection,
   winnerError,
 }: WinnerSelectionPanelProps) {
   const formRef = useRef<HTMLFormElement>(null);
-  const submitConfirmedRef = useRef(false);
+  const allowNativeSubmitRef = useRef(false);
   const [query, setQuery] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const uniqueCandidates = useMemo(
+    () => deduplicateWinnerCandidates(candidates),
+    [candidates],
+  );
+
   const [selectedTokens, setSelectedTokens] = useState<Set<string>>(
     () =>
       new Set(
-        candidates
+        uniqueCandidates
           .filter((candidate) => candidate.selected)
           .map((candidate) => candidate.token),
       ),
   );
 
+  const candidateSelectionKey = uniqueCandidates
+    .map(
+      (candidate) =>
+        `${candidate.token}:${candidate.selected ? "selected" : "unselected"}`,
+    )
+    .join("|");
+
   const filteredCandidates = useMemo(() => {
     const normalized = query.trim().toLowerCase();
 
-    if (!normalized) return candidates;
+    if (!normalized) return uniqueCandidates;
 
     const normalizedQuery = normalized.replace(/^#/, "");
     const isNumericQuery = /^\d+$/.test(normalizedQuery);
 
-    return candidates.filter((candidate) => {
+    return uniqueCandidates.filter((candidate) => {
       const participantNumber = String(candidate.participantNumber ?? "")
         .replace(/^#/, "")
         .trim()
@@ -81,7 +118,8 @@ export function WinnerSelectionPanel({
       const detail = String(candidate.detail ?? "")
         .replace(/^#/, "")
         .toLowerCase();
-      const haystack = `${candidate.label} ${detail} ${participantNumber}`.toLowerCase();
+      const haystack =
+        `${candidate.label} ${detail} ${participantNumber}`.toLowerCase();
 
       if (isNumericQuery) {
         return (
@@ -93,74 +131,91 @@ export function WinnerSelectionPanel({
 
       return haystack.includes(normalizedQuery);
     });
-  }, [candidates, query]);
+  }, [uniqueCandidates, query]);
 
-  const handleSubmit: NonNullable<React.ComponentProps<"form">["onSubmit"]> =
-    async (event) => {
-      if (submitConfirmedRef.current) {
-        submitConfirmedRef.current = false;
-        return;
-      }
+  const confirmAndSubmit = async () => {
+    const form = formRef.current;
+    if (!form || isSubmitting) {
+      return;
+    }
 
-      event.preventDefault();
+    const selectedInputs = Array.from(
+      form.querySelectorAll<HTMLInputElement>(
+        'input[name="winnerToken"]:checked',
+      ),
+    );
+    const reasonInput = form.querySelector<HTMLInputElement>(
+      'input[name="reason"]',
+    );
+    const selectedCount = selectedInputs.length;
 
-      const form = event.currentTarget;
-      const selectedInputs = Array.from(
-        form.querySelectorAll<HTMLInputElement>('input[name="winnerToken"]:checked'),
-      );
-      const reasonInput = form.querySelector<HTMLInputElement>('input[name="reason"]');
-      const selectedCount = selectedInputs.length;
-
-      if (selectedCount === 0) {
-        await Swal.fire({
-          title: "Sin selección",
-          text: "Debes seleccionar al menos un participante para continuar.",
-          icon: "warning",
-          background: "#FFFFFF",
-          color: "#000000",
-          confirmButtonColor: "#10b981",
-        });
-        return;
-      }
-
-      const selectedReferences = selectedInputs
-        .slice(0, 3)
-        .map((input) => {
-          const candidate = candidates.find((item) => item.token === input.value);
-          return getParticipantReference(candidate, input.value);
-        });
-      const selectedPreview = formatParticipantReferences(selectedReferences);
-
-      const hasMore = selectedCount > 3;
-      const participantLabel = selectedCount === 1 ? "Participante" : "Participantes";
-      const participantText = hasMore
-        ? `${participantLabel}: ${selectedPreview} y ${selectedCount - 3} participante(s) más.`
-        : `${participantLabel}: ${selectedPreview}`;
-
-      const result = await Swal.fire({
-        title: selectedCount === 1 ? "Confirmar ganador" : "Confirmar ganadores",
-        text: participantText,
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonText: "Confirmar selección",
-        cancelButtonText: "Cancelar",
+    if (selectedCount === 0) {
+      await Swal.fire({
+        title: "Sin selección",
+        text: "Debes seleccionar al menos un participante para continuar.",
+        icon: "warning",
         background: "#FFFFFF",
         color: "#000000",
         confirmButtonColor: "#10b981",
       });
+      return;
+    }
 
-      if (!result.isConfirmed) {
-        return;
-      }
+    const selectedReferences = selectedInputs.slice(0, 3).map((input) => {
+      const candidate = candidates.find((item) => item.token === input.value);
+      return getParticipantReference(candidate, input.value);
+    });
+    const selectedPreview = formatParticipantReferences(selectedReferences);
 
-      if (!reasonInput?.value.trim()) {
-        reasonInput?.focus();
-        return;
-      }
+    const hasMore = selectedCount > 3;
+    const participantLabel =
+      selectedCount === 1 ? "Participante" : "Participantes";
+    const participantText = hasMore
+      ? `${participantLabel}: ${selectedPreview} y ${selectedCount - 3} participante(s) más.`
+      : `${participantLabel}: ${selectedPreview}`;
 
-      submitConfirmedRef.current = true;
-      formRef.current?.requestSubmit();
-    };
+    const result = await Swal.fire({
+      title: selectedCount === 1 ? "Confirmar ganador" : "Confirmar ganadores",
+      text: participantText,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Confirmar selección",
+      cancelButtonText: "Cancelar",
+      background: "#FFFFFF",
+      color: "#000000",
+      confirmButtonColor: "#10b981",
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
+    if (!reasonInput?.value.trim()) {
+      reasonInput?.focus();
+      return;
+    }
+
+    setIsSubmitting(true);
+    allowNativeSubmitRef.current = true;
+    form.requestSubmit();
+  };
+
+  const handleSubmit: NonNullable<
+    React.ComponentProps<"form">["onSubmit"]
+  > = async (event) => {
+    if (allowNativeSubmitRef.current) {
+      allowNativeSubmitRef.current = false;
+      return;
+    }
+
+    event.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
+
+    await confirmAndSubmit();
+  };
 
   const handleCandidateChange = (token: string, checked: boolean) => {
     setSelectedTokens((prev) => {
@@ -172,42 +227,44 @@ export function WinnerSelectionPanel({
   };
 
   return (
-    <section className="mt-6 rounded-xl border border-[#00BFA5]/30 bg-[#00BFA5]/8 p-5">
-      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-[#00BFA5]">
-        <LuTrophy className="size-3.5" />
-        <span>Selección de ganadores</span>
-      </div>
-
-      <div className="mt-3 flex flex-col gap-3 rounded-xl border border-[#00BFA5]/20 bg-[#FFFFFF] p-3 sm:flex-row sm:items-center sm:justify-between">
+    <section
+      key={candidateSelectionKey}
+      className="mt-6 max-w-3xl border-t border-[#E8E8E6] pt-6"
+    >
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-base font-semibold text-[#000000]">
-            Elige uno o más participantes
-          </h2>
-          <p className="mt-1 text-sm text-[#000000]/60">
-            Solo en este flujo se mostrarán datos completos de los participantes seleccionados.
+          <div className="flex items-center gap-2">
+            <LuTrophy className="size-4 text-[#00A88F]" />
+            <h2 className="text-sm font-semibold text-[#000000]">
+              Selección de ganadores
+            </h2>
+          </div>
+
+          <p className="mt-1 text-sm text-[#000000]/55">
+            Selecciona uno o más participantes para mostrar sus datos completos.
           </p>
         </div>
 
-        <div className="inline-flex items-center gap-2 rounded-full border border-[#00BFA5]/20 bg-[#00BFA5]/8 px-2.5 py-1.5 text-xs font-medium text-[#00BFA5]">
-          <LuTrophy className="size-3.5" />
+        <span className="shrink-0 text-sm text-[#000000]/50">
           {selectedTokens.size} seleccionados
-        </div>
+        </span>
       </div>
 
       {winnerSelection === "1" && (
-        <p className="mt-3 text-sm text-emerald-400">
-          Ganadores seleccionados. La data completa solo está visible para los elegidos.
+        <p className="mt-4 text-sm text-[#00A88F]">
+          Ganadores seleccionados. La información completa solo está disponible
+          para los participantes elegidos.
         </p>
       )}
 
       {winnerError === "empty" && (
-        <p className="mt-3 text-sm text-amber-400">
+        <p className="mt-4 text-sm text-[#B45309]">
           Debes seleccionar al menos un participante para continuar.
         </p>
       )}
 
       {winnerError === "forbidden" && (
-        <p className="mt-3 text-sm text-rose-400">
+        <p className="mt-4 text-sm text-[#DC2626]">
           No tienes permisos para seleccionar ganadores en este formulario.
         </p>
       )}
@@ -216,94 +273,149 @@ export function WinnerSelectionPanel({
         ref={formRef}
         action={action}
         onSubmit={handleSubmit}
-        className="mt-4 space-y-4"
+        aria-busy={isSubmitting}
+        className={`mt-5 space-y-5 transition-opacity ${
+          isSubmitting ? "pointer-events-none opacity-60" : "opacity-100"
+        }`}
       >
         <input type="hidden" name="page" value={String(currentPage)} />
-        <input type="hidden" name="pageSize" value={String(itemsPerPage)} />
+        <input
+          type="hidden"
+          name="pageSize"
+          value={pageSizeValue ?? String(itemsPerPage)}
+        />
 
-        <label className="relative block">
-          <span className="sr-only">Buscar participante</span>
-          <LuSearch className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#000000]/40" />
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar por nombre o # participante"
-            className="w-full rounded-xl border border-[#F5F5F5] bg-[#FFFFFF] py-2.5 pl-10 pr-3 text-sm text-[#000000] placeholder:text-[#000000]/40 outline-none transition focus:border-[#00BFA5]"
-          />
-        </label>
+        <div>
+          <label
+            htmlFor="winner-search"
+            className="mb-2 block text-sm font-medium text-[#000000]"
+          >
+            Participantes
+          </label>
 
-        <div className="grid gap-2 md:grid-cols-2">
-          {filteredCandidates.length === 0 ? (
-            <div className="md:col-span-2 rounded-xl border border-dashed border-[#F5F5F5] bg-[#FFFFFF] px-3 py-5 text-center text-sm text-[#000000]/55">
-              No hay participantes que coincidan con tu búsqueda.
-            </div>
-          ) : (
-            filteredCandidates.map((candidate) => (
-              <label
-                key={`winner-${candidate.token}`}
-                className="flex items-center gap-2 rounded-lg border border-[#F5F5F5] bg-[#FFFFFF] px-3 py-2 text-sm text-[#000000]/75"
-              >
-                <input
-                  type="checkbox"
-                  name="winnerToken"
-                  value={candidate.token}
-                  checked={selectedTokens.has(candidate.token)}
-                  onChange={(event) => {
-                    handleCandidateChange(candidate.token, event.target.checked);
-                  }}
-                  className="size-4 accent-[#00BFA5]"
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate">{candidate.label}</span>
-                  {candidate.detail && (
-                    <span className="block truncate text-xs text-[#000000]/50">
-                      {candidate.detail}
-                    </span>
-                  )}
-                </span>
-              </label>
-            ))
-          )}
+          <div className="relative">
+            <LuSearch className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#000000]/35" />
+
+            <input
+              id="winner-search"
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Buscar por nombre o número de participante"
+              disabled={isSubmitting}
+              className="w-full border border-[#DCDCD9] bg-white py-2.5 pl-10 pr-3 text-sm text-[#000000] placeholder:text-[#000000]/40 outline-none transition focus:border-[#000000] disabled:cursor-not-allowed disabled:opacity-60"
+            />
+          </div>
         </div>
 
-        <label className="block">
-          <span className="mb-1 block text-xs uppercase tracking-wide text-zinc-500">
+        <div className="border border-[#E8E8E6] bg-white">
+          <div className="border-b border-[#E8E8E6] px-3 py-2">
+            <span className="text-xs font-medium text-[#000000]/50">
+              {filteredCandidates.length} participantes
+            </span>
+          </div>
+
+          <div className="max-h-[22rem] overflow-y-auto">
+            {filteredCandidates.length === 0 ? (
+              <div className="px-4 py-8 text-center text-sm text-[#000000]/50">
+                No hay participantes que coincidan con tu búsqueda.
+              </div>
+            ) : (
+              <div className="divide-y divide-[#E8E8E6]">
+                {filteredCandidates.map((candidate) => (
+                  <label
+                    key={`winner-${candidate.token}`}
+                    className="flex cursor-pointer items-center gap-3 px-3 py-2.5 transition-colors hover:bg-[#F8F8F7]"
+                  >
+                    <input
+                      type="checkbox"
+                      name="winnerToken"
+                      value={candidate.token}
+                      checked={selectedTokens.has(candidate.token)}
+                      disabled={isSubmitting}
+                      onChange={(event) => {
+                        handleCandidateChange(
+                          candidate.token,
+                          event.target.checked,
+                        );
+                      }}
+                      className="size-4 accent-[#00BFA5] disabled:cursor-not-allowed"
+                    />
+
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm text-[#000000]">
+                        {candidate.label}
+                      </span>
+
+                      {candidate.detail && (
+                        <span className="mt-0.5 block truncate text-xs text-[#000000]/45">
+                          {candidate.detail}
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <label
+            htmlFor="winner-reason"
+            className="mb-2 block text-sm font-medium text-[#000000]"
+          >
             Motivo de selección
-          </span>
+          </label>
+
           <input
+            id="winner-reason"
             type="text"
             name="reason"
             defaultValue="Selección manual de ganadores"
             required
-            className="w-full rounded-lg border border-[#F5F5F5] bg-[#FFFFFF] px-3 py-2 text-sm text-[#000000] outline-none transition focus:border-[#00BFA5]"
+            disabled={isSubmitting}
+            className="w-full border border-[#DCDCD9] bg-white px-3 py-2.5 text-sm text-[#000000] outline-none transition focus:border-[#000000] disabled:cursor-not-allowed disabled:opacity-60"
           />
-        </label>
+        </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="submit"
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#00BFA5] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
-          >
-            <LuTrophy className="size-4" />
-            Confirmar ganadores
-          </button>
+        <div className="flex flex-col gap-3 border-t border-[#E8E8E6] pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-xs text-[#000000]/50">
+            {selectedTokens.size === 0
+              ? "Ningún participante seleccionado"
+              : `${selectedTokens.size} participante${
+                  selectedTokens.size !== 1 ? "s" : ""
+                } seleccionado${selectedTokens.size !== 1 ? "s" : ""}`}
+          </span>
 
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedTokens(new Set());
-              const inputs = Array.from(
-                document.querySelectorAll<HTMLInputElement>('input[name="winnerToken"]'),
-              );
-              inputs.forEach((input) => {
-                input.checked = false;
-              });
-            }}
-            className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-[#F5F5F5] bg-[#FFFFFF] px-4 py-2 text-sm font-medium text-[#000000]/70 transition hover:border-[#000000]/15 hover:text-[#000000]"
-          >
-            Limpiar selección
-          </button>
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              disabled={isSubmitting || selectedTokens.size === 0}
+              onClick={() => {
+                setSelectedTokens(new Set());
+
+                const inputs = Array.from(
+                  document.querySelectorAll<HTMLInputElement>(
+                    'input[name="winnerToken"]',
+                  ),
+                );
+
+                inputs.forEach((input) => {
+                  input.checked = false;
+                });
+              }}
+              className="px-3 py-2 text-sm font-medium text-[#000000]/60 transition-colors hover:text-[#000000] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Limpiar
+            </button>
+
+            <FormSubmit
+              value={isSubmitting ? "Guardando..." : "Confirmar ganadores"}
+              disabled={isSubmitting || selectedTokens.size === 0}
+              className="border border-[#00BFA5] bg-[#00BFA5] px-4 py-2 text-sm font-medium text-white transition-colors hover:border-[#00A88F] hover:bg-[#00A88F] disabled:cursor-not-allowed disabled:border-[#DCDCD9] disabled:bg-[#DCDCD9]"
+            />
+          </div>
         </div>
       </form>
     </section>

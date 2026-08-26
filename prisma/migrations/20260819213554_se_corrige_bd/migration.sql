@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "form_winner" ADD COLUMN     "selectedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
