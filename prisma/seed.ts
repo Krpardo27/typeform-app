@@ -1,18 +1,29 @@
 import { prisma } from "@/lib/prisma";
 import { adminEmails, editorTestEmail } from "./data/usuarios";
+import { allowedUsers } from "./data/allowed-users";
 import { radioWorkspaces } from "./data/workspaces";
 import { WorkspaceRole } from "@/generated/prisma/client";
 
 async function main() {
   console.log("🌱 Iniciando seed...");
 
-  // 1. Whitelist
-  const allEmails = [...adminEmails, editorTestEmail];
+  const superAdminEmails = new Set<string>([
+    ...adminEmails,
+    "kevin.pardov26@gmail.com",
+  ]);
 
-  await prisma.allowedUser.createMany({
-    data: allEmails.map((email) => ({ email })),
-    skipDuplicates: true,
-  });
+  const allEmails = [...new Set([...allowedUsers, ...adminEmails, editorTestEmail])];
+
+  // 1. Whitelist
+  await Promise.all(
+    allEmails.map((email) =>
+      prisma.allowedUser.upsert({
+        where: { email },
+        update: {},
+        create: { email },
+      }),
+    ),
+  );
 
   console.log("Allowed users creados");
 
@@ -21,14 +32,16 @@ async function main() {
     allEmails.map((email) =>
       prisma.user.upsert({
         where: { email },
-        update: {},
+        update: {
+          globalRole: superAdminEmails.has(email) ? "SUPER_ADMIN" : "USER",
+          status: superAdminEmails.has(email) ? "ACTIVE" : undefined,
+        },
         create: {
           id: crypto.randomUUID(),
           email,
           name: email.split("@")[0],
-          globalRole: (adminEmails as readonly string[]).includes(email)
-            ? "SUPER_ADMIN"
-            : "USER",
+          globalRole: superAdminEmails.has(email) ? "SUPER_ADMIN" : "USER",
+          status: superAdminEmails.has(email) ? "ACTIVE" : "PENDING",
         },
       }),
     ),

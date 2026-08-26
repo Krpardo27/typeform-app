@@ -138,7 +138,7 @@ export default async function WorkspaceDetailPage({
                         </h2>
                         {appForm && (
                           <span className="rounded-md border border-[#18181B]/30 px-2 py-0.5 text-[11px] font-medium text-[#18181B]">
-                            App
+                            Creado desde App
                           </span>
                         )}
                       </div>

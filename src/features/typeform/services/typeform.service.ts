@@ -339,15 +339,26 @@ export async function getTypeformFormResponses(
   options?: {
     page?: number;
     pageSize?: number;
+    after?: string;
+    before?: string;
   },
 ) {
   const page = options?.page ?? 1;
   const pageSize = options?.pageSize ?? 50;
+  const after = options?.after;
+  const before = options?.before;
 
   const searchParams = new URLSearchParams({
-    page: String(page),
     page_size: String(pageSize),
   });
+
+  if (after) {
+    searchParams.set("after", after);
+  } else if (before) {
+    searchParams.set("before", before);
+  } else {
+    searchParams.set("page", String(page));
+  }
 
   return typeformRequest<TypeformResponsesResponse>(
     `/forms/${encodeURIComponent(formId)}/responses?${searchParams}`,

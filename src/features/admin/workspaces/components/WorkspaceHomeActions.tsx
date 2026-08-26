@@ -51,7 +51,7 @@ export function WorkspaceHomeActions({
 
       <Link
         href={`/workspaces/${workspaceId}/forms`}
-        className="rounded-xl border border-[#F5F5F5] bg-[#FFFFFF] p-5 transition hover:border-[#7C3AED]/40 hover:bg-[#F5F5F5]/40"
+        className="rounded-xl border  bg-[#FFFFFF] p-5 transition border-[#7C3AED] hover:border-[#7C3AED]/40 hover:bg-[#F5F5F5]/40"
       >
         <div className="flex items-center gap-3">
           <span className="flex size-10 items-center justify-center rounded-lg border border-[#F5F5F5] bg-[#F5F5F5] text-[#7C3AED]">

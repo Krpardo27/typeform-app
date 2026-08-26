@@ -21,6 +21,13 @@ export function WorkspaceHeader({
 }: WorkspaceHeaderProps) {
   const hasTopRow = Boolean((backHref && backLabel) || eyebrow);
 
+  console.log("[WORKSPACE_HEADER] current role context", {
+    hasTopRow,
+    backHref,
+    backLabel,
+    eyebrow: Boolean(eyebrow),
+  });
+
   return (
     <header className="relative">
       <div className="absolute left-0 top-0 h-px w-16 bg-linear-to-r from-[#FF5C35] to-transparent" />

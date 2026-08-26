@@ -168,7 +168,7 @@ export function AuthorizeMemberForm({ workspaces }: Props) {
         </label>
 
         {assignments.length > 0 && (
-            <div className="rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] p-4">
+          <div className="rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] p-4">
             <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[#737373]">
               Roles por workspace
             </p>

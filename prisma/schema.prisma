@@ -27,21 +27,22 @@ enum UserStatus {
 }
 
 model User {
-  id            String     @id
+  id            String  @id
   name          String
   email         String
-  emailVerified Boolean    @default(false)
+  emailVerified Boolean @default(false)
   image         String?
 
-  globalRole    GlobalRole @default(USER)
-  status UserStatus @default(PENDING)
-  
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  sessions      Session[]
-  accounts      Account[]
+  globalRole GlobalRole @default(USER)
+  status     UserStatus @default(PENDING)
 
-  workspaces UserWorkspace[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  sessions  Session[]
+  accounts  Account[]
+
+  workspaces      UserWorkspace[]
+  selectedWinners FormWinner[]    @relation("WinnerSelectedBy")
 
   @@unique([email])
   @@map("user")
@@ -147,9 +148,9 @@ model AuditLog {
 }
 
 model Form {
-  id          String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  typeformId  String   @unique   // puente con Typeform
+  typeformId  String  @unique // puente con Typeform
   title       String
   description String?
   selfUrl     String?
@@ -157,11 +158,39 @@ model Form {
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  winners FormWinner[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([workspaceId])
   @@map("form")
+}
+
+model FormWinner {
+  id String @id @default(cuid())
+
+  formId String
+  form   Form   @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  responseToken    String
+  participantEmail String?
+  reason           String?
+
+  selectedByUserId String?
+  selectedByUser   User?   @relation("WinnerSelectedBy", fields: [selectedByUserId], references: [id], onDelete: SetNull)
+
+  selectedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@unique([formId, responseToken])
+  @@index([formId])
+  @@index([workspaceId])
+  @@index([selectedByUserId])
+  @@map("form_winner")
 }
 
 model Workspace {
@@ -180,8 +209,9 @@ model Workspace {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users UserWorkspace[]
-  forms Form[]
+  users   UserWorkspace[]
+  forms   Form[]
+  winners FormWinner[]
 
   @@index([typeformId])
   @@map("workspace")

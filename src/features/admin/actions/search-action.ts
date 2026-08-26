@@ -16,6 +16,7 @@ import {
 
 const MIN_SEARCH_LENGTH = 2;
 const MAX_RESULTS_PER_SECTION = 12;
+const WORKSPACE_FORMS_SEARCH_PAGE_SIZE = 200;
 
 function looksLikeInternalWorkspaceId(value: string) {
   return /^c[a-z0-9]{20,}$/i.test(value);
@@ -163,6 +164,28 @@ async function searchVisibleWorkspaces(
     .slice(0, MAX_RESULTS_PER_SECTION);
 }
 
+async function getAllWorkspaceForms(workspaceLookupKey: string) {
+  const firstPage = await getWorkspaceForms(workspaceLookupKey, {
+    page: 1,
+    pageSize: WORKSPACE_FORMS_SEARCH_PAGE_SIZE,
+  });
+
+  if (firstPage.page_count <= 1) {
+    return firstPage.items;
+  }
+
+  const remainingPages = await Promise.all(
+    Array.from({ length: firstPage.page_count - 1 }, (_, index) =>
+      getWorkspaceForms(workspaceLookupKey, {
+        page: index + 2,
+        pageSize: WORKSPACE_FORMS_SEARCH_PAGE_SIZE,
+      }),
+    ),
+  );
+
+  return [firstPage, ...remainingPages].flatMap((page) => page.items);
+}
+
 async function searchWorkspaceForms(
   currentUser: {
     id: string;
@@ -182,10 +205,10 @@ async function searchWorkspaceForms(
   const workspaceLookupKey = looksLikeInternalWorkspaceId(workspace.typeformId)
     ? workspace.name
     : workspace.typeformId;
-  const forms = await getWorkspaceForms(workspaceLookupKey);
+  const forms = await getAllWorkspaceForms(workspaceLookupKey);
   const queryLower = query.toLowerCase();
 
-  return forms.items
+  return forms
     .filter((form) => {
       const byTitle = form.title.toLowerCase().includes(queryLower);
       const byId = form.id.toLowerCase().includes(queryLower);
@@ -312,15 +335,15 @@ export async function searchGlobalAction(
     throw new Error("Debes iniciar sesión para usar el buscador");
   }
 
+  const isSuperAdmin = currentUser.globalRole === "SUPER_ADMIN";
+
   const [workspaces, authorizedUsers, forms, participants] = await Promise.all([
     searchVisibleWorkspaces(currentUser, query),
-    currentUser.globalRole === "SUPER_ADMIN"
-      ? searchAuthorizedUsers(query)
-      : Promise.resolve([]),
+    isSuperAdmin ? searchAuthorizedUsers(query) : Promise.resolve([]),
     options?.includeForms && options.workspaceId
       ? searchWorkspaceForms(currentUser, options.workspaceId, query)
       : Promise.resolve([]),
-    options?.includeParticipants && options.workspaceId && options.formId
+    isSuperAdmin && options?.includeParticipants && options.workspaceId && options.formId
       ? searchFormParticipants(currentUser, {
           workspaceId: options.workspaceId,
           formId: options.formId,

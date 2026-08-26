@@ -25,7 +25,6 @@ export default async function NewWorkspaceFormPage({
     notFound();
   }
 
-  const forms = await getWorkspaceForms(workspace.typeformId);
   const createDefaultForm = createDefaultFormForWorkspaceAction.bind(
     null,
     workspace.id,
@@ -38,13 +37,15 @@ export default async function NewWorkspaceFormPage({
   const itemsPerPage = PAGE_SIZE_OPTIONS.includes(requestedPageSize)
     ? requestedPageSize
     : DEFAULT_PAGE_SIZE;
-  const totalItems = forms.items.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+
+  const forms = await getWorkspaceForms(workspace.typeformId, {
+    page: requestedPage,
+    pageSize: itemsPerPage,
+  });
+
+  const totalItems = forms.total_items;
+  const totalPages = Math.max(1, forms.page_count);
   const currentPage = Math.min(Math.max(requestedPage, 1), totalPages);
-  const paginatedForms = forms.items.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
-  );
 
   return (
     <>
@@ -57,7 +58,7 @@ export default async function NewWorkspaceFormPage({
         <EmptyBaseFormsState action={createDefaultForm} />
       ) : (
         <section className="space-y-6">
-          <BaseFormsGrid workspaceId={workspace.id} forms={paginatedForms} />
+          <BaseFormsGrid workspaceId={workspace.id} forms={forms.items} />
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

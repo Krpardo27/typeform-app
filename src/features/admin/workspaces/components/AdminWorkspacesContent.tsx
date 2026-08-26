@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { syncTypeformWorkspaceIds } from "@/features/admin/workspaces/services/sync-typeform-workspace-ids";
+import {
+  ensureAppWorkspacesFromTypeform,
+  syncTypeformWorkspaceIds,
+} from "@/features/admin/workspaces/services/sync-typeform-workspace-ids";
 import { getTypeformWorkspaces } from "@/features/typeform/services/typeform.service";
 import Pagination from "@/shared/components/Pagination";
 import { AdminWorkspacesGrid } from "./AdminWorkspacesGrid";
@@ -17,6 +20,7 @@ export async function AdminWorkspacesContent({
 }: Props) {
   const typeformWorkspaces = await getTypeformWorkspaces();
 
+  await ensureAppWorkspacesFromTypeform(typeformWorkspaces.items);
   await syncTypeformWorkspaceIds(typeformWorkspaces.items);
 
   const appWorkspaces = await prisma.workspace.findMany({

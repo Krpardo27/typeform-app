@@ -148,7 +148,10 @@ export function WorkspaceFormResponsesList({
     return tokens.filter((token) => available.has(token));
   }
 
-  const normalizedExpandedTokens = filterUnavailableExpanded(expandedTokens);
+  const normalizedExpandedTokens = useMemo(
+    () => filterUnavailableExpanded(expandedTokens),
+    [expandedTokens, responseTokens],
+  );
 
   const allExpanded =
     responses.length > 0 &&
@@ -181,6 +184,8 @@ export function WorkspaceFormResponsesList({
         itemsPerPage={itemsPerPage}
         itemLabel="participantes"
         showPageSizeSelector
+        showAllPageSizeOption
+        showLastPageButton
       />
 
       {responses.length > 0 && (
@@ -320,18 +325,9 @@ export function WorkspaceFormResponsesList({
 
                 <div className="flex shrink-0 items-center gap-2">
                   <span
-                    className={`
-                      inline-flex items-center gap-1.5
-                      rounded-full
-                      border
-                      px-2.5 py-1
-                      text-xs
-                      ${
-                        isWinnerVisible
-                          ? "border-[#00BFA5]/30 bg-[#00BFA5]/10 text-[#00A88F]"
-                          : "border-[#FF5C35]/30 bg-[#FF5C35]/10 text-[#FF5C35]"
-                      }
-                    `}
+                    className={`inline-flex items-center gap-1.5 text-xs ${
+                      isWinnerVisible ? "text-[#00A88F]" : "text-[#FF5C35]"
+                    }`}
                   >
                     {isWinnerVisible ? (
                       <LuEye className="size-3.5" />
@@ -348,21 +344,21 @@ export function WorkspaceFormResponsesList({
                     type="button"
                     onClick={() => toggleToken(response.token)}
                     aria-expanded={isExpanded}
-                    aria-label={isExpanded ? "Contraer respuesta" : "Expandir respuesta"}
-                    className="flex size-7 items-center justify-center rounded-lg border border-[#E8E8E6] bg-[#F7F7F6] text-[#000000]/45 transition hover:bg-[#E8E8E6]"
+                    aria-label={
+                      isExpanded ? "Contraer respuesta" : "Expandir respuesta"
+                    }
+                    className="flex size-7 items-center justify-center text-black/50 transition-colors hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <LuChevronDown
-                      className={`
-                        size-4 shrink-0
-                        transition-transform
-                        ${isExpanded ? "rotate-180" : "rotate-0"}
-                      `}
+                      className={`size-4 transition-transform ${
+                        isExpanded ? "rotate-180" : ""
+                      }`}
                     />
                   </button>
                 </div>
               </div>
 
-              {isExpanded && (
+              {isExpanded ? (
                 <div className="mt-4 grid gap-4 lg:grid-cols-2">
                   <section className="space-y-2.5">
                     <p className="text-xs font-semibold uppercase tracking-wider text-[#000000]/45">
@@ -426,7 +422,7 @@ export function WorkspaceFormResponsesList({
                     )}
                   </section>
                 </div>
-              )}
+              ) : null}
             </article>
           );
         })
@@ -439,6 +435,8 @@ export function WorkspaceFormResponsesList({
         itemsPerPage={itemsPerPage}
         itemLabel="participantes"
         showPageSizeSelector
+        showAllPageSizeOption
+        showLastPageButton
       />
     </section>
   );
