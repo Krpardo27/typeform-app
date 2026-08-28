@@ -274,6 +274,9 @@ export default async function FormResponsesPage({
       unmaskTokens: revealedWinnerTokens,
     },
   );
+  const highlightedWinnerResponses = maskedWinnerCandidateResponses.filter(
+    (response) => revealedWinnerTokens.has(response.token),
+  );
   const revealedResponses = maskedResponses.filter((response) =>
     revealedWinnerTokens.has(response.token),
   );
@@ -385,6 +388,7 @@ export default async function FormResponsesPage({
         </section>
       ) : !isPageOutOfRange ? (
         <WorkspaceFormResponsesList
+          highlightedResponses={highlightedWinnerResponses}
           responses={maskedResponses}
           revealedWinnerTokens={Array.from(revealedWinnerTokens)}
           currentPage={currentPage}
