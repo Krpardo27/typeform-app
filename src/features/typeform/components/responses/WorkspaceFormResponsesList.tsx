@@ -15,6 +15,7 @@ import type { MaskedTypeformResponse } from "@/features/typeform/services/typefo
 
 type WorkspaceFormResponsesListProps = {
   highlightedResponses?: MaskedTypeformResponse[];
+  highlightedContactsByToken?: Record<string, string>;
   responses: MaskedTypeformResponse[];
   revealedWinnerTokens: string[];
   currentPage: number;
@@ -132,6 +133,7 @@ function ResponseArticle({
   isWinnerVisible,
   isExpanded,
   participantLabel,
+  contactOverride,
   variant = "default",
   onToggle,
 }: {
@@ -139,10 +141,11 @@ function ResponseArticle({
   isWinnerVisible: boolean;
   isExpanded: boolean;
   participantLabel: string;
+  contactOverride?: string;
   variant?: "default" | "winner";
   onToggle: () => void;
 }) {
-  const participantContact = getParticipantContact(response);
+  const participantContact = contactOverride ?? getParticipantContact(response);
   const isWinnerVariant = variant === "winner";
 
   return (
@@ -317,6 +320,7 @@ function ResponseArticle({
 
 export function WorkspaceFormResponsesList({
   highlightedResponses = [],
+  highlightedContactsByToken = {},
   responses,
   revealedWinnerTokens,
   currentPage,
@@ -469,6 +473,7 @@ export function WorkspaceFormResponsesList({
               isWinnerVisible={winnerTokenSet.has(response.token)}
               isExpanded={normalizedExpandedTokens.includes(response.token)}
               participantLabel={`Ganador #${index + 1}`}
+              contactOverride={highlightedContactsByToken[response.token]}
               variant="winner"
               onToggle={() => toggleToken(response.token)}
             />

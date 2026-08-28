@@ -7,11 +7,89 @@ import { createAuditLog } from "@/features/admin/audit/services/audit-log.servic
 import {
   formBelongsToWorkspace,
   getTypeformForm,
+  getTypeformFormResponses,
+  getTypeformResponseParticipantEmail,
   resolveWorkspaceTypeformId,
+  type TypeformResponseItem,
 } from "@/features/typeform/services/typeform.service";
 import { prisma } from "@/lib/prisma";
 
 const WINNER_COOKIE_PREFIX = "winner_selection";
+const WINNER_LOOKUP_PAGE_SIZE = 100;
+
+async function getWinnerResponsesByToken(formId: string, tokens: string[]) {
+  const responsesByToken = new Map<string, TypeformResponseItem>();
+  const remainingTokens = new Set(tokens);
+
+  function collectResponse(response: TypeformResponseItem) {
+    if (!remainingTokens.has(response.token)) {
+      return;
+    }
+
+    responsesByToken.set(response.token, response);
+    remainingTokens.delete(response.token);
+  }
+
+  try {
+    const directResult = await getTypeformFormResponses(formId, {
+      pageSize: Math.max(tokens.length, 1),
+      includedResponseIds: tokens,
+    });
+
+    for (const response of directResult.items) {
+      collectResponse(response);
+    }
+  } catch (error) {
+    console.warn("[WINNER_EMAIL_DIRECT_LOOKUP_FAILED]", {
+      formId,
+      selectedWinnerCount: tokens.length,
+      error,
+    });
+  }
+
+  let before: string | undefined;
+  let expectedTotal: number | null = null;
+
+  while (remainingTokens.size > 0) {
+    const pageResult = await getTypeformFormResponses(formId, {
+      pageSize: WINNER_LOOKUP_PAGE_SIZE,
+      before,
+    });
+
+    if (expectedTotal === null) {
+      expectedTotal = pageResult.total_items;
+    }
+
+    if (pageResult.items.length === 0) {
+      break;
+    }
+
+    for (const response of pageResult.items) {
+      collectResponse(response);
+    }
+
+    if (remainingTokens.size === 0) {
+      break;
+    }
+
+    if (pageResult.items.length < WINNER_LOOKUP_PAGE_SIZE) {
+      break;
+    }
+
+    if (expectedTotal !== null && responsesByToken.size >= expectedTotal) {
+      break;
+    }
+
+    const lastToken = pageResult.items.at(-1)?.token;
+    if (!lastToken || lastToken === before) {
+      break;
+    }
+
+    before = lastToken;
+  }
+
+  return responsesByToken;
+}
 
 export async function selectWinnersAction(
   workspaceId: string,
@@ -148,8 +226,25 @@ export async function selectWinnersAction(
     });
   }
 
+  const winnerResponsesByToken = new Map<string, { participantEmail: string | null }>();
+
+  if (winnerTokens.length > 0) {
+    const winnerResponses = await getWinnerResponsesByToken(
+      formId,
+      winnerTokens,
+    );
+
+    for (const [token, response] of winnerResponses) {
+      winnerResponsesByToken.set(token, {
+        participantEmail: getTypeformResponseParticipantEmail(response),
+      });
+    }
+  }
+
   await Promise.all(
     winnerTokens.map(async (token) => {
+      const winnerResponse = winnerResponsesByToken.get(token);
+
       await prisma.formWinner.upsert({
         where: {
           formId_responseToken: {
@@ -158,6 +253,7 @@ export async function selectWinnersAction(
           },
         },
         update: {
+          participantEmail: winnerResponse?.participantEmail ?? null,
           reason,
           selectedByUserId: user.id,
           selectedAt: new Date(),
@@ -166,6 +262,7 @@ export async function selectWinnersAction(
           formId: localForm.id,
           workspaceId,
           responseToken: token,
+          participantEmail: winnerResponse?.participantEmail ?? null,
           reason,
           selectedByUserId: user.id,
           selectedAt: new Date(),

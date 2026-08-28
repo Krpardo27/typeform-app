@@ -196,6 +196,7 @@ export default async function FormResponsesPage({
         },
         select: {
           responseToken: true,
+          participantEmail: true,
           reason: true,
           selectedByUserId: true,
         },
@@ -205,6 +206,14 @@ export default async function FormResponsesPage({
   for (const winner of persistedWinnerRows) {
     persistedWinnerTokens.add(winner.responseToken);
   }
+
+  const winnerContactsByToken = Object.fromEntries(
+    persistedWinnerRows.flatMap((winner) =>
+      winner.participantEmail
+        ? [[winner.responseToken, winner.participantEmail] as const]
+        : [],
+    ),
+  );
 
   const winnerCookieName = `winner_selection:${workspace.id}:${form.id}`;
   const winnerCookieRaw = (await cookies()).get(winnerCookieName)?.value;
@@ -389,6 +398,7 @@ export default async function FormResponsesPage({
       ) : !isPageOutOfRange ? (
         <WorkspaceFormResponsesList
           highlightedResponses={highlightedWinnerResponses}
+          highlightedContactsByToken={winnerContactsByToken}
           responses={maskedResponses}
           revealedWinnerTokens={Array.from(revealedWinnerTokens)}
           currentPage={currentPage}
