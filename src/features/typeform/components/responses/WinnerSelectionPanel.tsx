@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import Swal from "sweetalert2";
 import { LuSearch, LuTrophy } from "react-icons/lu";
 import FormSubmit from "../forms/FormSubmit";
@@ -77,9 +77,8 @@ export function WinnerSelectionPanel({
   winnerError,
 }: WinnerSelectionPanelProps) {
   const formRef = useRef<HTMLFormElement>(null);
-  const allowNativeSubmitRef = useRef(false);
   const [query, setQuery] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const uniqueCandidates = useMemo(
     () => deduplicateWinnerCandidates(candidates),
@@ -135,7 +134,7 @@ export function WinnerSelectionPanel({
 
   const confirmAndSubmit = async () => {
     const form = formRef.current;
-    if (!form || isSubmitting) {
+    if (!form || isPending) {
       return;
     }
 
@@ -195,22 +194,19 @@ export function WinnerSelectionPanel({
       return;
     }
 
-    setIsSubmitting(true);
-    allowNativeSubmitRef.current = true;
-    form.requestSubmit();
+    const formData = new FormData(form);
+
+    startTransition(async () => {
+      await action(formData);
+    });
   };
 
   const handleSubmit: NonNullable<
     React.ComponentProps<"form">["onSubmit"]
   > = async (event) => {
-    if (allowNativeSubmitRef.current) {
-      allowNativeSubmitRef.current = false;
-      return;
-    }
-
     event.preventDefault();
 
-    if (isSubmitting) {
+    if (isPending) {
       return;
     }
 
@@ -273,9 +269,9 @@ export function WinnerSelectionPanel({
         ref={formRef}
         action={action}
         onSubmit={handleSubmit}
-        aria-busy={isSubmitting}
+        aria-busy={isPending}
         className={`mt-5 space-y-5 transition-opacity ${
-          isSubmitting ? "pointer-events-none opacity-60" : "opacity-100"
+          isPending ? "pointer-events-none opacity-60" : "opacity-100"
         }`}
       >
         <input type="hidden" name="page" value={String(currentPage)} />
@@ -302,7 +298,7 @@ export function WinnerSelectionPanel({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Buscar por nombre o número de participante"
-              disabled={isSubmitting}
+              disabled={isPending}
               className="w-full border border-[#DCDCD9] bg-white py-2.5 pl-10 pr-3 text-sm text-[#000000] placeholder:text-[#000000]/40 outline-none transition focus:border-[#000000] disabled:cursor-not-allowed disabled:opacity-60"
             />
           </div>
@@ -315,7 +311,7 @@ export function WinnerSelectionPanel({
             </span>
           </div>
 
-          <div className="max-h-[22rem] overflow-y-auto">
+          <div className="max-h-88 overflow-y-auto">
             {filteredCandidates.length === 0 ? (
               <div className="px-4 py-8 text-center text-sm text-[#000000]/50">
                 No hay participantes que coincidan con tu búsqueda.
@@ -332,7 +328,7 @@ export function WinnerSelectionPanel({
                       name="winnerToken"
                       value={candidate.token}
                       checked={selectedTokens.has(candidate.token)}
-                      disabled={isSubmitting}
+                      disabled={isPending}
                       onChange={(event) => {
                         handleCandidateChange(
                           candidate.token,
@@ -374,7 +370,7 @@ export function WinnerSelectionPanel({
             name="reason"
             defaultValue="Selección manual de ganadores"
             required
-            disabled={isSubmitting}
+            disabled={isPending}
             className="w-full border border-[#DCDCD9] bg-white px-3 py-2.5 text-sm text-[#000000] outline-none transition focus:border-[#000000] disabled:cursor-not-allowed disabled:opacity-60"
           />
         </div>
@@ -391,7 +387,7 @@ export function WinnerSelectionPanel({
           <div className="flex items-center justify-end gap-2">
             <button
               type="button"
-              disabled={isSubmitting || selectedTokens.size === 0}
+              disabled={isPending || selectedTokens.size === 0}
               onClick={() => {
                 setSelectedTokens(new Set());
 
@@ -411,8 +407,8 @@ export function WinnerSelectionPanel({
             </button>
 
             <FormSubmit
-              value={isSubmitting ? "Guardando..." : "Confirmar ganadores"}
-              disabled={isSubmitting || selectedTokens.size === 0}
+              value={isPending ? "Guardando..." : "Confirmar ganadores"}
+              disabled={isPending || selectedTokens.size === 0}
               className="border border-[#00BFA5] bg-[#00BFA5] px-4 py-2 text-sm font-medium text-white transition-colors hover:border-[#00A88F] hover:bg-[#00A88F] disabled:cursor-not-allowed disabled:border-[#DCDCD9] disabled:bg-[#DCDCD9]"
             />
           </div>
