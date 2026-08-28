@@ -148,6 +148,7 @@ type TypeformAnswer = {
 
 export type TypeformResponseItem = {
   landing_id?: string;
+  response_id?: string;
   token: string;
   landed_at?: string;
   submitted_at?: string;
@@ -341,16 +342,22 @@ export async function getTypeformFormResponses(
     pageSize?: number;
     after?: string;
     before?: string;
+    includedResponseIds?: string[];
   },
 ) {
   const page = options?.page ?? 1;
   const pageSize = options?.pageSize ?? 50;
   const after = options?.after;
   const before = options?.before;
+  const includedResponseIds = options?.includedResponseIds?.filter(Boolean) ?? [];
 
   const searchParams = new URLSearchParams({
     page_size: String(pageSize),
   });
+
+  if (includedResponseIds.length > 0) {
+    searchParams.set("included_response_ids", includedResponseIds.join(","));
+  }
 
   if (after) {
     searchParams.set("after", after);
@@ -363,6 +370,37 @@ export async function getTypeformFormResponses(
   return typeformRequest<TypeformResponsesResponse>(
     `/forms/${encodeURIComponent(formId)}/responses?${searchParams}`,
   );
+}
+
+export function getTypeformResponseParticipantEmail(
+  response: TypeformResponseItem,
+) {
+  const answerEmail = response.answers?.find(
+    (answer) =>
+      answer.type === "email" &&
+      typeof answer.email === "string" &&
+      answer.email.trim().length > 0,
+  )?.email;
+
+  if (answerEmail) {
+    return answerEmail.trim().toLowerCase();
+  }
+
+  const hiddenEmail = Object.entries(response.hidden ?? {}).find(
+    ([key, value]) =>
+      /email|correo|mail/i.test(key) &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value)),
+  )?.[1];
+
+  if (hiddenEmail) {
+    return hiddenEmail.trim().toLowerCase();
+  }
+
+  const answerValueEmail = response.answers
+    ?.map((answer) => getAnswerValue(answer))
+    .find((value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value));
+
+  return answerValueEmail?.trim().toLowerCase() ?? null;
 }
 
 export function formBelongsToWorkspace(
