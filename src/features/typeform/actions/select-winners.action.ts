@@ -4,6 +4,11 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getWorkspaceAccessContext } from "@/features/admin/workspaces/services/workspace-access";
 import { createAuditLog } from "@/features/admin/audit/services/audit-log.service";
+import {
+  formBelongsToWorkspace,
+  getTypeformForm,
+  resolveWorkspaceTypeformId,
+} from "@/features/typeform/services/typeform.service";
 import { prisma } from "@/lib/prisma";
 
 const WINNER_COOKIE_PREFIX = "winner_selection";
@@ -85,13 +90,37 @@ export async function selectWinnersAction(
       ? String(formData.get("reason"))
       : "Seleccion manual de ganadores";
 
-  const localForm = await prisma.form.findUnique({
+  let localForm = await prisma.form.findUnique({
     where: { typeformId: formId },
     select: { id: true },
   });
 
   if (!localForm) {
-    redirect(`/workspaces/${workspaceId}/forms/${formId}/responses?winnerError=forbidden`);
+    const [typeformForm, resolvedWorkspaceTypeformId] = await Promise.all([
+      getTypeformForm(formId),
+      resolveWorkspaceTypeformId(workspace.typeformId),
+    ]);
+
+    if (!formBelongsToWorkspace(typeformForm, resolvedWorkspaceTypeformId)) {
+      redirect(`/workspaces/${workspaceId}/forms/${formId}/responses?winnerError=forbidden`);
+    }
+
+    localForm = await prisma.form.upsert({
+      where: { typeformId: formId },
+      create: {
+        title: typeformForm.title ?? formId,
+        description: null,
+        typeformId: formId,
+        selfUrl: typeformForm.self?.href ?? null,
+        workspaceId: workspace.id,
+      },
+      update: {
+        title: typeformForm.title ?? formId,
+        selfUrl: typeformForm.self?.href ?? null,
+        workspaceId: workspace.id,
+      },
+      select: { id: true },
+    });
   }
 
   const existingWinnerRows = await prisma.formWinner.findMany({
