@@ -67,6 +67,20 @@ function formatParticipantReferences(references: string[]) {
   return `${references.slice(0, -1).join(", ")} y ${references.at(-1)}`;
 }
 
+function areTokenSetsEqual(first: Set<string>, second: Set<string>) {
+  if (first.size !== second.size) {
+    return false;
+  }
+
+  for (const token of first) {
+    if (!second.has(token)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export function WinnerSelectionPanel({
   action,
   candidates,
@@ -93,6 +107,20 @@ export function WinnerSelectionPanel({
           .map((candidate) => candidate.token),
       ),
   );
+  const initialSelectedTokens = useMemo(
+    () =>
+      new Set(
+        uniqueCandidates
+          .filter((candidate) => candidate.selected)
+          .map((candidate) => candidate.token),
+      ),
+    [uniqueCandidates],
+  );
+  const hasSelectionChanged = !areTokenSetsEqual(
+    selectedTokens,
+    initialSelectedTokens,
+  );
+  const canSubmitSelection = selectedTokens.size > 0 || hasSelectionChanged;
 
   const candidateSelectionKey = uniqueCandidates
     .map(
@@ -148,18 +176,6 @@ export function WinnerSelectionPanel({
     );
     const selectedCount = selectedInputs.length;
 
-    if (selectedCount === 0) {
-      await Swal.fire({
-        title: "Sin selección",
-        text: "Debes seleccionar al menos un participante para continuar.",
-        icon: "warning",
-        background: "#FFFFFF",
-        color: "#000000",
-        confirmButtonColor: "#10b981",
-      });
-      return;
-    }
-
     const selectedReferences = selectedInputs.slice(0, 3).map((input) => {
       const candidate = candidates.find((item) => item.token === input.value);
       return getParticipantReference(candidate, input.value);
@@ -172,13 +188,22 @@ export function WinnerSelectionPanel({
     const participantText = hasMore
       ? `${participantLabel}: ${selectedPreview} y ${selectedCount - 3} participante(s) más.`
       : `${participantLabel}: ${selectedPreview}`;
+    const isClearingWinners = selectedCount === 0;
 
     const result = await Swal.fire({
-      title: selectedCount === 1 ? "Confirmar ganador" : "Confirmar ganadores",
-      text: participantText,
+      title: isClearingWinners
+        ? "Quitar ganadores"
+        : selectedCount === 1
+          ? "Confirmar ganador"
+          : "Confirmar ganadores",
+      text: isClearingWinners
+        ? "Se ocultará nuevamente la información completa de los ganadores actuales."
+        : participantText,
       icon: "question",
       showCancelButton: true,
-      confirmButtonText: "Confirmar selección",
+      confirmButtonText: isClearingWinners
+        ? "Quitar selección"
+        : "Confirmar selección",
       cancelButtonText: "Cancelar",
       background: "#FFFFFF",
       color: "#000000",
@@ -387,19 +412,9 @@ export function WinnerSelectionPanel({
           <div className="flex items-center justify-end gap-2">
             <button
               type="button"
-              disabled={isPending || selectedTokens.size === 0}
+              disabled={isPending || !canSubmitSelection}
               onClick={() => {
                 setSelectedTokens(new Set());
-
-                const inputs = Array.from(
-                  document.querySelectorAll<HTMLInputElement>(
-                    'input[name="winnerToken"]',
-                  ),
-                );
-
-                inputs.forEach((input) => {
-                  input.checked = false;
-                });
               }}
               className="px-3 py-2 text-sm font-medium text-[#000000]/60 transition-colors hover:text-[#000000] disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -407,8 +422,14 @@ export function WinnerSelectionPanel({
             </button>
 
             <FormSubmit
-              value={isPending ? "Guardando..." : "Confirmar ganadores"}
-              disabled={isPending || selectedTokens.size === 0}
+              value={
+                isPending
+                  ? "Guardando..."
+                  : selectedTokens.size === 0 && hasSelectionChanged
+                    ? "Quitar ganadores"
+                    : "Confirmar ganadores"
+              }
+              disabled={isPending || !canSubmitSelection}
               className="border border-[#00BFA5] bg-[#00BFA5] px-4 py-2 text-sm font-medium text-white transition-colors hover:border-[#00A88F] hover:bg-[#00A88F] disabled:cursor-not-allowed disabled:border-[#DCDCD9] disabled:bg-[#DCDCD9]"
             />
           </div>

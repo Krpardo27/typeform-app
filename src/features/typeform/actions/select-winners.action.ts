@@ -74,10 +74,6 @@ export async function selectWinnersAction(
     .map((value) => value.trim())
     .filter(Boolean);
 
-  if (winnerTokens.length === 0) {
-    redirect(`/workspaces/${workspaceId}/forms/${formId}/responses?winnerError=empty`);
-  }
-
   const page =
     typeof formData.get("page") === "string" ? String(formData.get("page")) : "1";
   const pageSize =
@@ -180,23 +176,34 @@ export async function selectWinnersAction(
 
   const cookieStore = await cookies();
   const cookieName = `${WINNER_COOKIE_PREFIX}:${workspaceId}:${formId}`;
+  const cookiePath = `/workspaces/${workspaceId}/forms/${formId}/responses`;
 
-  cookieStore.set(
-    cookieName,
-    JSON.stringify({
-      tokens: winnerTokens,
-      reason,
-      at: new Date().toISOString(),
-      by: user.id,
-    }),
-    {
+  if (winnerTokens.length === 0) {
+    cookieStore.set(cookieName, "", {
       httpOnly: true,
       sameSite: "lax",
       secure: false,
-      path: `/workspaces/${workspaceId}/forms/${formId}/responses`,
-      maxAge: 120,
-    },
-  );
+      path: cookiePath,
+      maxAge: 0,
+    });
+  } else {
+    cookieStore.set(
+      cookieName,
+      JSON.stringify({
+        tokens: winnerTokens,
+        reason,
+        at: new Date().toISOString(),
+        by: user.id,
+      }),
+      {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: false,
+        path: cookiePath,
+        maxAge: 120,
+      },
+    );
+  }
 
   await createAuditLog({
     action: "WINNER_SELECTED",
