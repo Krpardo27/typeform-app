@@ -61,18 +61,20 @@ export default async function AdminLayout({
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 overflow-y-auto px-4 pb-28 lg:pb-10">
-        <section className="sticky top-0 z-20 mb-6 py-5 border-b border-[#E5E5E5] bg-[#F5F5F5] pb-4 md:static md:mb-8 md:border-b-0 md:bg-transparent md:pb-0">
-          <div className="max-w-2xl">
-            <GlobalSearchForm
-              placeholder="Buscar usuarios autorizados o workspaces..."
-              debounceMs={300}
-              minLength={2}
-            />
-          </div>
-        </section>
+      <main className="min-w-0 flex-1 overflow-y-auto">
+        <div className="container mx-auto px-4 pb-28 lg:pb-10">
+          <section className="sticky top-0 z-20 mb-6 border-b border-[#E5E5E5] bg-[#F5F5F5] py-5 pb-4 md:static md:mb-8 md:border-b-0 md:bg-transparent md:pb-0">
+            <div className="max-w-2xl">
+              <GlobalSearchForm
+                placeholder="Buscar usuarios autorizados o workspaces..."
+                debounceMs={300}
+                minLength={2}
+              />
+            </div>
+          </section>
 
-        {children}
+          {children}
+        </div>
       </main>
       <AdminMobileDock />
     </div>

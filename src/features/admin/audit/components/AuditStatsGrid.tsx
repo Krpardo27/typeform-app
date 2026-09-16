@@ -8,7 +8,7 @@ type Props = {
 
 export function AuditStatsGrid({ timeline, sessionCount, auditLogCount }: Props) {
   return (
-    <section className="grid gap-4 md:grid-cols-4">
+    <section className="grid gap-4 md:grid-cols-4 grid-cols-2">
       <article className="rounded-xl border border-[#E5E5E5] bg-[#FFFFFF] p-5">
         <p className="text-xs font-medium uppercase tracking-wider text-[#737373]">
           Eventos

@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { LuArrowUpRight, LuFileText, LuUsers } from "react-icons/lu";
-import Link from "next/link";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import {
   getTypeformWorkspace,
   getWorkspaceForms,
+  resolveWorkspaceTypeformId,
 } from "@/features/typeform/services/typeform.service";
 import Pagination from "@/shared/components/Pagination";
 
@@ -23,8 +23,23 @@ export default async function WorkspaceDetailPage({
   const { workspaceId } = await params;
   const { page } = await searchParams;
 
-  const typeformWorkspace = await getTypeformWorkspace(workspaceId).catch(
-    (error: unknown) => {
+  const routeWorkspace = await prisma.workspace.findFirst({
+    where: {
+      OR: [{ id: workspaceId }, { typeformId: workspaceId }],
+    },
+    select: {
+      id: true,
+      typeformId: true,
+    },
+  });
+  const typeformWorkspaceId = routeWorkspace?.typeformId ?? workspaceId;
+  const resolvedTypeformWorkspaceId = await resolveWorkspaceTypeformId(
+    typeformWorkspaceId,
+  );
+
+  const typeformWorkspace = await getTypeformWorkspace(
+    resolvedTypeformWorkspaceId,
+  ).catch((error: unknown) => {
       if (
         error instanceof Error &&
         error.message.includes("Typeform API error 404")
@@ -38,8 +53,13 @@ export default async function WorkspaceDetailPage({
 
   const [typeformForms, appWorkspace] = await Promise.all([
     getWorkspaceForms(typeformWorkspace.id),
-    prisma.workspace.findUnique({
-      where: { typeformId: typeformWorkspace.id },
+    prisma.workspace.findFirst({
+      where: {
+        OR: [
+          { typeformId: typeformWorkspace.id },
+          ...(routeWorkspace ? [{ id: routeWorkspace.id }] : []),
+        ],
+      },
       select: {
         id: true,
         name: true,
@@ -121,7 +141,7 @@ export default async function WorkspaceDetailPage({
         </div>
       ) : (
         <>
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 grid-cols-1">
             {paginatedForms.map((form) => {
               const appForm = appFormsByTypeformId.get(form.id);
 

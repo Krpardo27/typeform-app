@@ -25,10 +25,9 @@ export default function LoaderScreen({
         <div className="absolute left-1/2 top-0 h-40 w-40 -translate-x-1/2 rounded-full bg-[#FF5C35]/8 blur-3xl sm:h-64 sm:w-64" />
       </div>
 
-      <div className="relative w-full max-w-[22rem] rounded-[1.75rem] border border-[#EAEAEA] bg-[#FFFFFF]/95 p-5 text-center shadow-[0_20px_60px_rgba(17,24,39,0.08)] backdrop-blur-sm sm:max-w-md sm:p-10">
+      <div className="relative w-full max-w-[22rem] rounded-[1.75rem] border border-[#D1D1CD] bg-white p-5 text-center shadow-[0_20px_60px_rgba(17,24,39,0.08)] backdrop-blur-sm sm:max-w-md sm:p-10">
         <div className="relative mx-auto mb-5 flex h-16 w-16 items-center justify-center sm:mb-8 sm:h-20 sm:w-20">
           <div className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-[#FF5C35] border-r-[#7C3AED]" />
-
           <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[#F3F0FF] bg-[linear-gradient(135deg,#FFF4F0_0%,#F6F2FF_100%)] sm:h-14 sm:w-14">
             <FaAward size={22} className="text-[#FF5C35] sm:text-[24px]" />
           </div>

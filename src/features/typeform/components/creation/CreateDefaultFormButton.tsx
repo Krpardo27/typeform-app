@@ -45,7 +45,7 @@ export function CreateDefaultFormButton({ action }: Props) {
     <form ref={formRef} action={action} onSubmit={handleSubmit} className="mt-5">
       <button
         type="submit"
-        className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#FF5C35] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+        className="inline-flex items-center justify-center cursor-pointer gap-2 rounded-lg bg-[#FF5C35] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
       >
         <LuFilePlus2 className="size-4" />
         Crear formulario base ahora

@@ -84,16 +84,30 @@ export function WorkspaceSidebar({
                 const href = item.href
                   ? `/workspaces/${currentWorkspaceId}/${item.href}`
                   : `/workspaces/${currentWorkspaceId}`;
+                const itemClassName = `flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
+                  isActive
+                    ? "bg-[#7C3AED]/10 text-[#7C3AED] cursor-pointer"
+                    : "text-[#000000]/65 hover:bg-[#F5F5F5] hover:text-[#000000]"
+                }`;
+
+                if (isActive) {
+                  return (
+                    <span
+                      key={item.label}
+                      aria-current="page"
+                      className={`${itemClassName} cursor-default`}
+                    >
+                      <Icon className="size-4" />
+                      {item.label}
+                    </span>
+                  );
+                }
 
                 return (
                   <Link
                     key={item.label}
                     href={href}
-                    className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
-                      isActive
-                        ? "bg-[#7C3AED]/10 text-[#7C3AED]"
-                        : "text-[#000000]/65 hover:bg-[#F5F5F5] hover:text-[#000000]"
-                    }`}
+                    className={itemClassName}
                   >
                     <Icon className="size-4" />
                     {item.label}

@@ -8,6 +8,8 @@ import { CreateWorkspaceSchema } from "../schemas/workspace.schema";
 import {
   createDefaultTypeformFormForWorkspace,
   createTypeformWorkspace,
+  getTypeformForm,
+  isTypeformNotFoundError,
 } from "@/features/typeform/services/typeform.service";
 
 export async function createWorkspaceAction(data: unknown) {
@@ -34,6 +36,16 @@ export async function createWorkspaceAction(data: unknown) {
       );
     }
 
+    const baseForm = await getTypeformForm(baseFormId).catch((error: unknown) => {
+      if (isTypeformNotFoundError(error)) {
+        throw new Error(
+          `No se encontro el formulario base de Typeform (${baseFormId}). Revisa TYPEFORM_BASE_FORM_ID y que el token tenga acceso a ese formulario.`,
+        );
+      }
+
+      throw error;
+    });
+
     const typeformWorkspace = await createTypeformWorkspace(name);
 
     const workspace = await prisma.workspace.create({
@@ -41,7 +53,7 @@ export async function createWorkspaceAction(data: unknown) {
         name,
         typeformId: typeformWorkspace.id,
         selfUrl: typeformWorkspace.self?.href ?? null,
-        accountId: typeformWorkspace.id,
+        accountId: typeformWorkspace.account_id ?? typeformWorkspace.id,
       },
     });
 
@@ -63,6 +75,7 @@ export async function createWorkspaceAction(data: unknown) {
     });
 
     const duplicated = await createDefaultTypeformFormForWorkspace({
+      baseForm,
       baseFormId,
       workspaceTypeformId: typeformWorkspace.id,
       title: `Formulario base - ${name}`,

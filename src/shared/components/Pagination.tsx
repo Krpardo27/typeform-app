@@ -89,7 +89,7 @@ export default function Pagination({
 
   return (
     <div className="flex w-full flex-col gap-3 border-t border-[#E5E5E5] pt-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-center gap-2 text-sm text-[#171717]/55">
+      <div className="flex items-center justify-center gap-2 text-sm text-[#171717]/55">
         <span>Mostrando</span>
         <span className="font-medium text-[#171717]">{from}-{to}</span>
         <span>de</span>
@@ -97,7 +97,7 @@ export default function Pagination({
         <span>{itemLabel}</span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center justify-center gap-2">
         {showPageSizeSelector && (
           <label className="flex items-center gap-2 rounded-md border border-[#E5E5E5] bg-white px-3 py-2 text-sm text-[#171717]/60">
             <span>Mostrar</span>

@@ -10,33 +10,35 @@ export function LoginView() {
   const [email, setEmail] = useState<string | null>(null);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#F7F7F6] px-4 text-[#111111]">
+    <main className="flex min-h-dvh items-center justify-center bg-[#F7F7F6] px-4 py-6 text-[#111111] sm:py-8">
       <section
         className="
           w-full
           max-w-md
-          rounded-3xl
-          border border-[#E8E8E6]
+          rounded-xl
+          border border-[#D1D1CD]
           bg-white
-          p-8
-          shadow-[0_20px_50px_-24px_rgba(0,0,0,0.22)]
+          p-6
+          shadow-2xl
+          sm:p-8
         "
       >
-        <div className="mb-8 border-b border-[#E8E8E6] pb-6">
+        <div className="mb-8 border-b border-[#D1D1CD] pb-6">
           <div className="mb-5 flex items-center gap-4">
             <div
               className="
                 flex size-12
+                shrink-0
                 items-center justify-center
                 rounded-2xl
-                border border-[#FFE1D7]
+                border border-[#FF5C35]/40
                 bg-[#FFF1EC]
               "
             >
               <LuClipboardPaste className="size-6 text-[#FF5C35]" />
             </div>
 
-            <h1 className="text-xl font-bold uppercase tracking-tight text-[#111111]">
+            <h1 className="text-2xl font-bold uppercase tracking-tight text-[#111111]">
               Plataforma de Formularios
             </h1>
           </div>
@@ -59,7 +61,7 @@ export function LoginView() {
                 ${
                   email
                     ? "bg-[#FF5C35] shadow-[0_2px_8px_-3px_rgba(255,92,53,0.5)]"
-                    : "bg-[#E8E8E6]"
+                    : "bg-[#D1D1CD]"
                 }
               `}
             />
@@ -67,10 +69,7 @@ export function LoginView() {
         </div>
 
         {email ? (
-          <OtpStep
-            email={email}
-            onBack={() => setEmail(null)}
-          />
+          <OtpStep email={email} onBack={() => setEmail(null)} />
         ) : (
           <EmailStep onSuccess={setEmail} />
         )}

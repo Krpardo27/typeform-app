@@ -3,7 +3,7 @@ import { CopyButton } from "@/shared/components/CopyButton";
 import { getEmbedInfo } from "@/features/typeform/utils/embed-info";
 
 const CARD_CLASSNAME =
-  "rounded-2xl border border-[#E8E8E6] bg-white p-5 shadow-[0_8px_30px_-18px_rgba(0,0,0,0.18)]";
+  "rounded-2xl border border-[#D1D1CD] bg-white p-5 shadow-[0_8px_30px_-18px_rgba(0,0,0,0.18)]";
 
 type StatCardProps = {
   label: string;
@@ -35,7 +35,7 @@ function EmbedCodeCard({ code, label, clonedFrom }: EmbedCodeCardProps) {
         {label}
       </p>
 
-      <div className="mt-3 rounded-xl border border-[#E8E8E6] bg-[#F7F7F6] px-3 py-2">
+      <div className="mt-3 rounded-xl border border-[#D1D1CD] bg-[#F7F7F6] px-3 py-2">
         <code className="block break-all text-sm leading-relaxed text-[#000000]/80">
           {code}
         </code>

@@ -26,11 +26,13 @@ export function AdminWorkspacesGrid({
 
   if (typeformWorkspaces.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#E5E5E5] px-4 py-12 text-center sm:py-16">
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#D1D1CD] px-4 py-12 text-center sm:py-16">
         <LuBriefcaseBusiness className="mb-3 size-8 text-[#737373]" />
+
         <p className="text-sm font-medium text-[#737373]">
           Typeform no devolvio workspaces
         </p>
+
         <p className="mt-1 text-xs text-[#737373]">
           Revisa el token o los permisos de la cuenta conectada.
         </p>

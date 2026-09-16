@@ -22,7 +22,9 @@ export default function CreateWorkspaceModal({ onClose }: Props) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit: NonNullable<React.ComponentProps<"form">["onSubmit"]> = async (e) => {
+  const handleSubmit: NonNullable<
+    React.ComponentProps<"form">["onSubmit"]
+  > = async (e) => {
     e.preventDefault();
 
     setError("");
@@ -37,7 +39,7 @@ export default function CreateWorkspaceModal({ onClose }: Props) {
     const workspaceName = result.data.name;
     const confirmation = await Swal.fire({
       title: "Crear workspace",
-      text: `Se creara el workspace "${workspaceName}" y su formulario base.`,
+      text: `Se creara el workspace "${workspaceName}" y se duplicara el formulario base configurado.`,
       icon: "question",
       showCancelButton: true,
       confirmButtonText: "Si, crear",
@@ -65,7 +67,8 @@ export default function CreateWorkspaceModal({ onClose }: Props) {
     if (response?.success) {
       const createdWorkspaceName = response.workspace?.name ?? workspaceName;
       const defaultFormTitle =
-        response.defaultForm?.title ?? `Formulario base - ${createdWorkspaceName}`;
+        response.defaultForm?.title ??
+        `Formulario base - ${createdWorkspaceName}`;
       const workspaceAdminPath = response.workspace?.typeformId
         ? `/admin/workspaces/${response.workspace.typeformId}`
         : "/admin/workspaces";
@@ -86,11 +89,13 @@ export default function CreateWorkspaceModal({ onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex p-4 lg:p-0 items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-xl border border-[#E5E5E5] bg-[#FFFFFF] p-6 shadow-xl">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[#171717]">Crear workspace</h2>
+          <h2 className="text-lg font-semibold text-[#171717]">
+            Crear workspace
+          </h2>
 
           <button
             type="button"
@@ -120,7 +125,7 @@ export default function CreateWorkspaceModal({ onClose }: Props) {
               }}
               placeholder="Ej: Radio ADN"
               disabled={loading}
-              className="w-full rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] px-3 py-2.5 text-sm text-[#171717] placeholder-[#737373] outline-none transition focus:border-[#18181B] disabled:opacity-50"
+              className="w-full rounded-lg border border-gray-400 bg-[#F5F5F5] px-3 py-2.5 text-sm text-[#171717] placeholder-[#737373] outline-none transition focus:border-[#18181B] disabled:opacity-50"
             />
 
             {error && <FormErrors>{error}</FormErrors>}
@@ -131,7 +136,7 @@ export default function CreateWorkspaceModal({ onClose }: Props) {
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 rounded-lg border border-[#E5E5E5] py-2.5 text-sm text-[#737373] transition hover:border-[#18181B] hover:text-[#171717] disabled:opacity-50"
+              className="flex-1 rounded-lg bg-red-400 text-white border border-[#E5E5E5] py-2.5 text-sm  transition hover:border-[#18181B] hover:text-[#171717] disabled:opacity-50"
             >
               Cancelar
             </button>

@@ -10,7 +10,7 @@ export default function Form(props: Props) {
     <form
       {...props}
       className={clsx(
-        "w-full border border-[#dedede]/15 p-6 rounded-xl",
+        "w-full border border-[#dedede]/15 p-2 rounded-xl",
         "flex flex-col",
         "gap-5",
         "transition-all duration-200",

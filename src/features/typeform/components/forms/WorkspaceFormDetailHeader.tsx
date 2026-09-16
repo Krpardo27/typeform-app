@@ -46,7 +46,7 @@ export function WorkspaceFormDetailHeader({
               rel="noreferrer"
               className="inline-flex items-center gap-2 rounded-lg border border-[#FF5C35]/35 bg-[#FF5C35]/7 px-3 py-2 text-sm text-[#FF5C35] transition-colors hover:border-[#FF5C35]/22 hover:bg-[#FF5C35]/4 hover:text-[#FF5C35]/80"
             >
-              Abrir Typeform
+              Ver Formulario
               <LuExternalLink className="size-4" />
             </a>
           )}

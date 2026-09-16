@@ -16,7 +16,7 @@ export function WorkspaceFormStructurePanel({
       className="
         mt-6
         rounded-2xl
-        border border-[#E8E8E6]
+        border border-[#D1D1CD]
         bg-white
         p-5
         shadow-[0_8px_30px_-18px_rgba(0,0,0,0.18)]
@@ -27,7 +27,7 @@ export function WorkspaceFormStructurePanel({
       </h2>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-xl border border-[#E8E8E6] bg-[#F7F7F6] p-3">
+        <div className="rounded-xl border border-[#D1D1CD] bg-[#F7F7F6] p-3">
           <p className="text-xs font-medium uppercase tracking-wide text-[#000000]/45">
             Pantallas de bienvenida
           </p>
@@ -36,7 +36,7 @@ export function WorkspaceFormStructurePanel({
           </p>
         </div>
 
-        <div className="rounded-xl border border-[#E8E8E6] bg-[#F7F7F6] p-3">
+        <div className="rounded-xl border border-[#D1D1CD] bg-[#F7F7F6] p-3">
           <p className="text-xs font-medium uppercase tracking-wide text-[#000000]/45">
             Pantallas de agradecimiento
           </p>
@@ -45,7 +45,7 @@ export function WorkspaceFormStructurePanel({
           </p>
         </div>
 
-        <div className="rounded-xl border border-[#E8E8E6] bg-[#F7F7F6] p-3">
+        <div className="rounded-xl border border-[#D1D1CD] bg-[#F7F7F6] p-3">
           <p className="text-xs font-medium uppercase tracking-wide text-[#000000]/45">
             Reglas de lógica
           </p>
@@ -54,7 +54,7 @@ export function WorkspaceFormStructurePanel({
           </p>
         </div>
 
-        <div className="rounded-xl border border-[#E8E8E6] bg-[#F7F7F6] p-3">
+        <div className="rounded-xl border border-[#D1D1CD] bg-[#F7F7F6] p-3">
           <p className="text-xs font-medium uppercase tracking-wide text-[#000000]/45">
             Estado
           </p>

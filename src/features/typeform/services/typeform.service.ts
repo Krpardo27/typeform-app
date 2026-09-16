@@ -428,7 +428,21 @@ export async function createTypeformWorkspace(name: string) {
     throw new Error(`Typeform error: ${error.description ?? response.status}`);
   }
 
-  return response.json() as Promise<TypeformWorkspace>;
+  const data = (await response.json()) as Partial<TypeformWorkspace>;
+  const workspaceId = data.id ?? data.self?.href?.split("/").filter(Boolean).at(-1);
+
+  if (!workspaceId) {
+    throw new Error("Typeform no devolvio el ID del workspace creado");
+  }
+
+  return {
+    ...data,
+    id: workspaceId,
+    name: data.name ?? name,
+    self: {
+      href: data.self?.href ?? `${TYPEFORM_API_BASE_URL}/workspaces/${workspaceId}`,
+    },
+  } as TypeformWorkspace;
 }
 
 export async function createTypeformForm(payload: TypeformCreateFormPayload) {
@@ -549,10 +563,12 @@ export async function duplicateTypeformForm({
 }
 
 export async function createDefaultTypeformFormForWorkspace({
+  baseForm,
   baseFormId,
   workspaceTypeformId,
   title,
 }: {
+  baseForm?: TypeformFormDetail;
   baseFormId: string;
   workspaceTypeformId: string;
   title?: string;
@@ -561,16 +577,16 @@ export async function createDefaultTypeformFormForWorkspace({
     workspaceTypeformId,
   );
 
-  const baseForm = await getTypeformForm(baseFormId);
+  const resolvedBaseForm = baseForm ?? (await getTypeformForm(baseFormId));
   const payload = buildDuplicateFormPayload(
-    baseForm,
+    resolvedBaseForm,
     resolvedWorkspaceTypeformId,
-    title ?? baseForm.title,
+    title ?? resolvedBaseForm.title,
   );
   const createdForm = await createTypeformForm(payload);
 
   return {
-    baseForm,
+    baseForm: resolvedBaseForm,
     createdForm,
   };
 }
