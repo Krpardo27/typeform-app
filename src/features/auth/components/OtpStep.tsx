@@ -158,30 +158,30 @@ export function OtpStep({ email, onBack }: OtpStepProps) {
         <button
           type="button"
           onClick={onBack}
-          className="group flex cursor-pointer items-center gap-2 text-xs font-medium text-black/45 transition-colors hover:text-black"
+          className="group flex cursor-pointer items-center gap-2 text-xs font-medium text-black transition-colors hover:text-black"
         >
           <LuArrowLeft className="size-3.5 transition-transform group-hover:-translate-x-0.5" />
           Cambiar email
         </button>
 
         <div className="space-y-4">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-[#FF5C35]/10">
+          <div className="flex size-10 items-center justify-center rounded-xl border border-[#FF5C35]/40">
             <LuKeyRound className="size-5 text-[#FF5C35]" strokeWidth={1.8} />
           </div>
 
           <div className="space-y-1.5">
-            <h2 className="text-xl font-semibold tracking-[-0.02em] text-black">
+            <h2 className="text-xl font-semibold text-black">
               Verifica tu email
             </h2>
 
-            <p className="max-w-sm text-sm leading-6 text-black/50">
+            <p className="max-w-sm text-sm leading-5 text-black/50">
               Introduce el código de 6 dígitos que enviamos a tu correo
               electrónico.
             </p>
           </div>
 
           <div className="inline-flex items-center gap-2 text-sm font-medium text-black/75">
-            <LuMail className="size-4 text-black/35" />
+            <LuMail className="size-5 text-black/40" />
             <span>{maskedEmail}</span>
           </div>
         </div>
@@ -193,14 +193,14 @@ export function OtpStep({ email, onBack }: OtpStepProps) {
           <OtpInput value={otp} onChange={setOtp} />
         </div>
 
-        <p className="text-center text-[11px] text-black/35">
+        <p className="text-center text-[12px] text-black">
           El código es válido por un tiempo limitado.
         </p>
       </div>
 
       {/* ERROR */}
       {error && (
-        <div className="flex items-start gap-2.5 rounded-xl bg-rose-50 px-3.5 py-3 text-xs leading-5 text-rose-600">
+        <div className="flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-xs leading-5 text-rose-600">
           <LuTriangle className="mt-0.5 size-3.5 shrink-0" />
           <span>{error}</span>
         </div>
@@ -227,7 +227,7 @@ export function OtpStep({ email, onBack }: OtpStepProps) {
 
       {/* RESEND */}
       <div className="flex items-center justify-between gap-2 text-center">
-        <span className="text-xs text-black/40">¿No recibiste el código?</span>
+        <span className="text-xs text-black">¿No recibiste el código?</span>
 
         <button
           type="button"

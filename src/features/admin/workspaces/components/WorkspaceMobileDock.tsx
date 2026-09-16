@@ -115,7 +115,14 @@ export function WorkspaceMobileDock({
               <Link
                 key={item.label}
                 href={href}
-                onClick={triggerHapticFeedback}
+                onClick={(event) => {
+                  if (item.active) {
+                    event.preventDefault();
+                    return;
+                  }
+
+                  triggerHapticFeedback();
+                }}
                 className={
                   item.active
                     ? item.label === "Forms"

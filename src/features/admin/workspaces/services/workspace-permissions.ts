@@ -60,8 +60,10 @@ export async function getAuthorizedWorkspace(
   workspaceId: string,
 ) {
   if (user.globalRole === "SUPER_ADMIN") {
-    const workspace = await prisma.workspace.findUnique({
-      where: { id: workspaceId },
+    const workspace = await prisma.workspace.findFirst({
+      where: {
+        OR: [{ id: workspaceId }, { typeformId: workspaceId }],
+      },
       select: {
         id: true,
         name: true,
@@ -72,11 +74,11 @@ export async function getAuthorizedWorkspace(
     return workspace ? { ...workspace, role: "EDITOR" as const } : null;
   }
 
-  const access = await prisma.userWorkspace.findUnique({
+  const access = await prisma.userWorkspace.findFirst({
     where: {
-      userId_workspaceId: {
-        userId: user.id,
-        workspaceId,
+      userId: user.id,
+      workspace: {
+        OR: [{ id: workspaceId }, { typeformId: workspaceId }],
       },
     },
     include: {

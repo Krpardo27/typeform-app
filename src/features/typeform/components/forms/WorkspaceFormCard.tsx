@@ -32,19 +32,19 @@ export function WorkspaceFormCard({
   return (
     <article
       className="
-        group
-        rounded-2xl
-        border border-[#E8E8E6]
-        bg-white
-        p-4
-        shadow-[0_8px_30px_-18px_rgba(0,0,0,0.18)]
-        transition-all
-        duration-200
-        hover:-translate-y-0.5
-        hover:border-[#FF5C35]/40
-        hover:shadow-[0_14px_35px_-18px_rgba(0,0,0,0.22)]
-        sm:p-5
-      "
+    group
+    rounded-2xl
+    border border-[#D1D1CD]
+    bg-white
+    p-4
+    shadow-[0_8px_30px_-18px_rgba(0,0,0,0.18)]
+    transition-all
+    duration-200
+    hover:-translate-y-0.5
+    hover:border-[#FF5C35]/50
+    hover:shadow-[0_14px_35px_-18px_rgba(0,0,0,0.22)]
+    sm:p-5
+  "
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
@@ -73,10 +73,7 @@ export function WorkspaceFormCard({
 
             {embedConfig ? (
               <div className="flex shrink-0 gap-1.5">
-                <CopyButton
-                  value={embedConfig.buildSrc(form.id)}
-                  label="src"
-                />
+                <CopyButton value={embedConfig.buildSrc(form.id)} label="src" />
                 <CopyButton
                   value={embedConfig.buildCode(form.id)}
                   label="iframe"

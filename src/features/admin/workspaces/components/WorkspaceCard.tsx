@@ -20,7 +20,7 @@ export function WorkspaceCard({ typeformWorkspace, appWorkspace }: Props) {
   const isRegisteredInApp = Boolean(appWorkspace);
 
   return (
-    <article className="group rounded-2xl border border-[#E5E5E5] bg-[#FFFFFF] p-4 shadow-sm transition hover:border-[#18181B]/20 hover:shadow-[#18181B]/5 sm:p-5">
+    <article className="group rounded-2xl border border-[#E5E5E5] bg-[#FFFFFF] p-4 shadow-md transition hover:border-[#18181B]/20 hover:shadow-[#18181B]/5 sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="line-clamp-2 wrap-break-word text-base font-semibold leading-snug text-[#171717] sm:truncate sm:text-lg">

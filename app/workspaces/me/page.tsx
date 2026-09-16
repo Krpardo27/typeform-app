@@ -52,7 +52,7 @@ export default async function MyWorkspacesPage() {
 
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <Link
-              href="/"
+              href="/workspaces/me"
               className="rounded-lg border border-[#F5F5F5] bg-[#FFFFFF] px-4 py-2 text-sm text-[#000000]/75 transition hover:border-[#7C3AED]/35 hover:text-[#7C3AED]"
             >
               Ir al inicio

@@ -22,7 +22,7 @@ export function DashboardStatsGrid({
     new Intl.NumberFormat("es-CL").format(value);
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-4 xl:grid-cols-3 grid-cols-2">
       <DashboardStatCard
         title="Usuarios"
         value={formatNumber(totalUsers)}

@@ -113,11 +113,11 @@ export function DuplicateFormPanel({
       aria-busy={isPending}
       className="
         mt-6
-        rounded-2xl
-        border border-[#E8E8E6]
-        bg-white
-        p-5
-        shadow-[0_8px_30px_-18px_rgba(0,0,0,0.18)]
+    rounded-2xl
+    border border-[#D1D1CD]
+    bg-white
+    p-5
+    shadow-[0_8px_30px_-18px_rgba(0,0,0,0.18)]
       "
     >
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-[#000000]/45">
@@ -150,22 +150,22 @@ export function DuplicateFormPanel({
             defaultValue={defaultTitle}
             readOnly={isPending}
             className="
-              w-full
-              rounded-xl
-              border border-[#E8E8E6]
-              bg-[#FAFAF9]
-              px-3 py-2.5
-              text-sm text-[#111111]
-              outline-none
-              transition-all
-              placeholder:text-[#000000]/40
-              focus:border-[#FF5C35]
-              focus:bg-white
-              focus:ring-2
-              focus:ring-[#FF5C35]/10
-              read-only:cursor-wait
-              read-only:opacity-70
-            "
+        w-full
+        rounded-xl
+        border border-[#D1D1CD]
+        bg-[#FAFAF9]
+        px-3 py-2.5
+        text-sm text-[#111111]
+        outline-none
+        transition-all
+        placeholder:text-[#000000]/40
+        focus:border-[#FF5C35]
+        focus:bg-white
+        focus:ring-2
+        focus:ring-[#FF5C35]/10
+        read-only:cursor-wait
+        read-only:opacity-70
+      "
           />
 
           <p className="mt-1.5 text-xs text-[#000000]/50">
@@ -181,25 +181,25 @@ export function DuplicateFormPanel({
           type="submit"
           disabled={isPending}
           className="
-            cursor-pointer
-            inline-flex
-            items-center
-            justify-center
-            gap-2
-            rounded-xl
-            bg-[#FF5C35]
-            px-4 py-2.5
-            text-sm font-semibold
-            text-white
-            shadow-[0_4px_12px_-4px_rgba(255,92,53,0.4)]
-            transition-all
-            hover:-translate-y-0.5
-            hover:opacity-90
-            active:translate-y-0
-            disabled:cursor-wait
-            disabled:opacity-70
-            disabled:hover:translate-y-0
-          "
+      cursor-pointer
+      inline-flex
+      items-center
+      justify-center
+      gap-2
+      rounded-xl
+      bg-[#FF5C35]
+      px-4 py-2.5
+      text-sm font-semibold
+      text-white
+      shadow-[0_4px_12px_-4px_rgba(255,92,53,0.4)]
+      transition-all
+      hover:-translate-y-0.5
+      hover:opacity-90
+      active:translate-y-0
+      disabled:cursor-wait
+      disabled:opacity-70
+      disabled:hover:translate-y-0
+    "
         >
           {isPending ? (
             <>

@@ -36,7 +36,7 @@ export function AdminPageHeader({
   const hasTopRow = Boolean(topLeading || eyebrow);
 
   return (
-    <header className="relative mb-8 pb-8">
+    <header className="relative mb-8 lg:pb-8">
       <div className="absolute left-0 top-0 h-px w-16 bg-linear-to-r from-[#18181B] to-transparent" />
 
       {hasTopRow && (
