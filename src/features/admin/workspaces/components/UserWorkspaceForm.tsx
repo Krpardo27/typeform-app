@@ -5,6 +5,10 @@ import { toast } from "sonner";
 import Swal from "sweetalert2";
 import { LuLoader } from "react-icons/lu";
 import { updateUserWorkspaces } from "../actions/update-user-workspaces";
+import {
+  WorkspaceAccessSelector,
+  type WorkspaceAccessRole,
+} from "./WorkspaceAccessSelector";
 
 type Workspace = {
   id: string;
@@ -38,6 +42,7 @@ export function UserWorkspaceForm({
 }: Props) {
   const [assignments, setAssignments] =
     useState<WorkspaceAssignment[]>(assignedWorkspaces);
+  const [workspaceQuery, setWorkspaceQuery] = useState("");
 
   const [isPending, startTransition] = useTransition();
 
@@ -73,12 +78,37 @@ export function UserWorkspaceForm({
     });
   }
 
-  function updateRole(workspaceId: string, role: WorkspaceRole) {
+    function updateRole(workspaceId: string, role: WorkspaceAccessRole) {
     setAssignments((current) =>
       current.map((item) =>
         item.workspaceId === workspaceId ? { ...item, role } : item,
       ),
     );
+  }
+
+  async function handleClearAssignments() {
+    if (assignments.length === 0) {
+      toast.info("No hay workspaces asignados para limpiar");
+      return;
+    }
+
+    const result = await Swal.fire({
+      title: "Limpiar workspaces",
+      text: "Se quitaran todos los workspaces seleccionados. El cambio se aplicara cuando guardes permisos.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Si, limpiar",
+      cancelButtonText: "Cancelar",
+      background: "#FFFFFF",
+      color: "#171717",
+      confirmButtonColor: "#C2412D",
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
+    setAssignments([]);
   }
 
   async function handleSubmit() {
@@ -153,7 +183,7 @@ export function UserWorkspaceForm({
         </h2>
 
         <p className="mt-1 text-sm text-[#737373]">
-          Selecciona las radios o marcas y el rol dentro de cada una.
+          Selecciona las radios y el rol dentro de cada una.
         </p>
 
         <div className="mt-3 grid gap-2 rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] p-3 text-xs text-[#737373] md:grid-cols-2">
@@ -173,89 +203,18 @@ export function UserWorkspaceForm({
         </div>
       </div>
 
-      {/* GRID */}
-      <div className="space-y-4 p-5">
-        <label className="block">
-          <span className="mb-2 block text-xs font-medium uppercase tracking-wide text-[#737373]">
-            Seleccionar workspaces
-          </span>
-          <select
-            multiple
-            size={Math.min(Math.max(workspaces.length, 4), 12)}
-            value={assignments.map((a) => a.workspaceId)}
-            onChange={(event) => {
-              const selectedIds = Array.from(
-                event.target.selectedOptions,
-                (opt) => opt.value,
-              );
-              const currentIds = new Set(assignments.map((a) => a.workspaceId));
-              const newIds = new Set(selectedIds);
-
-              const toRemove = [...currentIds].filter((id) => !newIds.has(id));
-              const toAdd = [...newIds].filter((id) => !currentIds.has(id));
-
-              toRemove.forEach((id) => toggleWorkspace(id));
-              toAdd.forEach((id) => toggleWorkspace(id));
-            }}
-            className="w-full rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] px-3 py-2 text-sm text-[#171717] outline-none transition focus:border-[#18181B] focus:ring-2 focus:ring-[#18181B]/20"
-          >
-            {workspaces.map((workspace) => (
-              <option key={workspace.id} value={workspace.id}>
-                {workspace.name} ({workspace.typeformId})
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-xs text-[#737373]">
-            Usa Ctrl+Click para multi-selección.
-          </p>
-        </label>
-
-        {assignments.length > 0 && (
-            <div className="rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] p-4">
-            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[#737373]">
-              Roles por workspace
-            </p>
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {assignments.map((assignment) => {
-                const workspace = workspaces.find(
-                  (w) => w.id === assignment.workspaceId,
-                );
-                if (!workspace) return null;
-
-                return (
-                  <div
-                    key={assignment.workspaceId}
-                    className="rounded-lg border border-[#18181B]/20 bg-[#18181B]/5 p-3 transition hover:border-[#18181B]/40 hover:bg-[#18181B]/10"
-                  >
-                    <div className="mb-2 flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium text-[#18181B]">
-                          {workspace.name}
-                        </p>
-                        <p className="truncate text-xs text-[#737373]">
-                          {workspace.typeformId}
-                        </p>
-                      </div>
-                    </div>
-                    <select
-                      value={assignment.role}
-                      onChange={(event) =>
-                        updateRole(
-                          assignment.workspaceId,
-                          event.target.value as WorkspaceRole,
-                        )
-                      }
-                      className="w-full rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] px-2.5 py-2 text-xs font-medium text-[#171717] outline-none transition focus:border-[#18181B] focus:ring-1 focus:ring-[#18181B]/50"
-                    >
-                      <option value="VIEWER">Viewer (lectura)</option>
-                      <option value="EDITOR">Editor (crear/duplicar)</option>
-                    </select>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+      <div className="space-y-6 p-5">
+        <WorkspaceAccessSelector
+          workspaces={workspaces}
+          assignments={assignments}
+          query={workspaceQuery}
+          onQueryChange={setWorkspaceQuery}
+          onToggleWorkspace={toggleWorkspace}
+          onRoleChange={updateRole}
+          onClear={handleClearAssignments}
+          workspaceDescription="Selecciona los workspaces que tendra acceso este usuario."
+          emptySelectionDescription="Selecciona al menos uno para definir su rol."
+        />
       </div>
 
       {/* FOOTER */}

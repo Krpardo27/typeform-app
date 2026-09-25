@@ -14,11 +14,11 @@ export async function createDefaultFormForWorkspaceAction(workspaceId: string) {
     notFound();
   }
 
-  const baseFormId = process.env.TYPEFORM_BASE_FORM_ID?.trim();
+  const baseFormId = workspace.templateFormTypeformId?.trim();
 
   if (!baseFormId) {
     throw new Error(
-      "TYPEFORM_BASE_FORM_ID no esta definido. Configuralo para crear el formulario base.",
+      `El workspace ${workspace.name} no tiene una plantilla Typeform configurada.`,
     );
   }
 

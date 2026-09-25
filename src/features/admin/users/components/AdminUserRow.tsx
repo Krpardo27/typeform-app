@@ -1,13 +1,22 @@
 import Link from "next/link";
 import { DeleteUserButton } from "./DeleteUserButton";
 
+type UserWorkspace = {
+  role: string;
+  workspace: {
+    id: string;
+    name: string;
+    typeformId: string;
+  };
+};
+
 type AdminUserRowProps = {
   user: {
     id: string;
     name: string;
     email: string;
     globalRole: string;
-    workspaces: unknown[];
+    workspaces: UserWorkspace[];
   };
   isSelf: boolean;
 };
@@ -26,19 +35,38 @@ function RoleBadge({ role }: { role: string }) {
   );
 }
 
-function WorkspaceCount({ count }: { count: number }) {
-  return count === 0 ? (
+function WorkspaceSummary({ workspaces }: { workspaces: UserWorkspace[] }) {
+  if (workspaces.length === 0) {
+    return (
     <span className="text-sm text-[#737373]">Sin asignar</span>
-  ) : (
-    <span className="text-sm text-[#737373]">
-      {count} workspace{count !== 1 ? "s" : ""} asignado
-      {count !== 1 ? "s" : ""}
-    </span>
+    );
+  }
+
+  const visibleWorkspaces = workspaces.slice(0, 2);
+  const hiddenCount = workspaces.length - visibleWorkspaces.length;
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {visibleWorkspaces.map(({ role, workspace }) => (
+        <span
+          key={workspace.id}
+          title={`${workspace.name} (${role})`}
+          className="max-w-40 truncate rounded-md border border-[#E5E5E5] bg-[#F5F5F5] px-2 py-1 text-xs text-[#525252]"
+        >
+          {workspace.name}
+        </span>
+      ))}
+
+      {hiddenCount > 0 && (
+        <span className="rounded-md border border-[#E5E5E5] px-2 py-1 text-xs text-[#737373]">
+          +{hiddenCount}
+        </span>
+      )}
+    </div>
   );
 }
 
 export function AdminUserRow({ user, isSelf }: AdminUserRowProps) {
-  const workspaceCount = user.workspaces.length;
   const displayName = user.name || "Sin nombre";
 
   return (
@@ -59,7 +87,7 @@ export function AdminUserRow({ user, isSelf }: AdminUserRowProps) {
         <span className="text-xs font-medium uppercase tracking-wider text-[#737373] lg:hidden">
           Workspaces
         </span>
-        <WorkspaceCount count={workspaceCount} />
+        <WorkspaceSummary workspaces={user.workspaces} />
       </div>
 
       <div className="flex flex-wrap items-center justify-end gap-2 border-t border-[#E5E5E5] pt-3 lg:col-span-2 lg:border-t-0 lg:pt-0">

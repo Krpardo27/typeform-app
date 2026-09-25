@@ -50,6 +50,7 @@ export default async function WorkspaceFormsPage({
           <WorkspaceFormsGrid
             workspaceId={workspace.id}
             workspaceTypeformId={workspace.typeformId}
+            templateFormTypeformId={workspace.templateFormTypeformId}
             forms={forms.items}
             canCreateForms={canCreateForms}
           />

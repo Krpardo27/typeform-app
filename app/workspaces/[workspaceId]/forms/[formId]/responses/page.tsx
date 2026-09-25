@@ -324,7 +324,6 @@ export default async function FormResponsesPage({
       <WorkspaceFormResponsesHeader
         workspaceId={workspace.id}
         workspaceName={workspace.name}
-        formId={form.id}
         formTitle={form.title}
       />
 

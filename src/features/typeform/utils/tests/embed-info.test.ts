@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  ADN_TEMPLATE_FORM_ID,
   ADN_TYPEFORM_ID,
+  LOS40_TEMPLATE_FORM_ID,
   LOS40_TYPEFORM_ID,
   getEmbedInfo,
 } from "../embed-info";
@@ -80,6 +82,86 @@ describe("getEmbedInfo", () => {
     it("label indica duplicado cuando se pasa clonedFrom", () => {
       const { label } = getEmbedInfo(FORM_ID, "otro-workspace", "source-id");
       expect(label).toBe("Typeform ID del duplicado");
+    });
+  });
+
+  describe("workspace creado desde plantilla con iframe especial", () => {
+    it("genera el iframe exacto de ADN desde su plantilla base", () => {
+      const { code, src } = getEmbedInfo(
+        "NWJLKpDj",
+        "workspace-nuevo",
+        undefined,
+        ADN_TEMPLATE_FORM_ID,
+      );
+
+      expect(src).toBe("https://prisa.typeform.com/to/NWJLKpDj");
+      expect(code).toBe(
+        '<iframe frameborder="0" height="600" id="typeform-full" src="https://prisa.typeform.com/to/NWJLKpDj" width="100%"></iframe>',
+      );
+    });
+
+    it("genera el iframe exacto de LOS40 desde su plantilla base", () => {
+      const { code, src } = getEmbedInfo(
+        "ACJWBsMI",
+        "workspace-nuevo",
+        undefined,
+        LOS40_TEMPLATE_FORM_ID,
+      );
+
+      expect(src).toBe("https://concursos.los40.cl/t/?id=ACJWBsMI");
+      expect(code).toBe(
+        '<iframe id="concurso" width="100%" height="600px" referrerpolicy="unsafe-url" src="https://concursos.los40.cl/t/?id=ACJWBsMI" scrolling="no" marginwidth="0" marginheight="0" style="border:none;"></iframe>',
+      );
+    });
+
+    it("resuelve iframe ADN desde templateFormTypeformId", () => {
+      const { code, label } = getEmbedInfo(
+        FORM_ID,
+        "workspace-nuevo",
+        undefined,
+        ADN_TEMPLATE_FORM_ID,
+      );
+
+      expect(label).toBe("Código iframe (ADN)");
+      expect(code).toContain(`https://prisa.typeform.com/to/${FORM_ID}`);
+      expect(code).toMatch(/^<iframe /);
+      expect(code).toMatch(/<\/iframe>$/);
+    });
+
+    it("resuelve iframe LOS40 desde templateFormTypeformId", () => {
+      const { code, label } = getEmbedInfo(
+        FORM_ID,
+        "workspace-nuevo",
+        undefined,
+        LOS40_TEMPLATE_FORM_ID,
+      );
+
+      expect(label).toBe("Código iframe (LOS40)");
+      expect(code).toContain(`https://concursos.los40.cl/t/?id=${FORM_ID}`);
+      expect(code).toContain('referrerpolicy="unsafe-url"');
+      expect(code).toMatch(/^<iframe /);
+      expect(code).toMatch(/<\/iframe>$/);
+    });
+
+    it("resuelve iframe LOS40 desde clonedFrom si falta templateFormTypeformId", () => {
+      const { code, label } = getEmbedInfo(
+        "ACJWBsMI",
+        "workspace-nuevo",
+        LOS40_TEMPLATE_FORM_ID,
+      );
+
+      expect(label).toBe("Código iframe (LOS40)");
+      expect(code).toContain("https://concursos.los40.cl/t/?id=ACJWBsMI");
+    });
+
+    it("resuelve iframe ADN si el formId es la plantilla base", () => {
+      const { code, label } = getEmbedInfo(
+        ADN_TEMPLATE_FORM_ID,
+        "workspace-nuevo",
+      );
+
+      expect(label).toBe("Código iframe (ADN)");
+      expect(code).toContain(`https://prisa.typeform.com/to/${ADN_TEMPLATE_FORM_ID}`);
     });
   });
 

@@ -58,6 +58,7 @@ function EmbedCodeCard({ code, label, clonedFrom }: EmbedCodeCardProps) {
 type WorkspaceFormMetaCardsProps = {
   formId: string;
   workspaceTypeformId: string;
+  templateFormTypeformId?: string | null;
   fieldsCount: number;
   hiddenFieldsCount: number;
   clonedFrom?: string;
@@ -66,11 +67,17 @@ type WorkspaceFormMetaCardsProps = {
 export function WorkspaceFormMetaCards({
   formId,
   workspaceTypeformId,
+  templateFormTypeformId,
   fieldsCount,
   hiddenFieldsCount,
   clonedFrom,
 }: WorkspaceFormMetaCardsProps) {
-  const { code, label } = getEmbedInfo(formId, workspaceTypeformId, clonedFrom);
+  const { code, label } = getEmbedInfo(
+    formId,
+    workspaceTypeformId,
+    clonedFrom,
+    templateFormTypeformId,
+  );
 
   return (
     <section className="mt-8 grid gap-4 lg:grid-cols-[2fr_1fr] lg:grid-rows-2">

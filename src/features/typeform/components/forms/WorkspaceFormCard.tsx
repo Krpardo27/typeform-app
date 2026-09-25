@@ -2,12 +2,13 @@ import Link from "next/link";
 import { LuArrowUpRight, LuCalendarClock, LuInbox } from "react-icons/lu";
 import type { TypeformFormSummary } from "@/features/typeform/services/typeform.service";
 import { CopyButton } from "@/shared/components/CopyButton";
-import { WORKSPACE_EMBED_CONFIG } from "@/features/typeform/utils/embed-info";
+import { getEmbedInfo } from "@/features/typeform/utils/embed-info";
 import { WorkspaceFormDuplicateButton } from "./WorkspaceFormDuplicateButton";
 
 type Props = {
   workspaceId: string;
   workspaceTypeformId: string;
+  templateFormTypeformId?: string | null;
   form: TypeformFormSummary;
   canCreateForms: boolean;
 };
@@ -24,10 +25,16 @@ function formatDate(value?: string) {
 export function WorkspaceFormCard({
   workspaceId,
   workspaceTypeformId,
+  templateFormTypeformId,
   form,
   canCreateForms,
 }: Props) {
-  const embedConfig = WORKSPACE_EMBED_CONFIG[workspaceTypeformId];
+  const embedInfo = getEmbedInfo(
+    form.id,
+    workspaceTypeformId,
+    undefined,
+    templateFormTypeformId,
+  );
 
   return (
     <article
@@ -68,14 +75,14 @@ export function WorkspaceFormCard({
 
           <div className="mt-3 flex min-w-0 flex-col items-start gap-3">
             <p className="min-w-0 w-full truncate text-sm text-[#000000]/55">
-              {embedConfig ? embedConfig.buildSrc(form.id) : `ID: ${form.id}`}
+              {embedInfo.src ?? `ID: ${form.id}`}
             </p>
 
-            {embedConfig ? (
+            {embedInfo.src ? (
               <div className="flex shrink-0 gap-1.5">
-                <CopyButton value={embedConfig.buildSrc(form.id)} label="src" />
+                <CopyButton value={embedInfo.src} label="src" />
                 <CopyButton
-                  value={embedConfig.buildCode(form.id)}
+                  value={embedInfo.code}
                   label="iframe"
                 />
               </div>

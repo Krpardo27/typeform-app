@@ -196,13 +196,15 @@ model FormWinner {
 model Workspace {
   id String @id @default(cuid())
 
-  typeformId String @unique
-  name       String
+  typeformId             String  @unique
+  templateFormTypeformId String?
+  name                   String
 
   accountId String
 
   isDefault Boolean @default(false)
   isShared  Boolean @default(false)
+  createdFromApp Boolean @default(false)
 
   selfUrl String?
 
@@ -214,6 +216,7 @@ model Workspace {
   winners FormWinner[]
 
   @@index([typeformId])
+  @@index([templateFormTypeformId])
   @@map("workspace")
 }
 

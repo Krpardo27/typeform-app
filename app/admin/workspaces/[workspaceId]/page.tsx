@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { LuArrowUpRight, LuFileText, LuUsers } from "react-icons/lu";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
@@ -7,6 +8,7 @@ import {
   getWorkspaceForms,
   resolveWorkspaceTypeformId,
 } from "@/features/typeform/services/typeform.service";
+import { getEmbedInfo } from "@/features/typeform/utils/embed-info";
 import Pagination from "@/shared/components/Pagination";
 
 const ITEMS_PER_PAGE = 10;
@@ -14,6 +16,22 @@ const ITEMS_PER_PAGE = 10;
 interface Props {
   params: Promise<{ workspaceId: string }>;
   searchParams: Promise<{ page?: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { workspaceId } = await params;
+
+  const workspace = await prisma.workspace.findFirst({
+    where: {
+      createdFromApp: true,
+      OR: [{ id: workspaceId }, { typeformId: workspaceId }],
+    },
+    select: { name: true },
+  });
+
+  return {
+    title: workspace?.name ?? "Workspace",
+  };
 }
 
 export default async function WorkspaceDetailPage({
@@ -25,13 +43,20 @@ export default async function WorkspaceDetailPage({
 
   const routeWorkspace = await prisma.workspace.findFirst({
     where: {
+      createdFromApp: true,
       OR: [{ id: workspaceId }, { typeformId: workspaceId }],
     },
     select: {
       id: true,
       typeformId: true,
+      templateFormTypeformId: true,
     },
   });
+
+  if (!routeWorkspace) {
+    notFound();
+  }
+
   const typeformWorkspaceId = routeWorkspace?.typeformId ?? workspaceId;
   const resolvedTypeformWorkspaceId = await resolveWorkspaceTypeformId(
     typeformWorkspaceId,
@@ -55,6 +80,7 @@ export default async function WorkspaceDetailPage({
     getWorkspaceForms(typeformWorkspace.id),
     prisma.workspace.findFirst({
       where: {
+        createdFromApp: true,
         OR: [
           { typeformId: typeformWorkspace.id },
           ...(routeWorkspace ? [{ id: routeWorkspace.id }] : []),
@@ -64,6 +90,7 @@ export default async function WorkspaceDetailPage({
         id: true,
         name: true,
         typeformId: true,
+        templateFormTypeformId: true,
         forms: {
           orderBy: { createdAt: "desc" },
           select: {
@@ -144,6 +171,14 @@ export default async function WorkspaceDetailPage({
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 grid-cols-1">
             {paginatedForms.map((form) => {
               const appForm = appFormsByTypeformId.get(form.id);
+              const embedInfo = getEmbedInfo(
+                form.id,
+                typeformWorkspace.id,
+                undefined,
+                appWorkspace?.templateFormTypeformId ??
+                  routeWorkspace.templateFormTypeformId,
+              );
+              const formUrl = embedInfo.src ?? form._links?.display;
 
               return (
                 <article
@@ -156,11 +191,6 @@ export default async function WorkspaceDetailPage({
                         <h2 className="truncate text-base font-semibold text-[#171717]">
                           {form.title}
                         </h2>
-                        {appForm && (
-                          <span className="rounded-md border border-[#18181B]/30 px-2 py-0.5 text-[11px] font-medium text-[#18181B]">
-                            Creado desde App
-                          </span>
-                        )}
                       </div>
 
                       {appForm?.description && (
@@ -174,9 +204,9 @@ export default async function WorkspaceDetailPage({
                       </p>
                     </div>
 
-                    {form._links?.display && (
+                    {formUrl && (
                       <a
-                        href={form._links.display}
+                        href={formUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="rounded-lg border border-[#E5E5E5] p-2 text-[#737373] transition hover:border-[#18181B] hover:text-[#18181B]"
@@ -209,7 +239,7 @@ export default async function WorkspaceDetailPage({
 
                   {appForm && (
                     <div className="mt-2 text-xs text-[#737373]">
-                      Registrado en app{" "}
+                      Creado el{" "}
                       {new Date(appForm.createdAt).toLocaleDateString("es-CL", {
                         day: "numeric",
                         month: "short",

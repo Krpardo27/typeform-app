@@ -1,0 +1,115 @@
+           email            | globalRole  |               workspace               | typeformId | createdFromApp |  role  
+----------------------------+-------------+---------------------------------------+------------+----------------+--------
+ kpardoveas@gmail.com       | USER        | RADIO LOS40 - APP                     | DtBVbM     | t              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | RADIO ADN - APP                       | zUWDst     | t              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | RADIO LOS40 - APP                     | DtBVbM     | t              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | RADIO FMDOS - APP                     | kfSNYp     | t              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | RADIO FUTURO - APP                    | nHBysf     | t              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | RADIO CONCIERTO - APP                 | AvBRkS     | t              | EDITOR
+ kpardoveas@gmail.com       | USER        | RADIO ADN - APP                       | ebs63D     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | RADIO ADN - APP                       | ebs63D     | f              | EDITOR
+ kpardoveas@gmail.com       | USER        | RADIO FUTURO - APP                    | TRME9n     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | RADIO FUTURO - APP                    | TRME9n     | f              | EDITOR
+ kpardoveas@gmail.com       | USER        | RADIO CORAZÓN - APP                   | 4futLv     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | RADIO CORAZÓN - APP                   | 4futLv     | f              | EDITOR
+ kpardoveas@gmail.com       | USER        | RADIO LOS40 - APP                     | zxXykF     | f              | EDITOR
+ kpardoveas@gmail.com       | USER        | RADIO IMAGINA - APP                   | ZcumF5     | f              | EDITOR
+ kpardoveas@gmail.com       | USER        | RADIO FMDOS - APP                     | CMJhu7     | f              | EDITOR
+ kpardoveas@gmail.com       | USER        | RADIO CONCIERTO - APP                 | asSFK7     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | RADIO FMDOS - APP                     | CMJhu7     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | RADIO LOS40 - APP                     | zxXykF     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | RADIO CONCIERTO - APP                 | asSFK7     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | RADIO IMAGINA - APP                   | ZcumF5     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | PREMIOS MUSA 2021 (EN)                | JhgeTV     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | AS CHILE                              | Ydgyes     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | PREMIOS MUSA 2023                     | 7S5F4c     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | PREMIOS MUSA 2022                     | mqd6U4     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | PREMIOS MUSA 2021                     | BBdmjv     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | PREMIOS MUSA 2020                     | NpJfDm     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | FESTIGAME                             | 4eKLWQ     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | separadormodular                      | ubbsZL     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | AMPLIFICADOR                          | wrsEVq     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | ADN // CONCURSOS                      | YFwF8J     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | CONCIERTO // CONCURSOS                | pbwZSu     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | IARC                                  | 5574343    | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | AS CHILE                              | 5295598    | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | DEVS                                  | 1368389    | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | SOMOS LA PERCHA                       | CBpDnc     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | PROD 16 DE SEPTIEMBRE                 | zTDVEn     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | Workspace 24 Septiembre LOCAL OFICINA | fyrMP8     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | CONCIERTO - FORM APP                  | a7U2du     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | CONCIERTO - FORM APP                  | 6fbvqw     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | PROBANDO NOMBRE METADATA              | hrDaub     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | PRUEBA NOMBRE METADATA                | GkJu8f     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | PRUEBA NOMBRE METADATA 2              | mYPvZM     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | NUEVA PRUEBA TITLE Workspace          | YCLXt2     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | ROCKANDPOP                            | 414850     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | CORAZÓN                               | 4110099    | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | IMAGINA                               | 2979562    | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | WORKSPACE 14 DE JULIO                 | ULt2za     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | WORKSPACE 10 DE JULIO 2026            | w5WRSd     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | RADIO GTA VI                          | XUdmPM     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | RADIO CORAZÓN PRUEBA                  | 2Yc7BT     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | ESTO ES UNA PRUEBA NUEVA 1 DE JULIO   | kyfECK     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | PROBANDO CREACIÓN DE FORMS            | fS9sgk     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | ESPECIALES - PUDAHUEL                 | ApmYEe     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | SOMOS LA PERCHA                       | WxMTrP     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | PREMIOS MUSA 2024                     | z553sW     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | EL PAIS CHILE                         | QkDHFT     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | AS CHILE                              | Ydgyes     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | PREMIOS MUSA 2023                     | 7S5F4c     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | PREMIOS MUSA 2022                     | mqd6U4     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | PREMIOS MUSA 2021 (EN)                | JhgeTV     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | PREMIOS MUSA 2021                     | BBdmjv     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | PREMIOS MUSA 2020                     | NpJfDm     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | FESTIGAME                             | 4eKLWQ     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | separadormodular                      | ubbsZL     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | AMPLIFICADOR                          | wrsEVq     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | ADN // CONCURSOS                      | YFwF8J     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | CONCIERTO // CONCURSOS                | pbwZSu     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | IARC                                  | 5574343    | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | AS CHILE                              | 5295598    | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | DEVS                                  | 1368389    | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | SOMOS LA PERCHA                       | CBpDnc     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | PROD 16 DE SEPTIEMBRE                 | zTDVEn     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | CONCIERTO - FORM APP                  | a7U2du     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | ROCKANDPOP                            | 414850     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | CORAZÓN                               | 4110099    | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | IMAGINA                               | 2979562    | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | WORKSPACE 14 DE JULIO                 | ULt2za     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | WORKSPACE 10 DE JULIO 2026            | w5WRSd     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | RADIO GTA VI                          | XUdmPM     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | RADIO CORAZÓN PRUEBA                  | 2Yc7BT     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | ESTO ES UNA PRUEBA NUEVA 1 DE JULIO   | kyfECK     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | PROBANDO CREACIÓN DE FORMS            | fS9sgk     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | ESPECIALES - PUDAHUEL                 | ApmYEe     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | SOMOS LA PERCHA                       | WxMTrP     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | PREMIOS MUSA 2024                     | z553sW     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | EL PAIS CHILE                         | QkDHFT     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | NUEVA PRUEBA TITLE Workspace          | YCLXt2     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | PRUEBA NOMBRE METADATA 2              | mYPvZM     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | PRUEBA NOMBRE METADATA                | GkJu8f     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | PROBANDO NOMBRE METADATA              | hrDaub     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | CONCIERTO - FORM APP                  | 6fbvqw     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | Workspace 24 Septiembre LOCAL OFICINA | fyrMP8     | f              | EDITOR
+ kevin.pardov25@gmail.com   | USER        | FUTURO                                | 371901     | f              | EDITOR
+ kevin.pardov25@gmail.com   | USER        | LOS40                                 | 416594     | f              | EDITOR
+ kevin.pardov25@gmail.com   | USER        | ADN                                   | 2828888    | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | CONCIERTO                             | 1530584    | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | ACTIVA                                | 866034     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | ADN                                   | 2828888    | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | LOS40                                 | 416594     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | FMDOS                                 | 282794     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | FUTURO                                | 371901     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | PUDAHUEL                              | 390974     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | ROCK&POP                              | rockpop    | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | LOS40                                 | 416594     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | ACTIVA                                | 866034     | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | CONCIERTO                             | 1530584    | f              | EDITOR
+ benjaminliberona@gmail.com | SUPER_ADMIN | ADN                                   | 2828888    | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | FMDOS                                 | 282794     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | FUTURO                                | 371901     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | PUDAHUEL                              | 390974     | f              | EDITOR
+ kevin.pardov26@gmail.com   | SUPER_ADMIN | ROCK&POP                              | rockpop    | f              | EDITOR
+(111 rows)
+

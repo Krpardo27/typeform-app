@@ -1,5 +1,5 @@
 import { createPortal } from "react-dom";
-import { FaAward } from "react-icons/fa6";
+import { LuLoaderCircle } from "react-icons/lu";
 
 type LoaderScreenProps = {
   title: string;
@@ -18,32 +18,33 @@ export default function LoaderScreen({
     <main
       role="status"
       aria-live="polite"
-      className="fixed inset-0 z-[2147483647] flex min-h-screen items-center justify-center overflow-hidden bg-[#F7F7F5] px-3 py-4 sm:px-4"
+      className="fixed inset-0 z-2147483647 flex min-h-screen items-center justify-center bg-[#F5F5F5]/95 px-4 py-6 backdrop-blur-sm"
     >
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-0 top-0 h-px w-full bg-linear-to-r from-transparent via-[#F5F5F5] to-transparent" />
-        <div className="absolute left-1/2 top-0 h-40 w-40 -translate-x-1/2 rounded-full bg-[#FF5C35]/8 blur-3xl sm:h-64 sm:w-64" />
-      </div>
+      <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-[#E5E5E5] bg-white shadow-[0_18px_50px_rgba(23,23,23,0.08)]">
+        <div className="border-b border-[#E5E5E5] bg-[#FAFAFA] px-5 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 items-center justify-center rounded-xl border border-[#E5E5E5] bg-white text-[#18181B]">
+              <LuLoaderCircle className="size-5 animate-spin" />
+            </div>
 
-      <div className="relative w-full max-w-[22rem] rounded-[1.75rem] border border-[#D1D1CD] bg-white p-5 text-center shadow-[0_20px_60px_rgba(17,24,39,0.08)] backdrop-blur-sm sm:max-w-md sm:p-10">
-        <div className="relative mx-auto mb-5 flex h-16 w-16 items-center justify-center sm:mb-8 sm:h-20 sm:w-20">
-          <div className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-[#FF5C35] border-r-[#7C3AED]" />
-          <div className="flex h-11 w-11 items-center justify-center rounded-full border border-[#F3F0FF] bg-[linear-gradient(135deg,#FFF4F0_0%,#F6F2FF_100%)] sm:h-14 sm:w-14">
-            <FaAward size={22} className="text-[#FF5C35] sm:text-[24px]" />
+            <div className="min-w-0 text-left">
+              <p className="text-sm font-semibold text-[#171717]">{title}</p>
+              <p className="mt-0.5 text-xs text-[#737373]">Redirigiendo</p>
+            </div>
           </div>
         </div>
 
-        <h1 className="text-[1.7rem] font-semibold tracking-[-0.04em] text-[#111111] sm:text-3xl">
-          {title}
-        </h1>
+        <div className="px-5 py-5 text-left">
+          <p className="text-sm leading-6 text-[#525252]">{description}</p>
 
-        <p className="mx-auto mt-3 max-w-[17rem] text-sm leading-relaxed text-[#111111]/65 sm:max-w-xs">
-          {description}
-        </p>
+          <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-[#F5F5F5]">
+            <div className="h-full w-1/2 animate-pulse rounded-full bg-[#18181B]" />
+          </div>
 
-        <p className="mt-4 text-[10px] tracking-[0.18em] text-[#111111]/45 sm:text-xs">
-          Redirigiendo...
-        </p>
+          <p className="mt-3 text-xs text-[#A3A3A3]">
+            Esto tomara solo un momento.
+          </p>
+        </div>
       </div>
     </main>,
     document.body,

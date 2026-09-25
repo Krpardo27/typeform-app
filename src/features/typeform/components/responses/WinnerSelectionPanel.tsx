@@ -23,6 +23,8 @@ type WinnerSelectionPanelProps = {
   winnerError?: string;
 };
 
+const DEFAULT_WINNER_REASON = "Selección manual de ganadores";
+
 export function deduplicateWinnerCandidates(candidates: WinnerCandidate[]) {
   const seen = new Set<string>();
 
@@ -92,6 +94,7 @@ export function WinnerSelectionPanel({
 }: WinnerSelectionPanelProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [query, setQuery] = useState("");
+  const [reason, setReason] = useState(DEFAULT_WINNER_REASON);
   const [isPending, startTransition] = useTransition();
 
   const uniqueCandidates = useMemo(
@@ -99,14 +102,13 @@ export function WinnerSelectionPanel({
     [candidates],
   );
 
-  const [selectedTokens, setSelectedTokens] = useState<Set<string>>(
-    () =>
-      new Set(
-        uniqueCandidates
-          .filter((candidate) => candidate.selected)
-          .map((candidate) => candidate.token),
-      ),
-  );
+  const candidateSelectionKey = uniqueCandidates
+    .map(
+      (candidate) =>
+        `${candidate.token}:${candidate.selected ? "selected" : "unselected"}`,
+    )
+    .join("|");
+
   const initialSelectedTokens = useMemo(
     () =>
       new Set(
@@ -116,18 +118,46 @@ export function WinnerSelectionPanel({
       ),
     [uniqueCandidates],
   );
+
+  const [selectedTokenState, setSelectedTokenState] = useState<{
+    key: string;
+    tokens: Set<string>;
+  }>(() => ({
+    key: candidateSelectionKey,
+    tokens: initialSelectedTokens,
+  }));
+
+  const selectedTokens =
+    selectedTokenState.key === candidateSelectionKey
+      ? selectedTokenState.tokens
+      : initialSelectedTokens;
+
+  function updateSelectedTokens(
+    nextTokens: Set<string> | ((current: Set<string>) => Set<string>),
+  ) {
+    setSelectedTokenState((currentState) => {
+      const currentTokens =
+        currentState.key === candidateSelectionKey
+          ? currentState.tokens
+          : initialSelectedTokens;
+
+      return {
+        key: candidateSelectionKey,
+        tokens:
+          typeof nextTokens === "function"
+            ? nextTokens(currentTokens)
+            : nextTokens,
+      };
+    });
+  }
+
   const hasSelectionChanged = !areTokenSetsEqual(
     selectedTokens,
     initialSelectedTokens,
   );
-  const canSubmitSelection = selectedTokens.size > 0 || hasSelectionChanged;
-
-  const candidateSelectionKey = uniqueCandidates
-    .map(
-      (candidate) =>
-        `${candidate.token}:${candidate.selected ? "selected" : "unselected"}`,
-    )
-    .join("|");
+  const hasReasonChanged = reason.trim() !== DEFAULT_WINNER_REASON;
+  const canSubmitSelection =
+    hasSelectionChanged || (selectedTokens.size > 0 && hasReasonChanged);
 
   const filteredCandidates = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -166,19 +196,12 @@ export function WinnerSelectionPanel({
       return;
     }
 
-    const selectedInputs = Array.from(
-      form.querySelectorAll<HTMLInputElement>(
-        'input[name="winnerToken"]:checked',
-      ),
-    );
-    const reasonInput = form.querySelector<HTMLInputElement>(
-      'input[name="reason"]',
-    );
-    const selectedCount = selectedInputs.length;
+    const selectedTokenList = [...selectedTokens];
+    const selectedCount = selectedTokenList.length;
 
-    const selectedReferences = selectedInputs.slice(0, 3).map((input) => {
-      const candidate = candidates.find((item) => item.token === input.value);
-      return getParticipantReference(candidate, input.value);
+    const selectedReferences = selectedTokenList.slice(0, 3).map((token) => {
+      const candidate = candidates.find((item) => item.token === token);
+      return getParticipantReference(candidate, token);
     });
     const selectedPreview = formatParticipantReferences(selectedReferences);
 
@@ -214,12 +237,20 @@ export function WinnerSelectionPanel({
       return;
     }
 
-    if (!reasonInput?.value.trim()) {
-      reasonInput?.focus();
+    const trimmedReason = reason.trim();
+
+    if (!trimmedReason) {
+      form.querySelector<HTMLInputElement>('input[name="reason"]')?.focus();
       return;
     }
 
     const formData = new FormData(form);
+    formData.delete("winnerToken");
+    formData.set("reason", trimmedReason);
+
+    for (const token of selectedTokenList) {
+      formData.append("winnerToken", token);
+    }
 
     startTransition(async () => {
       await action(formData);
@@ -239,7 +270,7 @@ export function WinnerSelectionPanel({
   };
 
   const handleCandidateChange = (token: string, checked: boolean) => {
-    setSelectedTokens((prev) => {
+    updateSelectedTokens((prev) => {
       const next = new Set(prev);
       if (checked) next.add(token);
       else next.delete(token);
@@ -393,7 +424,8 @@ export function WinnerSelectionPanel({
             id="winner-reason"
             type="text"
             name="reason"
-            defaultValue="Selección manual de ganadores"
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
             required
             disabled={isPending}
             className="w-full border border-[#DCDCD9] bg-white px-3 py-2.5 text-sm text-[#000000] outline-none transition focus:border-[#000000] disabled:cursor-not-allowed disabled:opacity-60"
@@ -414,7 +446,7 @@ export function WinnerSelectionPanel({
               type="button"
               disabled={isPending || !canSubmitSelection}
               onClick={() => {
-                setSelectedTokens(new Set());
+                updateSelectedTokens(new Set());
               }}
               className="px-3 py-2 text-sm font-medium text-[#000000]/60 transition-colors hover:text-[#000000] disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -425,6 +457,8 @@ export function WinnerSelectionPanel({
               value={
                 isPending
                   ? "Guardando..."
+                  : !canSubmitSelection
+                    ? "Sin cambios"
                   : selectedTokens.size === 0 && hasSelectionChanged
                     ? "Quitar ganadores"
                     : "Confirmar ganadores"

@@ -36,17 +36,31 @@ export default async function AdminDashboardPage() {
           },
         },
       }),
-      prisma.workspace.count(),
       prisma.workspace.count({
         where: {
+          createdFromApp: true,
+        },
+      }),
+      prisma.workspace.count({
+        where: {
+          createdFromApp: true,
           createdAt: {
             gte: startOfMonth,
           },
         },
       }),
-      prisma.form.count(),
       prisma.form.count({
         where: {
+          workspace: {
+            createdFromApp: true,
+          },
+        },
+      }),
+      prisma.form.count({
+        where: {
+          workspace: {
+            createdFromApp: true,
+          },
           createdAt: {
             gte: startOfWeek,
           },

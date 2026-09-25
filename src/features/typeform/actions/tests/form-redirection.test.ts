@@ -55,6 +55,7 @@ const WORKSPACE = {
   id: "workspace-db-id",
   name: "Workspace Demo",
   typeformId: "typeform-workspace-id",
+  templateFormTypeformId: "base-form-id",
 };
 
 const USER = {
@@ -80,7 +81,6 @@ function expectRedirectToFormsList(error: unknown) {
 describe("form action redirection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.TYPEFORM_BASE_FORM_ID = "base-form-id";
 
     mocks.getWorkspaceAccessContext.mockResolvedValue({
       user: USER,

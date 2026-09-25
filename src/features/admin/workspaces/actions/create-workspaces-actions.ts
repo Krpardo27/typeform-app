@@ -25,21 +25,15 @@ export async function createWorkspaceAction(data: unknown) {
     return { errors: result.error.issues };
   }
 
-  const { name } = result.data;
+  const { name, templateFormTypeformId } = result.data;
 
   try {
-    const baseFormId = process.env.TYPEFORM_BASE_FORM_ID?.trim();
-
-    if (!baseFormId) {
-      throw new Error(
-        "TYPEFORM_BASE_FORM_ID no esta definido. Configuralo para crear el formulario por defecto.",
-      );
-    }
+    const baseFormId = templateFormTypeformId.trim();
 
     const baseForm = await getTypeformForm(baseFormId).catch((error: unknown) => {
       if (isTypeformNotFoundError(error)) {
         throw new Error(
-          `No se encontro el formulario base de Typeform (${baseFormId}). Revisa TYPEFORM_BASE_FORM_ID y que el token tenga acceso a ese formulario.`,
+          `No se encontro el formulario plantilla de Typeform (${baseFormId}). Revisa que el token tenga acceso a ese formulario.`,
         );
       }
 
@@ -52,8 +46,10 @@ export async function createWorkspaceAction(data: unknown) {
       data: {
         name,
         typeformId: typeformWorkspace.id,
+        templateFormTypeformId: baseFormId,
         selfUrl: typeformWorkspace.self?.href ?? null,
         accountId: typeformWorkspace.account_id ?? typeformWorkspace.id,
+        createdFromApp: true,
       },
     });
 

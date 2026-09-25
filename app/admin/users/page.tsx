@@ -20,8 +20,24 @@ export default async function AdminUsersPage() {
     orderBy: { createdAt: "desc" },
     include: {
       workspaces: {
+        where: {
+          workspace: {
+            createdFromApp: true,
+          },
+        },
+        orderBy: {
+          workspace: {
+            name: "asc",
+          },
+        },
         include: {
-          workspace: true,
+          workspace: {
+            select: {
+              id: true,
+              name: true,
+              typeformId: true,
+            },
+          },
         },
       },
     },

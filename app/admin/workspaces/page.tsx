@@ -1,10 +1,15 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import WorkspacesPageClient from "@/features/admin/workspaces/components/WorkspacesPageClient";
 import { AdminWorkspacesContent } from "@/features/admin/workspaces/components/AdminWorkspacesContent";
 import { AdminWorkspacesGridSkeleton } from "@/features/admin/workspaces/components/AdminWorkspacesGridSkeleton";
+
+export const metadata: Metadata = {
+  title: "Workspaces",
+};
 
 const PAGE_SIZE_OPTIONS = [12, 24, 48] as const;
 const DEFAULT_PAGE_SIZE = 12;
@@ -35,7 +40,11 @@ export default async function AdminWorkspacesPage({
   const itemsPerPage = resolveItemsPerPage(pageSize);
   const requestedPage = Number.parseInt(page ?? "1", 10) || 1;
 
-  const workspaceCount = await prisma.workspace.count();
+  const workspaceCount = await prisma.workspace.count({
+    where: {
+      createdFromApp: true,
+    },
+  });
   const totalPages = Math.max(1, Math.ceil(workspaceCount / itemsPerPage));
   const currentPage = Math.min(Math.max(requestedPage, 1), totalPages);
   const fallbackCount = getFallbackCount(workspaceCount, currentPage, itemsPerPage);

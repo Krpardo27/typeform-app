@@ -15,10 +15,64 @@ interface Props {
   onClose: () => void;
 }
 
+const TEMPLATE_FORM_OPTIONS = [
+  {
+    label: "CONCIERTO",
+    typeformId: "1530584",
+    value: "HePVkesf",
+  },
+  {
+    label: "LOS40",
+    typeformId: "416594",
+    value: "pirygCQR",
+  },
+  {
+    label: "ROCKANDPOP",
+    typeformId: "414850",
+    value: "VxoT54si",
+  },
+  {
+    label: "FUTURO",
+    typeformId: "371901",
+    value: "r1aIO4Xh",
+  },
+  {
+    label: "ADN",
+    typeformId: "2828888",
+    value: "yuXGlh4N",
+  },
+  {
+    label: "FMDOS",
+    typeformId: "282794",
+    value: "pkgiqZ1g",
+  },
+  {
+    label: "ACTIVA",
+    typeformId: "866034",
+    value: "E9T1RItE",
+  },
+  {
+    label: "CORAZÓN",
+    typeformId: "4110099",
+    value: "l5cL82so",
+  },
+  {
+    label: "PUDAHUEL",
+    typeformId: "390974",
+    value: "Id8OdFJO",
+  },
+  {
+    label: "IMAGINA",
+    typeformId: "2979562",
+    value: "cQ5BsMcs",
+  },
+] as const;
+
 export default function CreateWorkspaceModal({ onClose }: Props) {
   const router = useRouter();
 
   const [name, setName] = useState("");
+  const [templateFormTypeformId, setTemplateFormTypeformId] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -29,7 +83,10 @@ export default function CreateWorkspaceModal({ onClose }: Props) {
 
     setError("");
 
-    const result = CreateWorkspaceSchema.safeParse({ name });
+    const result = CreateWorkspaceSchema.safeParse({
+      name,
+      templateFormTypeformId,
+    });
 
     if (!result.success) {
       setError(result.error.issues[0].message);
@@ -37,6 +94,7 @@ export default function CreateWorkspaceModal({ onClose }: Props) {
     }
 
     const workspaceName = result.data.name;
+    const workspaceTemplateFormTypeformId = result.data.templateFormTypeformId;
     const confirmation = await Swal.fire({
       title: "Crear workspace",
       text: `Se creara el workspace "${workspaceName}" y se duplicara el formulario base configurado.`,
@@ -55,7 +113,10 @@ export default function CreateWorkspaceModal({ onClose }: Props) {
 
     setLoading(true);
 
-    const response = await createWorkspaceAction({ name: workspaceName });
+    const response = await createWorkspaceAction({
+      name: workspaceName,
+      templateFormTypeformId: workspaceTemplateFormTypeformId,
+    });
 
     setLoading(false);
 
@@ -75,11 +136,12 @@ export default function CreateWorkspaceModal({ onClose }: Props) {
 
       toast.success("Workspace creado exitosamente", {
         description: `Se creo ${createdWorkspaceName} con el formulario base ${defaultFormTitle}.`,
-        action: {
-          label: "Abrir",
-          onClick: () => router.push(workspaceAdminPath),
-        },
       });
+
+      onClose();
+      router.push(workspaceAdminPath);
+      router.refresh();
+      return;
     } else {
       toast.success("Workspace creado exitosamente");
     }
@@ -127,9 +189,36 @@ export default function CreateWorkspaceModal({ onClose }: Props) {
               disabled={loading}
               className="w-full rounded-lg border border-gray-400 bg-[#F5F5F5] px-3 py-2.5 text-sm text-[#171717] placeholder-[#737373] outline-none transition focus:border-[#18181B] disabled:opacity-50"
             />
-
-            {error && <FormErrors>{error}</FormErrors>}
           </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium uppercase tracking-wider text-[#737373]">
+              Radio plantilla
+            </label>
+
+            <select
+              value={templateFormTypeformId}
+              onChange={(e) => {
+                setTemplateFormTypeformId(e.target.value);
+
+                if (error) {
+                  setError("");
+                }
+              }}
+              disabled={loading}
+              className="w-full rounded-lg border border-gray-400 bg-[#F5F5F5] px-3 py-2.5 text-sm text-[#171717] placeholder-[#737373] outline-none transition focus:border-[#18181B] disabled:opacity-50"
+            >
+              <option value="">Selecciona una radio base</option>
+
+              {TEMPLATE_FORM_OPTIONS.map((option) => (
+                <option key={option.typeformId} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {error && <FormErrors>{error}</FormErrors>}
 
           <div className="flex gap-3 pt-2">
             <button

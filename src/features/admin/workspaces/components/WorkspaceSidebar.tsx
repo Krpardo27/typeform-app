@@ -31,7 +31,7 @@ export function WorkspaceSidebar({
   const displayName = user.name?.trim() || user.email.split("@")[0];
 
   return (
-    <aside className="flex h-full min-h-0 w-72 shrink-0 flex-col overflow-y-auto border-r border-[#F5F5F5] bg-[#FFFFFF] px-4 py-6 text-[#000000]">
+    <aside className="flex h-full min-h-0 w-72 shrink-0 flex-col overflow-y-auto border-r border-[#F5F5F5] bg-[#FFFFFF] p-4 text-[#000000]">
       <div className="mb-6 flex h-full flex-col bg-[#FFFFFF]">
         <div className="mb-4">
           <Link
