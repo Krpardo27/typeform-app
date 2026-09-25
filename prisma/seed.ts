@@ -50,10 +50,44 @@ async function main() {
   console.log("Usuarios garantizados");
 
   // 3. Workspaces
-  await prisma.workspace.createMany({
-    data: radioWorkspaces,
-    skipDuplicates: true,
-  });
+  const legacyWorkspaceTypeformIds = [
+    { legacyTypeformId: "concierto", nextTypeformId: "1530584" },
+    { legacyTypeformId: "los40", nextTypeformId: "416594" },
+    { legacyTypeformId: "rockpop", nextTypeformId: "414850" },
+    { legacyTypeformId: "futuro", nextTypeformId: "371901" },
+    { legacyTypeformId: "adn", nextTypeformId: "2828888" },
+    { legacyTypeformId: "fmdos", nextTypeformId: "282794" },
+    { legacyTypeformId: "activa", nextTypeformId: "866034" },
+    { legacyTypeformId: "pudahuel", nextTypeformId: "390974" },
+  ];
+
+  for (const workspace of legacyWorkspaceTypeformIds) {
+    const nextWorkspaceExists = await prisma.workspace.findUnique({
+      where: { typeformId: workspace.nextTypeformId },
+      select: { id: true },
+    });
+
+    if (!nextWorkspaceExists) {
+      await prisma.workspace.updateMany({
+        where: { typeformId: workspace.legacyTypeformId },
+        data: { typeformId: workspace.nextTypeformId },
+      });
+    }
+  }
+
+  await Promise.all(
+    radioWorkspaces.map((workspace) =>
+      prisma.workspace.upsert({
+        where: { typeformId: workspace.typeformId },
+        update: {
+          name: workspace.name,
+          accountId: workspace.accountId,
+          templateFormTypeformId: workspace.templateFormTypeformId,
+        },
+        create: workspace,
+      }),
+    ),
+  );
 
   console.log("Workspaces creados");
 

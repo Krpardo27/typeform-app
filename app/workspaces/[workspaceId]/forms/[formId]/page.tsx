@@ -14,6 +14,7 @@ import {
   resolveWorkspaceTypeformId,
 } from "@/features/typeform/services/typeform.service";
 import { getSuggestedDuplicateTitle } from "@/features/typeform/utils/duplicate-title";
+import { getEmbedInfo } from "@/features/typeform/utils/embed-info";
 
 async function getExistingTypeformForm(formId: string) {
   try {
@@ -60,7 +61,13 @@ export default async function WorkspaceFormDetailPage({
     notFound();
   }
 
-  const displayUrl = form._links?.display;
+  const embedInfo = getEmbedInfo(
+    form.id,
+    workspace.typeformId,
+    clonedFrom,
+    workspace.templateFormTypeformId,
+  );
+  const displayUrl = embedInfo.src ?? form._links?.display;
   const duplicateForm = duplicateFormAction.bind(null, workspace.id, form.id);
 
   return (
@@ -87,6 +94,7 @@ export default async function WorkspaceFormDetailPage({
       <WorkspaceFormMetaCards
         formId={form.id}
         workspaceTypeformId={workspace.typeformId}
+        templateFormTypeformId={workspace.templateFormTypeformId}
         fieldsCount={form.fields?.length ?? 0}
         hiddenFieldsCount={form.hidden?.length ?? 0}
         clonedFrom={clonedFrom}

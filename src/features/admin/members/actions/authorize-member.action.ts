@@ -12,6 +12,16 @@ type AuthorizeMemberInput = {
   role: "VIEWER" | "EDITOR";
 };
 
+type AuthorizeMemberWorkspaceInput = {
+  workspaceId: string;
+  role: "VIEWER" | "EDITOR";
+};
+
+type AuthorizeMemberBatchInput = {
+  email: string;
+  assignments: AuthorizeMemberWorkspaceInput[];
+};
+
 type AuthorizeMemberResult = {
   success: boolean;
   message: string;
@@ -25,8 +35,8 @@ function fallbackNameFromEmail(email: string) {
   return email.split("@")[0] || "usuario";
 }
 
-export async function authorizeMember(
-  input: AuthorizeMemberInput,
+export async function authorizeMemberBatch(
+  input: AuthorizeMemberBatchInput,
 ): Promise<AuthorizeMemberResult> {
   const currentUser = await getCurrentUser();
 
@@ -42,16 +52,29 @@ export async function authorizeMember(
   }
 
   const email = input.email.trim().toLowerCase();
-  const workspaceId = input.workspaceId.trim();
-  const role =
-    input.role === WorkspaceRole.EDITOR
-      ? WorkspaceRole.EDITOR
-      : WorkspaceRole.VIEWER;
+  const roleByWorkspaceId = new Map<string, WorkspaceRole>();
 
-  if (!email || !workspaceId) {
+  for (const assignment of input.assignments) {
+    const workspaceId = assignment.workspaceId.trim();
+
+    if (!workspaceId) {
+      continue;
+    }
+
+    roleByWorkspaceId.set(
+      workspaceId,
+      assignment.role === WorkspaceRole.EDITOR
+        ? WorkspaceRole.EDITOR
+        : WorkspaceRole.VIEWER,
+    );
+  }
+
+  const workspaceIds = [...roleByWorkspaceId.keys()];
+
+  if (!email || workspaceIds.length === 0) {
     return {
       success: false,
-      message: "Debes completar email y workspace",
+      message: "Debes completar email y seleccionar al menos un workspace",
     };
   }
 
@@ -62,15 +85,20 @@ export async function authorizeMember(
     };
   }
 
-  const workspace = await prisma.workspace.findUnique({
-    where: { id: workspaceId },
+  const workspaces = await prisma.workspace.findMany({
+    where: {
+      id: {
+        in: workspaceIds,
+      },
+      createdFromApp: true,
+    },
     select: { id: true, name: true },
   });
 
-  if (!workspace) {
+  if (workspaces.length !== workspaceIds.length) {
     return {
       success: false,
-      message: "Workspace no encontrado",
+      message: "Uno o mas workspaces no existen o no se pueden asignar",
     };
   }
 
@@ -99,87 +127,128 @@ export async function authorizeMember(
       },
     });
 
-    const existingAssignment = await tx.userWorkspace.findUnique({
+    const existingAssignments = await tx.userWorkspace.findMany({
       where: {
-        userId_workspaceId: {
-          userId: user.id,
-          workspaceId,
+        userId: user.id,
+        workspaceId: {
+          in: workspaceIds,
         },
       },
-      select: { role: true },
+      select: { workspaceId: true, role: true },
     });
 
-    await tx.userWorkspace.upsert({
-      where: {
-        userId_workspaceId: {
-          userId: user.id,
-          workspaceId,
-        },
-      },
-      update: { role },
-      create: {
-        userId: user.id,
-        workspaceId,
-        role,
-      },
-    });
+    const previousRoleByWorkspaceId = new Map(
+      existingAssignments.map((assignment) => [
+        assignment.workspaceId,
+        assignment.role,
+      ]),
+    );
+
+    await Promise.all(
+      workspaceIds.map((workspaceId) => {
+        const role = roleByWorkspaceId.get(workspaceId) ?? WorkspaceRole.VIEWER;
+
+        return tx.userWorkspace.upsert({
+          where: {
+            userId_workspaceId: {
+              userId: user.id,
+              workspaceId,
+            },
+          },
+          update: { role },
+          create: {
+            userId: user.id,
+            workspaceId,
+            role,
+          },
+        });
+      }),
+    );
 
     return {
-      previousRole: existingAssignment?.role ?? null,
+      previousRoleByWorkspaceId,
     };
   });
 
-  await createAuditLog({
-    action: "FORM_CLONED",
-    actor: {
-      id: currentUser.id,
-      email: currentUser.email,
-      name: currentUser.name,
-    },
-    target: {
-      type: "member_access",
-      id: email,
-    },
-    context: {
-      workspaceId: workspace.id,
-      workspaceName: workspace.name,
-      metadata: {
-        eventType: "MEMBER_AUTHORIZED",
-        assignedRole: role,
-        wasWhitelisted: Boolean(alreadyWhitelisted),
-        hadPreviousRole: result.previousRole ?? null,
-      },
-    },
-  });
+  const workspaceNameById = new Map(
+    workspaces.map((workspace) => [workspace.id, workspace.name]),
+  );
+
+  await Promise.all(
+    workspaceIds.map((workspaceId) => {
+      const role = roleByWorkspaceId.get(workspaceId) ?? WorkspaceRole.VIEWER;
+      const previousRole = result.previousRoleByWorkspaceId.get(workspaceId);
+
+      return createAuditLog({
+        action: "FORM_CLONED",
+        actor: {
+          id: currentUser.id,
+          email: currentUser.email,
+          name: currentUser.name,
+        },
+        target: {
+          type: "member_access",
+          id: email,
+        },
+        context: {
+          workspaceId,
+          workspaceName: workspaceNameById.get(workspaceId),
+          metadata: {
+            eventType: "MEMBER_AUTHORIZED",
+            assignedRole: role,
+            wasWhitelisted: Boolean(alreadyWhitelisted),
+            hadPreviousRole: previousRole ?? null,
+          },
+        },
+      });
+    }),
+  );
 
   revalidatePath("/admin/miembros");
   revalidatePath("/admin/users");
   revalidatePath("/admin/workspaces");
   revalidatePath("/workspaces/me");
 
+  const createdCount = workspaceIds.filter(
+    (workspaceId) => !result.previousRoleByWorkspaceId.has(workspaceId),
+  ).length;
+  const updatedCount = workspaceIds.filter((workspaceId) => {
+    const previousRole = result.previousRoleByWorkspaceId.get(workspaceId);
+    const nextRole = roleByWorkspaceId.get(workspaceId);
+
+    return previousRole && previousRole !== nextRole;
+  }).length;
+
   if (!alreadyWhitelisted) {
     return {
       success: true,
-      message: `Miembro autorizado y asignado en ${workspace.name} como ${role}`,
+      message: `Miembro autorizado en ${workspaceIds.length} workspace(s)`,
     };
   }
 
-  if (result.previousRole && result.previousRole !== role) {
+  if (createdCount === 0 && updatedCount === 0) {
     return {
       success: true,
-      message: `Rol actualizado a ${role} en ${workspace.name}`,
-    };
-  }
-
-  if (result.previousRole === role) {
-    return {
-      success: true,
-      message: `El miembro ya tenia acceso ${role} en ${workspace.name}`,
+      message: "El miembro ya tenia esos accesos configurados",
     };
   }
 
   return {
     success: true,
-    message: `Miembro agregado al workspace ${workspace.name} como ${role}`,
+    message: `Accesos actualizados: ${createdCount} nuevo(s), ${updatedCount} rol(es) modificado(s)`,
   };
+}
+
+export async function authorizeMember(
+  input: AuthorizeMemberInput,
+): Promise<AuthorizeMemberResult> {
+  return authorizeMemberBatch({
+    email: input.email,
+    assignments: [
+      {
+        workspaceId: input.workspaceId,
+        role: input.role,
+      },
+    ],
+  });
 }

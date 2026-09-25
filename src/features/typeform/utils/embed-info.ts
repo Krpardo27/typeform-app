@@ -1,5 +1,7 @@
 export const ADN_TYPEFORM_ID = "2828888";
 export const LOS40_TYPEFORM_ID = "416594";
+export const ADN_TEMPLATE_FORM_ID = "yuXGlh4N";
+export const LOS40_TEMPLATE_FORM_ID = "pirygCQR";
 
 export type EmbedConfig = {
   label: string;
@@ -26,14 +28,44 @@ export const WORKSPACE_EMBED_CONFIG: Record<string, EmbedConfig> = {
   },
 };
 
+const TEMPLATE_FORM_EMBED_CONFIG: Record<string, EmbedConfig> = {
+  [ADN_TEMPLATE_FORM_ID]: WORKSPACE_EMBED_CONFIG[ADN_TYPEFORM_ID],
+  [LOS40_TEMPLATE_FORM_ID]: WORKSPACE_EMBED_CONFIG[LOS40_TYPEFORM_ID],
+};
+
+function resolveEmbedConfig(
+  workspaceTypeformId: string,
+  templateFormTypeformId?: string | null,
+  sourceFormTypeformId?: string | null,
+) {
+  return (
+    WORKSPACE_EMBED_CONFIG[workspaceTypeformId] ??
+    (templateFormTypeformId
+      ? TEMPLATE_FORM_EMBED_CONFIG[templateFormTypeformId]
+      : undefined) ??
+    (sourceFormTypeformId
+      ? TEMPLATE_FORM_EMBED_CONFIG[sourceFormTypeformId]
+      : undefined)
+  );
+}
+
 export function getEmbedInfo(
   formId: string,
   workspaceTypeformId: string,
   clonedFrom?: string,
-): { code: string; label: string } {
-  const config = WORKSPACE_EMBED_CONFIG[workspaceTypeformId];
+  templateFormTypeformId?: string | null,
+): { code: string; label: string; src?: string } {
+  const config = resolveEmbedConfig(
+    workspaceTypeformId,
+    templateFormTypeformId,
+    clonedFrom ?? formId,
+  );
   if (config) {
-    return { code: config.buildCode(formId), label: config.label };
+    return {
+      code: config.buildCode(formId),
+      label: config.label,
+      src: config.buildSrc(formId),
+    };
   }
   return {
     code: formId,

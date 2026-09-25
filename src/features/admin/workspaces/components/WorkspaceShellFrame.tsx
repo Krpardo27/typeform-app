@@ -26,8 +26,10 @@ export function WorkspaceShellFrame({
   const segment = useSelectedLayoutSegment();
   const currentSection =
     segment === "forms" || segment === "responses" ? "forms" : "home";
-  const hideSearchOnFormDetail =
-    /^\/workspaces\/[^/]+\/forms\/(?!new$)[^/]+\/?$/.test(pathname ?? "");
+  const showSearchOnFormsList =
+    /^\/workspaces\/[^/]+\/forms\/?$/.test(pathname ?? "");
+  const showSearchOnNewForm =
+    /^\/workspaces\/[^/]+\/forms\/new\/?$/.test(pathname ?? "");
 
   return (
     <WorkspaceShell
@@ -35,7 +37,7 @@ export function WorkspaceShellFrame({
       workspaces={workspaces}
       currentWorkspaceId={currentWorkspaceId}
       currentSection={currentSection}
-      showGlobalSearch={!hideSearchOnFormDetail}
+      showGlobalSearch={showSearchOnFormsList || showSearchOnNewForm}
     >
       {children}
     </WorkspaceShell>

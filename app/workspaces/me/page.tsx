@@ -1,6 +1,11 @@
-import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
+import {
+  LuBadgeCheck,
+  LuBriefcaseBusiness,
+  LuChevronRight,
+} from "react-icons/lu";
 import { getVisibleWorkspaces } from "@/features/admin/workspaces/services/workspace-permissions";
+import { NoWorkspaceActions } from "@/features/admin/workspaces/components/NoWorkspaceActions";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { prisma } from "@/lib/prisma";
 
@@ -34,35 +39,91 @@ export default async function MyWorkspacesPage() {
 
   if (!firstWorkspace) {
     return (
-      <main className="mx-auto flex min-h-[60vh] w-full max-w-2xl items-center px-6 py-12">
-        <section className="w-full rounded-2xl border border-[#F5F5F5] bg-[#FFFFFF] p-8 text-[#000000]/80">
-          <p className="text-xs font-medium uppercase tracking-wider text-[#000000]/45">
-            Workspace
-          </p>
+      <main className="flex min-h-[72vh] w-full items-center justify-center px-4 py-10 sm:px-6">
+        <section className="w-full max-w-2xl">
+          {/* Header */}
+          <div className="mb-6 text-center">
+            <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl border border-[#E4E4E7] bg-[#FAFAFA] text-[#52525B]">
+              <LuBriefcaseBusiness className="size-6" strokeWidth={1.8} />
+            </div>
 
-          <h1 className="mt-3 text-2xl font-bold text-[#000000]">
-            No tienes workspaces asignados
-          </h1>
+            <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-[#E4E4E7] bg-white px-2.5 py-1 text-[11px] font-medium text-[#71717A]">
+              <span className="size-1.5 rounded-full bg-[#F59E0B]" />
+              Acceso pendiente
+            </div>
 
-          <p className="mt-3 text-sm text-[#000000]/60">
-            Tu cuenta esta autenticada, pero todavia no tiene acceso a ningun
-            workspace. Solicita a un administrador que te asigne uno desde el
-            panel de usuarios.
-          </p>
+            <h1 className="text-2xl font-semibold tracking-tight text-[#18181B] sm:text-3xl">
+              Aún no tienes workspaces asignados
+            </h1>
 
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <Link
-              href="/workspaces/me"
-              className="rounded-lg border border-[#F5F5F5] bg-[#FFFFFF] px-4 py-2 text-sm text-[#000000]/75 transition hover:border-[#7C3AED]/35 hover:text-[#7C3AED]"
-            >
-              Ir al inicio
-            </Link>
-            <Link
-              href="/auth/login"
-              className="rounded-lg border border-[#F5F5F5] bg-[#FFFFFF] px-4 py-2 text-sm text-[#000000]/65 transition hover:border-[#FF5C35]/35 hover:text-[#FF5C35]"
-            >
-              Cambiar de cuenta
-            </Link>
+            <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#71717A]">
+              Tu cuenta está correctamente autenticada, pero todavía no
+              tienes acceso a ningún workspace.
+            </p>
+          </div>
+
+          {/* Main card */}
+          <div className="overflow-hidden rounded-2xl border border-[#E4E4E7] bg-white shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+            {/* Account status */}
+            <div className="flex items-center gap-3 border-b border-[#E4E4E7] px-5 py-4 sm:px-6">
+              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#F4F4F5]">
+                <LuBadgeCheck
+                  className="size-4 text-[#52525B]"
+                  strokeWidth={1.8}
+                />
+              </div>
+
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-[#18181B]">
+                  Sesión autenticada
+                </p>
+
+                <p className="truncate text-xs text-[#A1A1AA]">
+                  {user.email}
+                </p>
+              </div>
+
+              <span className="ml-auto flex shrink-0 items-center gap-1.5 text-xs font-medium text-[#16A34A]">
+                <span className="size-1.5 rounded-full bg-[#16A34A]" />
+                Activa
+              </span>
+            </div>
+
+            {/* Information */}
+            <div className="px-5 py-6 sm:px-6">
+              <div className="rounded-xl border border-[#E4E4E7] bg-[#FAFAFA] p-4">
+                <div className="flex gap-3">
+                  <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm ring-1 ring-[#E4E4E7]">
+                    <LuBriefcaseBusiness className="size-3.5 text-[#71717A]" />
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-medium text-[#18181B]">
+                      ¿Qué significa esto?
+                    </p>
+
+                    <p className="mt-1 text-sm leading-6 text-[#71717A]">
+                      Un administrador debe asignarte al menos un workspace
+                      para que puedas acceder a sus recursos y funcionalidades.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="mt-5">
+                <NoWorkspaceActions />
+              </div>
+            </div>
+          </div>
+
+          {/* Footer hint */}
+          <div className="mt-4 flex items-center justify-center gap-1 text-xs text-[#A1A1AA]">
+            <span>¿Necesitas acceso?</span>
+            <span className="font-medium text-[#71717A]">
+              Contacta a un administrador
+            </span>
+            <LuChevronRight className="size-3" />
           </div>
         </section>
       </main>

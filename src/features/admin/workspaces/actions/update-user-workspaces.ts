@@ -73,6 +73,7 @@ export async function updateUserWorkspaces(
         id: {
           in: normalizedWorkspaceIds,
         },
+        createdFromApp: true,
       },
       select: {
         id: true,
@@ -99,6 +100,9 @@ export async function updateUserWorkspaces(
   const currentAssignments = await prisma.userWorkspace.findMany({
     where: {
       userId,
+      workspace: {
+        createdFromApp: true,
+      },
     },
     select: {
       workspaceId: true,
@@ -130,6 +134,9 @@ export async function updateUserWorkspaces(
     prisma.userWorkspace.deleteMany({
       where: {
         userId,
+        workspace: {
+          createdFromApp: true,
+        },
         workspaceId: {
           notIn: nextAssignments.map((item) => item.workspaceId),
         },

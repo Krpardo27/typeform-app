@@ -1,9 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import {
-  ensureAppWorkspacesFromTypeform,
-  syncTypeformWorkspaceIds,
-} from "@/features/admin/workspaces/services/sync-typeform-workspace-ids";
-import { getTypeformWorkspaces } from "@/features/typeform/services/typeform.service";
 import Pagination from "@/shared/components/Pagination";
 import { AdminWorkspacesGrid } from "./AdminWorkspacesGrid";
 
@@ -18,12 +13,18 @@ export async function AdminWorkspacesContent({
   itemsPerPage,
   pageSizeOptions,
 }: Props) {
-  const typeformWorkspaces = await getTypeformWorkspaces();
-
-  await ensureAppWorkspacesFromTypeform(typeformWorkspaces.items);
-  await syncTypeformWorkspaceIds(typeformWorkspaces.items);
+  const totalItems = await prisma.workspace.count({
+    where: {
+      createdFromApp: true,
+    },
+  });
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const safeCurrentPage = Math.min(Math.max(currentPage, 1), totalPages);
 
   const appWorkspaces = await prisma.workspace.findMany({
+    where: {
+      createdFromApp: true,
+    },
     include: {
       _count: {
         select: { users: true },
@@ -32,22 +33,13 @@ export async function AdminWorkspacesContent({
     orderBy: {
       name: "asc",
     },
+    skip: (safeCurrentPage - 1) * itemsPerPage,
+    take: itemsPerPage,
   });
-
-  const totalItems = typeformWorkspaces.items.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
-  const safeCurrentPage = Math.min(Math.max(currentPage, 1), totalPages);
-  const paginatedTypeformWorkspaces = typeformWorkspaces.items.slice(
-    (safeCurrentPage - 1) * itemsPerPage,
-    safeCurrentPage * itemsPerPage,
-  );
 
   return (
     <section className="space-y-6">
-      <AdminWorkspacesGrid
-        typeformWorkspaces={paginatedTypeformWorkspaces}
-        appWorkspaces={appWorkspaces}
-      />
+      <AdminWorkspacesGrid appWorkspaces={appWorkspaces} />
 
       <Pagination
         currentPage={safeCurrentPage}

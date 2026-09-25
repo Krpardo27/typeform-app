@@ -18,6 +18,9 @@ export default async function AdminMembersPage() {
   }
 
   const workspaces = await prisma.workspace.findMany({
+    where: {
+      createdFromApp: true,
+    },
     orderBy: { name: "asc" },
     select: {
       id: true,
@@ -46,6 +49,11 @@ export default async function AdminMembersPage() {
           },
           include: {
             workspaces: {
+              where: {
+                workspace: {
+                  createdFromApp: true,
+                },
+              },
               include: {
                 workspace: {
                   select: {

@@ -5,7 +5,14 @@ type AdminUser = {
   name: string;
   email: string;
   globalRole: string;
-  workspaces: unknown[];
+  workspaces: {
+    role: string;
+    workspace: {
+      id: string;
+      name: string;
+      typeformId: string;
+    };
+  }[];
 };
 
 type AdminUsersListProps = {

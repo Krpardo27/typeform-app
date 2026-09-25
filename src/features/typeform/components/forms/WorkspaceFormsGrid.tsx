@@ -5,6 +5,7 @@ import { WorkspaceFormsGridLoadingGate } from "./WorkspaceFormsGridLoadingGate";
 type Props = {
   workspaceId: string;
   workspaceTypeformId: string;
+  templateFormTypeformId?: string | null;
   forms: TypeformFormSummary[];
   canCreateForms: boolean;
 };
@@ -12,6 +13,7 @@ type Props = {
 export function WorkspaceFormsGrid({
   workspaceId,
   workspaceTypeformId,
+  templateFormTypeformId,
   forms,
   canCreateForms,
 }: Props) {
@@ -23,6 +25,7 @@ export function WorkspaceFormsGrid({
             key={form.id}
             workspaceId={workspaceId}
             workspaceTypeformId={workspaceTypeformId}
+            templateFormTypeformId={templateFormTypeformId}
             form={form}
             canCreateForms={canCreateForms}
           />

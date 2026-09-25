@@ -3,11 +3,6 @@ import { getCurrentUser } from "@/lib/getCurrentUser";
 import { prisma } from "@/lib/prisma";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { UserWorkspaceForm } from "@/features/admin/workspaces/components/UserWorkspaceForm";
-import { getTypeformWorkspaces } from "@/features/typeform/services/typeform.service";
-import {
-  ensureAppWorkspacesFromTypeform,
-  syncTypeformWorkspaceIds,
-} from "@/features/admin/workspaces/services/sync-typeform-workspace-ids";
 
 export default async function AdminUserPage({
   params,
@@ -24,21 +19,25 @@ export default async function AdminUserPage({
     notFound();
   }
 
-  const typeformWorkspaces = await getTypeformWorkspaces();
-  await ensureAppWorkspacesFromTypeform(typeformWorkspaces.items);
-  await syncTypeformWorkspaceIds(typeformWorkspaces.items);
-
   const { userId } = await params;
   const [user, workspaces] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       include: {
         workspaces: {
+          where: {
+            workspace: {
+              createdFromApp: true,
+            },
+          },
           include: { workspace: true },
         },
       },
     }),
     prisma.workspace.findMany({
+      where: {
+        createdFromApp: true,
+      },
       orderBy: { name: "asc" },
     }),
   ]);

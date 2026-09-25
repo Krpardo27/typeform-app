@@ -11,17 +11,22 @@ export type WorkspaceSummary = {
   id: string;
   name: string;
   typeformId: string;
+  templateFormTypeformId: string | null;
   role: WorkspaceRole;
 };
 
 export async function getVisibleWorkspaces(user: CurrentUser) {
   if (user.globalRole === "SUPER_ADMIN") {
     const workspaces = await prisma.workspace.findMany({
+      where: {
+        createdFromApp: true,
+      },
       orderBy: { name: "asc" },
       select: {
         id: true,
         name: true,
         typeformId: true,
+        templateFormTypeformId: true,
       },
     });
 
@@ -32,13 +37,19 @@ export async function getVisibleWorkspaces(user: CurrentUser) {
   }
 
   const userWorkspaces = await prisma.userWorkspace.findMany({
-    where: { userId: user.id },
+    where: {
+      userId: user.id,
+      workspace: {
+        createdFromApp: true,
+      },
+    },
     include: {
       workspace: {
         select: {
           id: true,
           name: true,
           typeformId: true,
+          templateFormTypeformId: true,
         },
       },
     },
@@ -62,12 +73,14 @@ export async function getAuthorizedWorkspace(
   if (user.globalRole === "SUPER_ADMIN") {
     const workspace = await prisma.workspace.findFirst({
       where: {
+        createdFromApp: true,
         OR: [{ id: workspaceId }, { typeformId: workspaceId }],
       },
       select: {
         id: true,
         name: true,
         typeformId: true,
+        templateFormTypeformId: true,
       },
     });
 
@@ -78,6 +91,7 @@ export async function getAuthorizedWorkspace(
     where: {
       userId: user.id,
       workspace: {
+        createdFromApp: true,
         OR: [{ id: workspaceId }, { typeformId: workspaceId }],
       },
     },
@@ -87,6 +101,7 @@ export async function getAuthorizedWorkspace(
           id: true,
           name: true,
           typeformId: true,
+          templateFormTypeformId: true,
         },
       },
     },
