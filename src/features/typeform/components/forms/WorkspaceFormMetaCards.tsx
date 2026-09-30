@@ -1,89 +1,66 @@
-import type { ReactNode } from "react";
 import { CopyButton } from "@/shared/components/CopyButton";
-import { getEmbedInfo } from "@/features/typeform/utils/embed-info";
-
-const CARD_CLASSNAME =
-  "rounded-2xl border border-[#D1D1CD] bg-white p-5 shadow-[0_8px_30px_-18px_rgba(0,0,0,0.18)]";
-
-type StatCardProps = {
-  label: string;
-  value: ReactNode;
-};
-
-function StatCard({ label, value }: StatCardProps) {
-  return (
-    <article className={CARD_CLASSNAME}>
-      <p className="text-xs font-medium uppercase tracking-wider text-[#000000]/45">
-        {label}
-      </p>
-
-      <p className="mt-3 text-2xl font-bold text-[#111111]">{value}</p>
-    </article>
-  );
-}
-
-type EmbedCodeCardProps = {
-  code: string;
-  label: string;
-  clonedFrom?: string;
-};
-
-function EmbedCodeCard({ code, label, clonedFrom }: EmbedCodeCardProps) {
-  return (
-    <article className={`${CARD_CLASSNAME} lg:row-span-2`}>
-      <p className="text-xs font-medium uppercase tracking-wider text-[#000000]/45">
-        {label}
-      </p>
-
-      <div className="mt-3 rounded-xl border border-[#D1D1CD] bg-[#F7F7F6] px-3 py-2">
-        <code className="block break-all text-sm leading-relaxed text-[#000000]/80">
-          {code}
-        </code>
-
-        <div className="mt-3 flex justify-end">
-          <CopyButton value={code} label="Copiar" />
-        </div>
-      </div>
-
-      {clonedFrom && (
-        <p className="mt-3 text-xs text-[#000000]/55">
-          Base original:{" "}
-          <span className="font-mono text-[#000000]/70">{clonedFrom}</span>
-        </p>
-      )}
-    </article>
-  );
-}
+import type { getEmbedInfo } from "@/features/typeform/utils/embed-info";
 
 type WorkspaceFormMetaCardsProps = {
   formId: string;
-  workspaceTypeformId: string;
-  templateFormTypeformId?: string | null;
-  fieldsCount: number;
-  hiddenFieldsCount: number;
   clonedFrom?: string;
+  embedInfo: ReturnType<typeof getEmbedInfo>;
 };
 
 export function WorkspaceFormMetaCards({
   formId,
-  workspaceTypeformId,
-  templateFormTypeformId,
-  fieldsCount,
-  hiddenFieldsCount,
   clonedFrom,
+  embedInfo,
 }: WorkspaceFormMetaCardsProps) {
-  const { code, label } = getEmbedInfo(
-    formId,
-    workspaceTypeformId,
-    clonedFrom,
-    templateFormTypeformId,
-  );
+  const baseFormTypeformId = clonedFrom ?? formId;
+  const isEmbedCode = embedInfo.code !== formId;
 
   return (
-    <section className="mt-8 grid gap-4 lg:grid-cols-[2fr_1fr] lg:grid-rows-2">
-      <EmbedCodeCard code={code} label={label} clonedFrom={clonedFrom} />
-      <StatCard label="Campos" value={fieldsCount} />
-      <StatCard label="Campos ocultos" value={hiddenFieldsCount} />
+    <section className="mt-8">
+      <article className="max-w-4xl rounded-xl border border-[#DADAD6] bg-white p-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-md border border-[#E8E8E6] bg-[#F7F7F6] px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider text-[#000000]/45">
+                {isEmbedCode ? "Iframe" : "Typeform"}
+              </span>
+
+              <p className="text-sm font-semibold text-[#111111]">
+                {isEmbedCode ? embedInfo.label : "ID del formulario"}
+              </p>
+            </div>
+
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#000000]/55">
+              {isEmbedCode
+                ? "Usa este código para insertar el formulario en el sitio correspondiente."
+                : "Identificador de origen usado para duplicar o referenciar este formulario."}
+            </p>
+          </div>
+
+          <CopyButton
+            value={isEmbedCode ? embedInfo.code : baseFormTypeformId}
+            label={isEmbedCode ? "Copiar código" : "Copiar ID"}
+          />
+        </div>
+
+        <div className="mt-4 rounded-lg border border-[#E8E8E6] bg-[#FBFBFA] p-3">
+          <code className="block max-h-32 overflow-auto break-all font-mono text-xs leading-relaxed text-[#111111]">
+            {isEmbedCode ? embedInfo.code : baseFormTypeformId}
+          </code>
+        </div>
+
+        <div className="mt-3 flex flex-col gap-1 text-xs text-[#000000]/45 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4">
+          <span>
+            Actual: <span className="font-mono text-[#000000]/65">{formId}</span>
+          </span>
+
+          {isEmbedCode && (
+            <span>
+              Base: <span className="font-mono text-[#000000]/65">{baseFormTypeformId}</span>
+            </span>
+          )}
+        </div>
+      </article>
     </section>
   );
 }

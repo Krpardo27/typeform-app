@@ -1,6 +1,13 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+
 const TYPEFORM_API_BASE_URL =
   process.env.TYPEFORM_API_BASE_URL ?? "https://api.typeform.com";
 const TYPEFORM_RESOLVE_WORKSPACE_TTL_MS = 5 * 60 * 1000;
+const TYPEFORM_FIXTURES_RESPONSES_DIR = path.join(
+  process.cwd(),
+  "src/features/typeform/fixtures/responses",
+);
 
 const resolvedWorkspaceIdCache = new Map<
   string,
@@ -163,6 +170,12 @@ type TypeformResponsesResponse = {
   items: TypeformResponseItem[];
 };
 
+type TypeformResponsesFixture =
+  | TypeformResponseItem[]
+  | {
+      items?: TypeformResponseItem[];
+    };
+
 export type MaskedResponseAnswer = {
   id: string;
   question: string;
@@ -176,6 +189,7 @@ export type MaskedTypeformResponse = {
   token: string;
   submittedAt?: string;
   landedAt?: string;
+  participantNumber?: string;
   answers: MaskedResponseAnswer[];
   hidden: MaskedResponseAnswer[];
 };
@@ -345,6 +359,10 @@ export async function getTypeformFormResponses(
     includedResponseIds?: string[];
   },
 ) {
+  if (process.env.TYPEFORM_RESPONSES_SOURCE === "fixture") {
+    return getFixtureTypeformFormResponses(formId, options);
+  }
+
   const page = options?.page ?? 1;
   const pageSize = options?.pageSize ?? 50;
   const after = options?.after;
@@ -370,6 +388,62 @@ export async function getTypeformFormResponses(
   return typeformRequest<TypeformResponsesResponse>(
     `/forms/${encodeURIComponent(formId)}/responses?${searchParams}`,
   );
+}
+
+async function getFixtureTypeformFormResponses(
+  formId: string,
+  options?: {
+    page?: number;
+    pageSize?: number;
+    after?: string;
+    before?: string;
+    includedResponseIds?: string[];
+  },
+): Promise<TypeformResponsesResponse> {
+  const page = Math.max(1, options?.page ?? 1);
+  const pageSize = Math.max(1, options?.pageSize ?? 50);
+  const includedResponseIds = options?.includedResponseIds?.filter(Boolean) ?? [];
+  const fixturePath = path.join(TYPEFORM_FIXTURES_RESPONSES_DIR, `${formId}.json`);
+
+  let fixture: TypeformResponsesFixture;
+
+  try {
+    fixture = JSON.parse(await readFile(fixturePath, "utf8")) as TypeformResponsesFixture;
+  } catch (error) {
+    const nodeError = error as NodeJS.ErrnoException;
+
+    if (nodeError.code === "ENOENT") {
+      return { total_items: 0, page_count: 1, items: [] };
+    }
+
+    throw error;
+  }
+
+  let items = Array.isArray(fixture) ? fixture : (fixture.items ?? []);
+
+  if (includedResponseIds.length > 0) {
+    const included = new Set(includedResponseIds);
+    items = items.filter(
+      (item) => included.has(item.token) || included.has(item.response_id ?? ""),
+    );
+  }
+
+  const cursor = options?.after ?? options?.before;
+  const startIndex = cursor
+    ? Math.max(
+        0,
+        items.findIndex(
+          (item) => item.token === cursor || item.response_id === cursor,
+        ) + 1,
+      )
+    : (page - 1) * pageSize;
+  const paginatedItems = items.slice(startIndex, startIndex + pageSize);
+
+  return {
+    total_items: items.length,
+    page_count: Math.max(1, Math.ceil(items.length / pageSize)),
+    items: paginatedItems,
+  };
 }
 
 export function getTypeformResponseParticipantEmail(
@@ -647,6 +721,26 @@ function isSensitiveAnswer(answer: TypeformAnswer, field?: TypeformField) {
   );
 }
 
+function normalizeParticipantNumber(value: string) {
+  return value.replace(/^#/, "").trim();
+}
+
+function getTypeformResponseParticipantNumber(response: TypeformResponseItem) {
+  const hiddenEntries = Object.entries(response.hidden ?? {});
+  const numericHiddenEntries = hiddenEntries
+    .map(
+      ([key, value]) =>
+        [key, normalizeParticipantNumber(String(value))] as const,
+    )
+    .filter(([, value]) => /^\d+$/.test(value));
+
+  const preferredEntry = numericHiddenEntries.find(([key]) =>
+    /participante|participant|numero|número|nro|folio|codigo|código/i.test(key),
+  );
+
+  return preferredEntry?.[1] ?? numericHiddenEntries[0]?.[1];
+}
+
 export function mapMaskedTypeformResponses(
   form: TypeformFormDetail,
   responses: TypeformResponseItem[],
@@ -665,6 +759,7 @@ export function mapMaskedTypeformResponses(
     token: response.token,
     submittedAt: response.submitted_at,
     landedAt: response.landed_at,
+    participantNumber: getTypeformResponseParticipantNumber(response),
     answers: (response.answers ?? []).map((answer, index) => {
       const field =
         fieldsById.get(answer.field?.id) ?? fieldsByRef.get(answer.field?.ref);

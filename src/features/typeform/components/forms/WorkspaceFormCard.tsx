@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LuArrowUpRight, LuCalendarClock, LuInbox } from "react-icons/lu";
+import { LuArrowUpRight, LuCalendarClock } from "react-icons/lu";
 import type { TypeformFormSummary } from "@/features/typeform/services/typeform.service";
 import { CopyButton } from "@/shared/components/CopyButton";
 import { getEmbedInfo } from "@/features/typeform/utils/embed-info";
@@ -35,6 +35,8 @@ export function WorkspaceFormCard({
     undefined,
     templateFormTypeformId,
   );
+  const embedSrc = embedInfo.src;
+  const publicFormUrl = form._links?.display ?? embedSrc;
 
   return (
     <article
@@ -73,22 +75,10 @@ export function WorkspaceFormCard({
             </h2>
           </Link>
 
-          <div className="mt-3 flex min-w-0 flex-col items-start gap-3">
-            <p className="min-w-0 w-full truncate text-sm text-[#000000]/55">
-              {embedInfo.src ?? `ID: ${form.id}`}
-            </p>
-
-            {embedInfo.src ? (
-              <div className="flex shrink-0 gap-1.5">
-                <CopyButton value={embedInfo.src} label="src" />
-                <CopyButton
-                  value={embedInfo.code}
-                  label="iframe"
-                />
-              </div>
-            ) : (
-              <CopyButton value={form.id} label="" />
-            )}
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[#000000]/50">
+            <span className="rounded-lg border border-[#E8E8E6] bg-[#FAFAF9] px-2 py-1 font-mono text-[11px] text-[#000000]/60">
+              ID: {form.id}
+            </span>
           </div>
         </div>
 
@@ -101,9 +91,12 @@ export function WorkspaceFormCard({
             />
           )}
 
-          <Link
-            href={`/workspaces/${workspaceId}/forms/${form.id}`}
-            className="
+          {publicFormUrl ? (
+            <a
+              href={publicFormUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="
               flex size-11 shrink-0 items-center justify-center
               rounded-xl
               border border-[#E8E8E6]
@@ -115,10 +108,30 @@ export function WorkspaceFormCard({
               hover:text-[#FF5C35]
               sm:size-9
             "
-            aria-label={`Abrir ${form.title}`}
-          >
-            <LuArrowUpRight className="size-4" />
-          </Link>
+              aria-label={`Abrir formulario ${form.title}`}
+            >
+              <LuArrowUpRight className="size-4" />
+            </a>
+          ) : (
+            <Link
+              href={`/workspaces/${workspaceId}/forms/${form.id}`}
+              className="
+              flex size-11 shrink-0 items-center justify-center
+              rounded-xl
+              border border-[#E8E8E6]
+              bg-[#F7F7F6]
+              text-[#000000]/60
+              transition-all
+              hover:border-[#FF5C35]/30
+              hover:bg-white
+              hover:text-[#FF5C35]
+              sm:size-9
+            "
+              aria-label={`Abrir detalle de ${form.title}`}
+            >
+              <LuArrowUpRight className="size-4" />
+            </Link>
+          )}
         </div>
       </div>
 
@@ -129,29 +142,51 @@ export function WorkspaceFormCard({
         </span>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+      <div className="mt-5 flex min-w-0 flex-col gap-2 border-t border-[#F0F0EE] pt-4">
         <Link
           href={`/workspaces/${workspaceId}/forms/${form.id}/responses`}
           className="
-            inline-flex
-            items-center
-            gap-1.5
-            rounded-xl
-            border border-[#E8E8E6]
-            bg-[#FAFAF9]
-            px-2.5 py-1.5
-            text-xs
-            font-medium
-            text-[#000000]/70
-            transition-all
-            hover:border-[#7C3AED]/35
-            hover:bg-white
-            hover:text-[#7C3AED]
-          "
+    group/responses
+    inline-flex
+    w-full
+    items-center
+    justify-center
+    gap-2
+    rounded-lg
+    border border-[#E8E8E6]
+    bg-[#FAFAF9]
+    px-3
+    py-2
+    text-xs
+    font-medium
+    text-[#18181B]
+    transition-all
+    hover:border-[#FF5C35]/25
+    hover:bg-[#FFF7F4]
+    hover:text-[#FF5C35]
+  "
         >
-          <LuInbox className="size-3.5" />
-          Ver respuestas
+          <span>Ver respuestas</span>
+          <LuArrowUpRight
+            className="
+      size-3.5
+      text-[#A1A1AA]
+      transition-colors
+      group-hover/responses:text-[#FF5C35]
+    "
+          />
         </Link>
+
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          {embedSrc ? (
+            <>
+              <CopyButton value={embedSrc} label="src" />
+              <CopyButton value={embedInfo.code} label="iframe" />
+            </>
+          ) : (
+            <CopyButton value={form.id} label="ID" />
+          )}
+        </div>
       </div>
     </article>
   );

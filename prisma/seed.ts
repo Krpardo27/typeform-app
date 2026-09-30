@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { adminEmails, editorTestEmail } from "./data/usuarios";
 import { allowedUsers } from "./data/allowed-users";
-import { radioWorkspaces } from "./data/workspaces";
+import { radioWorkspaces } from "../config/radio-workspaces";
 import { WorkspaceRole } from "@/generated/prisma/client";
 
 async function main() {

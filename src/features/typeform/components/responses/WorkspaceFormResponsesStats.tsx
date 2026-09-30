@@ -1,9 +1,7 @@
-import { LuShieldCheck } from "react-icons/lu";
-
 type WorkspaceFormResponsesStatsProps = {
   totalParticipants: number;
   shownParticipants: number;
-  maskedAnswerCount: number;
+  selectedWinnersCount: number;
 };
 
 const CARD_CLASSNAME =
@@ -12,10 +10,10 @@ const CARD_CLASSNAME =
 export function WorkspaceFormResponsesStats({
   totalParticipants,
   shownParticipants,
-  maskedAnswerCount,
+  selectedWinnersCount,
 }: WorkspaceFormResponsesStatsProps) {
   return (
-    <section className="mt-8 grid gap-4 md:grid-cols-3">
+    <section className="lg:mt-8 grid gap-4 md:grid-cols-3">
       <article className={CARD_CLASSNAME}>
         <p className="text-xs font-medium uppercase tracking-wider text-[#000000]/45">
           Participantes
@@ -36,26 +34,13 @@ export function WorkspaceFormResponsesStats({
         </p>
       </article>
 
-      <article
-        className="
-          rounded-2xl
-          border border-[#00BFA5]/25
-          bg-[#00BFA5]/[0.06]
-          p-5
-          shadow-[0_8px_30px_-18px_rgba(0,191,165,0.22)]
-        "
-      >
-        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-[#00A88F]">
-          <LuShieldCheck className="size-3.5" />
-          <span>Protección activa</span>
-        </div>
-
-        <p className="mt-3 text-2xl font-bold text-[#111111]">
-          {maskedAnswerCount}
+      <article className={CARD_CLASSNAME}>
+        <p className="text-xs font-medium uppercase tracking-wider text-[#000000]/45">
+          Ganadores seleccionados
         </p>
 
-        <p className="mt-1 text-xs text-[#000000]/55">
-          Campos ocultados
+        <p className="mt-3 text-2xl font-bold text-[#111111]">
+          {selectedWinnersCount}
         </p>
       </article>
     </section>

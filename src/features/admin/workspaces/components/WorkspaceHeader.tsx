@@ -4,7 +4,6 @@ import { LuArrowLeft } from "react-icons/lu";
 
 type WorkspaceHeaderProps = {
   title: ReactNode;
-  description?: ReactNode;
   eyebrow?: ReactNode;
   actions?: ReactNode;
   backHref?: string;
@@ -13,7 +12,6 @@ type WorkspaceHeaderProps = {
 
 export function WorkspaceHeader({
   title,
-  description,
   eyebrow,
   actions,
   backHref,
@@ -21,22 +19,15 @@ export function WorkspaceHeader({
 }: WorkspaceHeaderProps) {
   const hasTopRow = Boolean((backHref && backLabel) || eyebrow);
 
-  console.log("[WORKSPACE_HEADER] current role context", {
-    hasTopRow,
-    backHref,
-    backLabel,
-    eyebrow: Boolean(eyebrow),
-  });
-
   return (
     <header className="relative">
       <div className="absolute left-0 top-0 h-px w-16 bg-linear-to-r from-[#FF5C35] to-transparent" />
       {hasTopRow && (
-        <div className="flex items-center justify-between mt-8">
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {backHref && backLabel && (
             <Link
               href={backHref}
-              className="group inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-[#000000]/55 transition-colors hover:text-[#FF5C35]"
+              className="group inline-flex my-4 items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-[#000000]/55 transition-colors hover:text-[#FF5C35]"
             >
               <LuArrowLeft className="size-3.5 transition-transform duration-200 group-hover:-translate-x-0.5" />
               {backLabel}
@@ -44,7 +35,7 @@ export function WorkspaceHeader({
           )}
 
           {eyebrow && (
-            <div className="flex items-center gap-2 text-md mt-2 font-medium uppercase tracking-wider text-[#000000]/45">
+            <div className="flex mt-5 items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#000000]/45 sm:justify-end">
               {eyebrow}
             </div>
           )}
@@ -58,11 +49,6 @@ export function WorkspaceHeader({
           <h1 className="text-3xl font-bold tracking-tight text-[#000000]">
             {title}
           </h1>
-          {description && (
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#000000]/55">
-              {description}
-            </p>
-          )}
         </div>
 
         {actions && (

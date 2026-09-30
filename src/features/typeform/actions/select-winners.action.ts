@@ -158,6 +158,10 @@ export async function selectWinnersAction(
     typeof formData.get("pageSize") === "string"
       ? String(formData.get("pageSize"))
       : "20";
+  const winnerRegionFilter =
+    typeof formData.get("winnerRegionFilter") === "string"
+      ? String(formData.get("winnerRegionFilter")).trim()
+      : "";
 
   const reason =
     typeof formData.get("reason") === "string" && formData.get("reason")
@@ -318,9 +322,17 @@ export async function selectWinnersAction(
     },
   });
 
+  const redirectParams = new URLSearchParams({
+    page,
+    pageSize,
+    winnerSelection: "1",
+  });
+
+  if (winnerRegionFilter) {
+    redirectParams.set("winnerRegionFilter", winnerRegionFilter);
+  }
+
   redirect(
-    `/workspaces/${workspaceId}/forms/${formId}/responses?page=${encodeURIComponent(
-      page,
-    )}&pageSize=${encodeURIComponent(pageSize)}&winnerSelection=1`,
+    `/workspaces/${workspaceId}/forms/${formId}/responses?${redirectParams}`,
   );
 }

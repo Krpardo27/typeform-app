@@ -28,7 +28,6 @@ export function WorkspaceFormDetailHeader({
         </>
       }
       title={formTitle}
-      description="Formulario autorizado"
       actions={
         <>
           <Link

@@ -5,7 +5,6 @@ import { DuplicateFormPanel } from "@/features/typeform/components/creation/Dupl
 import { WorkspaceFormCloneNotice } from "@/features/typeform/components/forms/WorkspaceFormCloneNotice";
 import { WorkspaceFormDetailHeader } from "@/features/typeform/components/forms/WorkspaceFormDetailHeader";
 import { WorkspaceFormMetaCards } from "@/features/typeform/components/forms/WorkspaceFormMetaCards";
-import { WorkspaceFormStructurePanel } from "@/features/typeform/components/forms/WorkspaceFormStructurePanel";
 import NewWorkspaceFormPage from "../new/page";
 import {
   formBelongsToWorkspace,
@@ -93,18 +92,8 @@ export default async function WorkspaceFormDetailPage({
 
       <WorkspaceFormMetaCards
         formId={form.id}
-        workspaceTypeformId={workspace.typeformId}
-        templateFormTypeformId={workspace.templateFormTypeformId}
-        fieldsCount={form.fields?.length ?? 0}
-        hiddenFieldsCount={form.hidden?.length ?? 0}
         clonedFrom={clonedFrom}
-      />
-
-      <WorkspaceFormStructurePanel
-        welcomeScreensCount={form.welcome_screens?.length ?? 0}
-        thankyouScreensCount={form.thankyou_screens?.length ?? 0}
-        logicRulesCount={form.logic?.length ?? 0}
-        isPublic={form.settings?.is_public !== false}
+        embedInfo={embedInfo}
       />
     </>
   );

@@ -24,7 +24,7 @@ export function CopyButton({ value, label = "Copiar ID" }: CopyButtonProps) {
     <button
       type="button"
       onClick={handleCopy}
-      className={`
+      className={`cursor-pointer
       inline-flex
       items-center
       gap-2

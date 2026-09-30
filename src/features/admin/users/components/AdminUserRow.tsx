@@ -51,7 +51,7 @@ function WorkspaceSummary({ workspaces }: { workspaces: UserWorkspace[] }) {
         <span
           key={workspace.id}
           title={`${workspace.name} (${role})`}
-          className="max-w-40 truncate rounded-md border border-[#E5E5E5] bg-[#F5F5F5] px-2 py-1 text-xs text-[#525252]"
+          className="max-w-40 rounded-md border border-[#E5E5E5] bg-[#F5F5F5] px-2 py-1 text-xs text-[#525252]"
         >
           {workspace.name}
         </span>

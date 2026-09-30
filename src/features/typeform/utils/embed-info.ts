@@ -1,7 +1,21 @@
-export const ADN_TYPEFORM_ID = "2828888";
-export const LOS40_TYPEFORM_ID = "416594";
-export const ADN_TEMPLATE_FORM_ID = "yuXGlh4N";
-export const LOS40_TEMPLATE_FORM_ID = "pirygCQR";
+import { radioWorkspaceTemplates } from "../../../../config/radio-workspaces";
+
+const ADN_WORKSPACE_TEMPLATE = radioWorkspaceTemplates.find(
+  (workspace) => workspace.name === "ADN",
+);
+const LOS40_WORKSPACE_TEMPLATE = radioWorkspaceTemplates.find(
+  (workspace) => workspace.name === "LOS40",
+);
+
+if (!ADN_WORKSPACE_TEMPLATE || !LOS40_WORKSPACE_TEMPLATE) {
+  throw new Error("Faltan plantillas base ADN o LOS40 en radio-workspaces");
+}
+
+export const ADN_TYPEFORM_ID = ADN_WORKSPACE_TEMPLATE.typeformId;
+export const LOS40_TYPEFORM_ID = LOS40_WORKSPACE_TEMPLATE.typeformId;
+export const ADN_TEMPLATE_FORM_ID = ADN_WORKSPACE_TEMPLATE.templateFormTypeformId;
+export const LOS40_TEMPLATE_FORM_ID =
+  LOS40_WORKSPACE_TEMPLATE.templateFormTypeformId;
 
 export type EmbedConfig = {
   label: string;
@@ -71,6 +85,6 @@ export function getEmbedInfo(
     code: formId,
     label: clonedFrom
       ? "Typeform ID del duplicado"
-      : "Typeform ID del formulario base",
+      : "Typeform ID del formulario",
   };
 }

@@ -188,7 +188,7 @@ export default async function WorkspaceDetailPage({
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="truncate text-base font-semibold text-[#171717]">
+                        <h2 className="text-base font-semibold text-[#171717]">
                           {form.title}
                         </h2>
                       </div>
