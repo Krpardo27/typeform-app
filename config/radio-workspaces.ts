@@ -1,4 +1,4 @@
-export const radioWorkspaces = [
+export const radioWorkspaceTemplates = [
   {
     typeformId: "1530584",
     templateFormTypeformId: "HePVkesf",
@@ -7,7 +7,7 @@ export const radioWorkspaces = [
   },
   {
     typeformId: "416594",
-    templateFormTypeformId: "pirygCQR",
+    templateFormTypeformId: "ACJWBsMI",
     name: "LOS40",
     accountId: "local",
   },
@@ -59,4 +59,17 @@ export const radioWorkspaces = [
     name: "IMAGINA",
     accountId: "local",
   },
-];
+] as const;
+
+export const radioWorkspaces = radioWorkspaceTemplates.map((workspace) => ({
+  typeformId: workspace.typeformId,
+  templateFormTypeformId: workspace.templateFormTypeformId,
+  name: workspace.name,
+  accountId: workspace.accountId,
+}));
+
+export const templateFormOptions = radioWorkspaceTemplates.map((workspace) => ({
+  label: workspace.name,
+  typeformId: workspace.typeformId,
+  value: workspace.templateFormTypeformId,
+}));

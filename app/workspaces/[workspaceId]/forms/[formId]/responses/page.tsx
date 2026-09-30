@@ -11,6 +11,7 @@ import {
   formBelongsToWorkspace,
   getTypeformForm,
   getTypeformFormResponses,
+  getTypeformResponseParticipantEmail,
   isTypeformNotFoundError,
   mapMaskedTypeformResponses,
   resolveWorkspaceTypeformId,
@@ -19,6 +20,109 @@ import { createAuditLog } from "@/features/admin/audit/services/audit-log.servic
 import { prisma } from "@/lib/prisma";
 
 const WINNER_CANDIDATES_PAGE_SIZE = 100;
+
+const REGION_ALIASES = [
+  {
+    name: "Arica y Parinacota",
+    aliases: ["arica", "parinacota"],
+  },
+  {
+    name: "Tarapacá",
+    aliases: ["tarapaca", "iquique"],
+  },
+  {
+    name: "Antofagasta",
+    aliases: ["antofagasta"],
+  },
+  {
+    name: "Atacama",
+    aliases: ["atacama", "copiapo"],
+  },
+  {
+    name: "Coquimbo",
+    aliases: ["coquimbo", "la serena"],
+  },
+  {
+    name: "Valparaíso",
+    aliases: ["valparaiso", "valpo"],
+  },
+  {
+    name: "Región Metropolitana",
+    aliases: ["rm", "metropolitana", "santiago"],
+  },
+  {
+    name: "O'Higgins",
+    aliases: ["ohiggins", "o higgins", "rancagua"],
+  },
+  {
+    name: "Maule",
+    aliases: ["maule", "talca"],
+  },
+  {
+    name: "Ñuble",
+    aliases: ["nuble", "chillan"],
+  },
+  {
+    name: "Biobío",
+    aliases: ["biobio", "bio bio", "bio-bio", "concepcion"],
+  },
+  {
+    name: "La Araucanía",
+    aliases: ["araucania", "temuco"],
+  },
+  {
+    name: "Los Ríos",
+    aliases: ["los rios", "valdivia"],
+  },
+  {
+    name: "Los Lagos",
+    aliases: ["los lagos", "puerto montt"],
+  },
+  {
+    name: "Aysén",
+    aliases: ["aysen", "aisen", "coyhaique"],
+  },
+  {
+    name: "Magallanes",
+    aliases: ["magallanes", "punta arenas"],
+  },
+] as const;
+
+function normalizeText(value: string) {
+  return value
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function normalizeRegion(value?: string) {
+  if (!value?.trim()) return undefined;
+
+  const normalizedValue = normalizeText(value);
+  const match = REGION_ALIASES.find((region) =>
+    region.aliases.some(
+      (alias) => normalizedValue === alias || normalizedValue.includes(alias),
+    ),
+  );
+
+  return match?.name ?? value.trim();
+}
+
+function normalizeComuna(value?: string) {
+  return value?.trim() || undefined;
+}
+
+function getResponseSubmittedTime(response: {
+  submitted_at?: string;
+  landed_at?: string;
+}) {
+  const timestamp = Date.parse(
+    response.submitted_at ?? response.landed_at ?? "",
+  );
+
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
 
 function getWinnerLabel(
   response: {
@@ -40,31 +144,37 @@ function getWinnerLabel(
   };
 }
 
-function normalizeParticipantNumber(value: string) {
-  return value.replace(/^#/, "").trim();
+function getCandidateRegion(response: {
+  answers: { question: string; value: string }[];
+}) {
+  const region = response.answers.find((answer) =>
+    /región|region/i.test(answer.question),
+  )?.value;
+
+  return normalizeRegion(region);
 }
 
-function getResponseParticipantNumber(
-  response: {
-    hidden?: Record<string, string>;
-  },
-  fallback: number,
-) {
-  const hiddenEntries = Object.entries(response.hidden ?? {});
-  const numericHiddenEntries = hiddenEntries
-    .map(
-      ([key, value]) =>
-        [key, normalizeParticipantNumber(String(value))] as const,
-    )
-    .filter(([, value]) => /^\d+$/.test(value));
+function getCandidateComuna(response: {
+  answers: { question: string; value: string }[];
+}) {
+  const comuna = response.answers.find((answer) =>
+    /comuna|comune|municipio|municipality/i.test(answer.question),
+  )?.value;
 
-  const preferredEntry = numericHiddenEntries.find(([key]) =>
-    /participante|participant|numero|número|nro|folio|codigo|código/i.test(key),
-  );
+  return normalizeComuna(comuna);
+}
 
-  return (
-    preferredEntry?.[1] ?? numericHiddenEntries[0]?.[1] ?? String(fallback)
-  );
+function getCandidateEmail(response: {
+  answers: { question: string; value: string; answerType?: string }[];
+}) {
+  return response.answers.find((answer) => {
+    const question = answer.question.toLowerCase();
+
+    return (
+      answer.value !== "Sin respuesta" &&
+      (answer.answerType === "email" || /correo|email|mail/.test(question))
+    );
+  })?.value;
 }
 
 async function getExistingTypeformForm(formId: string) {
@@ -90,6 +200,48 @@ function deduplicateByToken<T extends { token: string }>(items: T[]) {
     seen.add(item.token);
     return true;
   });
+}
+
+function deduplicateByParticipantEmail<T extends { token: string }>(
+  items: T[],
+) {
+  const seenEmails = new Set<string>();
+
+  return items.filter((item) => {
+    const email = getTypeformResponseParticipantEmail(item);
+
+    if (!email) {
+      return true;
+    }
+
+    if (seenEmails.has(email)) {
+      return false;
+    }
+
+    seenEmails.add(email);
+    return true;
+  });
+}
+
+function getChronologicalParticipantResponses<
+  T extends { token: string; submitted_at?: string; landed_at?: string },
+>(items: T[]) {
+  return deduplicateByParticipantEmail(
+    [...items].sort((first, second) => {
+      const dateDiff =
+        getResponseSubmittedTime(first) - getResponseSubmittedTime(second);
+
+      if (dateDiff !== 0) {
+        return dateDiff;
+      }
+
+      return first.token.localeCompare(second.token);
+    }),
+  );
+}
+
+function getParticipantNumbersByToken<T extends { token: string }>(items: T[]) {
+  return new Map(items.map((item, index) => [item.token, String(index + 1)]));
 }
 
 async function getWinnerCandidateResponses(formId: string) {
@@ -147,16 +299,15 @@ export default async function FormResponsesPage({
   searchParams: Promise<{
     page?: string;
     pageSize?: string;
+    winnerRegionFilter?: string;
     winnerSelection?: string;
     winnerError?: string;
   }>;
 }) {
   const { workspaceId, formId } = await params;
-  console.log("🚀 FormResponsesPage params:", { workspaceId});
-
-  const { page, pageSize, winnerSelection, winnerError } = await searchParams;
   const { user, workspace } = await getWorkspaceAccessContext(workspaceId);
-  console.log("🚀 user:", { user });
+  const { page, pageSize, winnerRegionFilter, winnerSelection, winnerError } =
+    await searchParams;
 
   const userWorkspaceMembership = await prisma.userWorkspace.findUnique({
     where: {
@@ -174,6 +325,7 @@ export default async function FormResponsesPage({
     user.globalRole === "SUPER_ADMIN" ||
     userWorkspaceMembership?.role === "EDITOR" ||
     workspace.role === "EDITOR";
+  const canExportResponses = workspace.role === "EDITOR";
   const currentPage = Math.max(1, Number.parseInt(page ?? "1", 10) || 1);
   const showAllResponses = (pageSize ?? "").toLowerCase() === "all";
   const requestedPageSize = Number.parseInt(pageSize ?? "20", 10) || 20;
@@ -245,18 +397,31 @@ export default async function FormResponsesPage({
     notFound();
   }
 
-  const allResponses = showAllResponses ? await getAllFormResponses(form.id) : null;
-  const allResponsesSafe = allResponses ?? [];
-  const responses = showAllResponses
+  const allResponses = await getAllFormResponses(form.id);
+  const chronologicalParticipantResponses =
+    getChronologicalParticipantResponses(allResponses);
+  const participantNumbersByToken = getParticipantNumbersByToken(
+    chronologicalParticipantResponses,
+  );
+  const canonicalParticipantTokens = new Set(participantNumbersByToken.keys());
+  const rawResponses = showAllResponses
     ? {
         page_count: 1,
-        total_items: allResponsesSafe.length,
-        items: allResponsesSafe,
+        total_items: chronologicalParticipantResponses.length,
+        items: chronologicalParticipantResponses,
       }
     : await getTypeformFormResponses(form.id, {
         page: currentPage,
         pageSize: selectedItemsPerPage,
       });
+  const visibleResponseItems = rawResponses.items.filter((response) =>
+    canonicalParticipantTokens.has(response.token),
+  );
+  const responses = {
+    ...rawResponses,
+    items: visibleResponseItems,
+    total_items: chronologicalParticipantResponses.length,
+  };
   const itemsPerPage = showAllResponses
     ? Math.max(1, responses.total_items)
     : selectedItemsPerPage;
@@ -266,15 +431,22 @@ export default async function FormResponsesPage({
   const winnerCandidateResponses =
     canSelectWinners && !isPageOutOfRange
       ? showAllResponses
-        ? deduplicateByToken(allResponsesSafe)
-        : await getWinnerCandidateResponses(form.id)
+        ? chronologicalParticipantResponses
+        : deduplicateByToken(await getWinnerCandidateResponses(form.id)).filter(
+            (response) => canonicalParticipantTokens.has(response.token),
+          )
       : [];
 
   const selectWinners = selectWinnersAction.bind(null, workspace.id, form.id);
   const maskedResponses = mapMaskedTypeformResponses(form, responses.items, {
     maskSensitive: true,
     unmaskTokens: revealedWinnerTokens,
-  });
+  }).map((response) => ({
+    ...response,
+    participantNumber:
+      participantNumbersByToken.get(response.token) ??
+      response.participantNumber,
+  }));
   const maskedWinnerCandidateResponses = mapMaskedTypeformResponses(
     form,
     winnerCandidateResponses,
@@ -282,19 +454,17 @@ export default async function FormResponsesPage({
       maskSensitive: true,
       unmaskTokens: revealedWinnerTokens,
     },
-  );
+  ).map((response) => ({
+    ...response,
+    participantNumber:
+      participantNumbersByToken.get(response.token) ??
+      response.participantNumber,
+  }));
   const highlightedWinnerResponses = maskedWinnerCandidateResponses.filter(
     (response) => revealedWinnerTokens.has(response.token),
   );
   const revealedResponses = maskedResponses.filter((response) =>
     revealedWinnerTokens.has(response.token),
-  );
-  const maskedAnswerCount = maskedResponses.reduce(
-    (total, response) =>
-      total +
-      response.answers.filter((answer) => answer.masked).length +
-      response.hidden.filter((answer) => answer.masked).length,
-    0,
   );
 
   if (revealedResponses.length > 0) {
@@ -330,7 +500,7 @@ export default async function FormResponsesPage({
       <WorkspaceFormResponsesStats
         totalParticipants={responses.total_items}
         shownParticipants={maskedResponses.length}
-        maskedAnswerCount={maskedAnswerCount}
+        selectedWinnersCount={revealedWinnerTokens.size}
       />
 
       {isPageOutOfRange && (
@@ -360,6 +530,7 @@ export default async function FormResponsesPage({
           <WinnerSelectionPanel
             action={selectWinners}
             currentPage={currentPage}
+            initialRegionFilter={winnerRegionFilter}
             itemsPerPage={itemsPerPage}
             pageSizeValue={showAllResponses ? "all" : String(itemsPerPage)}
             winnerSelection={winnerSelection}
@@ -367,17 +538,18 @@ export default async function FormResponsesPage({
             candidates={maskedWinnerCandidateResponses.map(
               (response, index) => {
                 const { label } = getWinnerLabel(response, index);
-                const fallbackParticipantNumber = index + 1;
-                const participantNumber = getResponseParticipantNumber(
-                  winnerCandidateResponses[index] ?? {},
-                  fallbackParticipantNumber,
-                );
+                const participantNumber =
+                  participantNumbersByToken.get(response.token) ??
+                  String(index + 1);
 
                 return {
                   token: response.token,
                   label,
                   detail: `#${participantNumber}`,
                   participantNumber,
+                  email: getCandidateEmail(response),
+                  region: getCandidateRegion(response),
+                  comuna: getCandidateComuna(response),
                   selected: revealedWinnerTokens.has(response.token),
                 };
               },
@@ -399,11 +571,12 @@ export default async function FormResponsesPage({
           highlightedResponses={highlightedWinnerResponses}
           highlightedContactsByToken={winnerContactsByToken}
           responses={maskedResponses}
-          revealedWinnerTokens={Array.from(revealedWinnerTokens)}
           currentPage={currentPage}
           totalPages={totalResponsePages}
           totalItems={responses.total_items}
           itemsPerPage={itemsPerPage}
+          exportBaseHref={`/workspaces/${workspace.id}/forms/${form.id}/responses/export`}
+          canExportResponses={canExportResponses}
         />
       ) : null}
     </>

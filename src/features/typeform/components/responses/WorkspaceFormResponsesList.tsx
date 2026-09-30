@@ -1,21 +1,57 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { LuEye } from "react-icons/lu";
-import Pagination from "@/shared/components/Pagination";
-import { ResponseArticle } from "@/features/typeform/components/responses/ResponseArticle";
+import {
+  createColumnHelper,
+  createPaginatedRowModel,
+  rowPaginationFeature,
+  tableFeatures,
+  useTable,
+} from "@tanstack/react-table";
+import { ResponseExportButton } from "@/features/typeform/components/responses/ResponseExportButton";
+import { ResponseTablePagination } from "@/features/typeform/components/responses/ResponseTablePagination";
+import { ResponseTableRow } from "@/features/typeform/components/responses/ResponseTableRow";
 import type { MaskedTypeformResponse } from "@/features/typeform/services/typeform.service";
 
 type WorkspaceFormResponsesListProps = {
   highlightedResponses?: MaskedTypeformResponse[];
   highlightedContactsByToken?: Record<string, string>;
   responses: MaskedTypeformResponse[];
-  revealedWinnerTokens: string[];
   currentPage: number;
   totalPages: number;
   totalItems: number;
   itemsPerPage: number;
+  exportBaseHref?: string;
+  canExportResponses: boolean;
 };
+
+type ResponseTableItem = {
+  response: MaskedTypeformResponse;
+  participantLabel: string;
+  contactOverride?: string;
+  variant?: "default" | "winner";
+};
+
+const RESPONSE_TABLE_FEATURES = tableFeatures({
+  rowPaginationFeature,
+  paginatedRowModel: createPaginatedRowModel(),
+});
+
+const responseTableColumnHelper = createColumnHelper<
+  typeof RESPONSE_TABLE_FEATURES,
+  ResponseTableItem
+>();
+
+const RESPONSE_TABLE_COLUMNS = responseTableColumnHelper.columns([
+  responseTableColumnHelper.display({
+    id: "participant",
+    header: "Participante",
+  }),
+  responseTableColumnHelper.display({ id: "contact", header: "Contacto" }),
+  responseTableColumnHelper.display({ id: "submittedAt", header: "Enviado" }),
+  responseTableColumnHelper.display({ id: "answers", header: "Respuestas" }),
+  responseTableColumnHelper.display({ id: "actions", header: "" }),
+]);
 
 function filterUnavailableExpanded(
   tokens: string[],
@@ -30,20 +66,16 @@ export function WorkspaceFormResponsesList({
   highlightedResponses = [],
   highlightedContactsByToken = {},
   responses,
-  revealedWinnerTokens,
   currentPage,
   totalPages,
   totalItems,
   itemsPerPage,
+  exportBaseHref,
+  canExportResponses,
 }: WorkspaceFormResponsesListProps) {
   const safeCurrentPage = Math.min(currentPage, Math.max(1, totalPages));
+  const hasWinnerResponses = highlightedResponses.length > 0;
 
-  const safeTotalPages = Math.max(1, totalPages);
-
-  const winnerTokenSet = useMemo(
-    () => new Set(revealedWinnerTokens),
-    [revealedWinnerTokens],
-  );
   const highlightedTokenSet = useMemo(
     () => new Set(highlightedResponses.map((response) => response.token)),
     [highlightedResponses],
@@ -55,6 +87,46 @@ export function WorkspaceFormResponsesList({
         .filter(({ response }) => !highlightedTokenSet.has(response.token)),
     [highlightedTokenSet, responses],
   );
+
+  const tableRows = useMemo<ResponseTableItem[]>(
+    () => [
+      ...highlightedResponses.map((response, index) => ({
+        response,
+        participantLabel: `Ganador #${index + 1}`,
+        contactOverride: highlightedContactsByToken[response.token],
+        variant: "winner" as const,
+      })),
+      ...paginatedResponses.map(({ response, index }) => ({
+        response,
+        participantLabel: `Participante #${
+          response.participantNumber ??
+          (safeCurrentPage - 1) * itemsPerPage + index + 1
+        }`,
+      })),
+    ],
+    [
+      highlightedContactsByToken,
+      highlightedResponses,
+      itemsPerPage,
+      paginatedResponses,
+      safeCurrentPage,
+    ],
+  );
+
+  const table = useTable({
+    features: RESPONSE_TABLE_FEATURES,
+    data: tableRows,
+    columns: RESPONSE_TABLE_COLUMNS,
+    initialState: {
+      pagination: {
+        pageIndex: 0,
+        pageSize: Math.min(10, Math.max(1, tableRows.length)),
+      },
+    },
+    getRowId: (row: ResponseTableItem) => row.response.token,
+  });
+
+  const columnCount = table.getAllLeafColumns().length;
 
   const responseTokens = useMemo(
     () => [
@@ -106,91 +178,6 @@ export function WorkspaceFormResponsesList({
 
   return (
     <section className="mt-8 space-y-5">
-      <Pagination
-        currentPage={safeCurrentPage}
-        totalPages={safeTotalPages}
-        totalItems={totalItems}
-        itemsPerPage={itemsPerPage}
-        itemLabel="participantes"
-        showPageSizeSelector
-        showAllPageSizeOption
-        showLastPageButton
-      />
-
-      {responseTokens.length > 0 && (
-        <div className="flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={expandAll}
-            disabled={allExpanded}
-            className="
-              rounded-xl
-              border border-[#E8E8E6]
-              bg-white
-              px-3 py-1.5
-              text-xs font-medium
-              text-[#000000]/70
-              shadow-sm
-              transition-all
-              hover:border-[#7C3AED]/30
-              hover:text-[#7C3AED]
-              disabled:cursor-not-allowed
-              disabled:opacity-50
-            "
-          >
-            Expandir todo
-          </button>
-
-          <button
-            type="button"
-            onClick={collapseAll}
-            disabled={normalizedExpandedTokens.length === 0}
-            className="
-              rounded-xl
-              border border-[#E8E8E6]
-              bg-white
-              px-3 py-1.5
-              text-xs font-medium
-              text-[#000000]/70
-              shadow-sm
-              transition-all
-              hover:border-[#000000]/20
-              hover:text-[#000000]
-              disabled:cursor-not-allowed
-              disabled:opacity-50
-            "
-          >
-            Contraer todo
-          </button>
-        </div>
-      )}
-
-      {highlightedResponses.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <LuEye className="size-4 text-[#00A88F]" />
-            <h2 className="text-sm font-semibold text-[#111111]">
-              Ganadores seleccionados
-            </h2>
-          </div>
-
-          <div className="grid gap-4 xl:grid-cols-2">
-            {highlightedResponses.map((response, index) => (
-              <ResponseArticle
-                key={`highlighted-winner-${response.token}`}
-                response={response}
-                isWinnerVisible={winnerTokenSet.has(response.token)}
-                isExpanded={normalizedExpandedTokens.includes(response.token)}
-                participantLabel={`Ganador #${index + 1}`}
-                contactOverride={highlightedContactsByToken[response.token]}
-                variant="winner"
-                onToggle={() => toggleToken(response.token)}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
       {responseTokens.length === 0 ? (
         <div
           className="
@@ -211,39 +198,114 @@ export function WorkspaceFormResponsesList({
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 xl:grid-cols-2">
-          {paginatedResponses.map(({ response, index }) => {
-            const isWinnerVisible = winnerTokenSet.has(response.token);
+        <div className="overflow-hidden rounded-xl border border-[#DADAD6] bg-white">
+          <div className="flex flex-col gap-3 border-b border-[#E8E8E6] bg-white px-3 py-3 sm:px-4 md:flex-row md:items-center md:justify-between">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[#111111]">
+                Respuestas del formulario
+              </p>
+              <p className="mt-0.5 text-xs text-[#000000]/50">
+                {totalItems} participantes en Typeform · {tableRows.length}{" "}
+                filas cargadas
+              </p>
+            </div>
 
-            const isExpanded = normalizedExpandedTokens.includes(response.token);
+            <div className="grid gap-2 sm:flex sm:items-center">
+              {exportBaseHref && (
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+                  <ResponseExportButton
+                    baseHref={exportBaseHref}
+                    scope="participants"
+                    label="Participantes"
+                    variant="participants"
+                    canExport={canExportResponses}
+                  />
 
-            const responseNumber =
-              (safeCurrentPage - 1) * itemsPerPage + index + 1;
+                  <ResponseExportButton
+                    baseHref={exportBaseHref}
+                    scope="winners"
+                    label="Ganadores"
+                    variant="winners"
+                    canExport={canExportResponses && hasWinnerResponses}
+                    disabledMessage={
+                      canExportResponses
+                        ? "No hay ganadores para exportar"
+                        : "No tienes permisos para exportar"
+                    }
+                    disabledDescription={
+                      canExportResponses
+                        ? "Selecciona ganadores antes de descargar el archivo."
+                        : "Solo los usuarios con rol editor pueden descargar respuestas."
+                    }
+                  />
+                </div>
+              )}
 
-            return (
-              <ResponseArticle
-                key={response.token}
-                response={response}
-                isWinnerVisible={isWinnerVisible}
-                isExpanded={isExpanded}
-                participantLabel={`Participante #${responseNumber}`}
-                onToggle={() => toggleToken(response.token)}
-              />
-            );
-          })}
+              <button
+                type="button"
+                onClick={expandAll}
+                disabled={allExpanded}
+                className="rounded-lg cursor-pointer border border-[#E8E8E6] bg-white px-3 py-2 text-xs font-medium text-[#000000]/70 transition-colors hover:border-black/20 hover:text-black disabled:cursor-not-allowed disabled:opacity-40 sm:py-1.5"
+              >
+                Expandir todo
+              </button>
+
+              <button
+                type="button"
+                onClick={collapseAll}
+                disabled={normalizedExpandedTokens.length === 0}
+                className="rounded-lg cursor-pointer border border-[#E8E8E6] bg-white px-3 py-2 text-xs font-medium text-[#000000]/70 transition-colors hover:border-black/20 hover:text-black disabled:cursor-not-allowed disabled:opacity-40 sm:py-1.5"
+              >
+                Contraer todo
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-200 border-collapse lg:min-w-225">
+              <thead className="bg-[#FBFBFA]">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr
+                    key={headerGroup.id}
+                    className="border-b border-[#E8E8E6]"
+                  >
+                    {headerGroup.headers.map((header) => (
+                      <th
+                        key={header.id}
+                        scope="col"
+                        className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-[#000000]/45 last:text-right"
+                      >
+                        {header.isPlaceholder ? null : (
+                          <table.FlexRender header={header} />
+                        )}
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+
+              <tbody>
+                {table.getPaginatedRowModel().rows.map((row) => (
+                  <ResponseTableRow
+                    key={row.id}
+                    response={row.original.response}
+                    isExpanded={normalizedExpandedTokens.includes(
+                      row.original.response.token,
+                    )}
+                    participantLabel={row.original.participantLabel}
+                    contactOverride={row.original.contactOverride}
+                    variant={row.original.variant}
+                    colSpan={columnCount}
+                    onToggle={() => toggleToken(row.original.response.token)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <ResponseTablePagination table={table} />
         </div>
       )}
-
-      <Pagination
-        currentPage={safeCurrentPage}
-        totalPages={safeTotalPages}
-        totalItems={totalItems}
-        itemsPerPage={itemsPerPage}
-        itemLabel="participantes"
-        showPageSizeSelector
-        showAllPageSizeOption
-        showLastPageButton
-      />
     </section>
   );
 }

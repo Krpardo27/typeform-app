@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Swal from "sweetalert2";
 import { LuX, LuLoader } from "react-icons/lu";
+import { templateFormOptions } from "../../../../../../config/radio-workspaces";
 
 import FormErrors from "./FormErrors";
 import { CreateWorkspaceSchema } from "../../schemas/workspace.schema";
@@ -14,59 +15,6 @@ import Form from "./Form";
 interface Props {
   onClose: () => void;
 }
-
-const TEMPLATE_FORM_OPTIONS = [
-  {
-    label: "CONCIERTO",
-    typeformId: "1530584",
-    value: "HePVkesf",
-  },
-  {
-    label: "LOS40",
-    typeformId: "416594",
-    value: "pirygCQR",
-  },
-  {
-    label: "ROCKANDPOP",
-    typeformId: "414850",
-    value: "VxoT54si",
-  },
-  {
-    label: "FUTURO",
-    typeformId: "371901",
-    value: "r1aIO4Xh",
-  },
-  {
-    label: "ADN",
-    typeformId: "2828888",
-    value: "yuXGlh4N",
-  },
-  {
-    label: "FMDOS",
-    typeformId: "282794",
-    value: "pkgiqZ1g",
-  },
-  {
-    label: "ACTIVA",
-    typeformId: "866034",
-    value: "E9T1RItE",
-  },
-  {
-    label: "CORAZÓN",
-    typeformId: "4110099",
-    value: "l5cL82so",
-  },
-  {
-    label: "PUDAHUEL",
-    typeformId: "390974",
-    value: "Id8OdFJO",
-  },
-  {
-    label: "IMAGINA",
-    typeformId: "2979562",
-    value: "cQ5BsMcs",
-  },
-] as const;
 
 export default function CreateWorkspaceModal({ onClose }: Props) {
   const router = useRouter();
@@ -210,7 +158,7 @@ export default function CreateWorkspaceModal({ onClose }: Props) {
             >
               <option value="">Selecciona una radio base</option>
 
-              {TEMPLATE_FORM_OPTIONS.map((option) => (
+              {templateFormOptions.map((option) => (
                 <option key={option.typeformId} value={option.value}>
                   {option.label}
                 </option>

@@ -2,7 +2,6 @@ import { redirect, notFound } from "next/navigation";
 import {
   LuBadgeCheck,
   LuBriefcaseBusiness,
-  LuChevronRight,
 } from "react-icons/lu";
 import { getVisibleWorkspaces } from "@/features/admin/workspaces/services/workspace-permissions";
 import { NoWorkspaceActions } from "@/features/admin/workspaces/components/NoWorkspaceActions";
@@ -115,15 +114,6 @@ export default async function MyWorkspacesPage() {
                 <NoWorkspaceActions />
               </div>
             </div>
-          </div>
-
-          {/* Footer hint */}
-          <div className="mt-4 flex items-center justify-center gap-1 text-xs text-[#A1A1AA]">
-            <span>¿Necesitas acceso?</span>
-            <span className="font-medium text-[#71717A]">
-              Contacta a un administrador
-            </span>
-            <LuChevronRight className="size-3" />
           </div>
         </section>
       </main>

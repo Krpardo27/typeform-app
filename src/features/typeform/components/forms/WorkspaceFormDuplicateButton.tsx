@@ -25,6 +25,8 @@ export function WorkspaceFormDuplicateButton({
   const [isPending, setIsPending] = useState(false);
 
   useEffect(() => {
+    isMountedRef.current = true;
+
     return () => {
       isMountedRef.current = false;
     };

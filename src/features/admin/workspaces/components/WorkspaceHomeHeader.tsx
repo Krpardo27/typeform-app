@@ -3,15 +3,15 @@ import { LuRadio } from "react-icons/lu";
 type WorkspaceHomeHeaderProps = {
   workspaceName: string;
   workspaceRole: string;
-  currentUserLabel: string;
+  currentUserEmail?: string | null;
 };
 
 export function WorkspaceHomeHeader({
   workspaceName,
   workspaceRole,
-  currentUserLabel,
+  currentUserEmail,
 }: WorkspaceHomeHeaderProps) {
-  console.log("Editor", workspaceRole);
+  const userEmail = currentUserEmail ?? "Sin email";
 
   return (
     <header className="mt-6 border-b border-[#F5F5F5] space-y-12">
@@ -46,9 +46,9 @@ export function WorkspaceHomeHeader({
             <span className="text-black/40 text-md">Usuario: </span>
             <span
               className="max-w-[180px] truncate font-medium text-black sm:max-w-56"
-              title={currentUserLabel}
+              title={userEmail}
             >
-              {currentUserLabel}
+              {userEmail}
             </span>
           </div>
         </div>

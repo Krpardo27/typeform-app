@@ -92,7 +92,7 @@ export function WorkspaceMobileDock({
     <div className="fixed inset-x-0 bottom-0 z-40 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 lg:hidden">
       <div
         className="
-          relative mx-auto max-w-xl
+          relative mx-auto w-full max-w-xl
           overflow-visible
           rounded-[1.35rem]
           border border-[#E8E8E6]
@@ -102,7 +102,6 @@ export function WorkspaceMobileDock({
         "
       >
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-[#FF5C35]/60 to-transparent" />
-
         <nav className="grid grid-cols-4 gap-1 p-1.5">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -127,7 +126,7 @@ export function WorkspaceMobileDock({
                   item.active
                     ? item.label === "Forms"
                       ? `
-                        group relative
+                        group relative min-w-0
                         flex min-h-14
                         flex-col items-center justify-center
                         gap-1
@@ -141,7 +140,7 @@ export function WorkspaceMobileDock({
                         min-[390px]:text-[11px]
                       `
                       : `
-                        group relative
+                        group relative min-w-0
                         flex min-h-14
                         flex-col items-center justify-center
                         gap-1
@@ -155,7 +154,7 @@ export function WorkspaceMobileDock({
                         min-[390px]:text-[11px]
                       `
                     : `
-                      group relative
+                      group relative min-w-0
                       flex min-h-14
                       flex-col items-center justify-center
                       gap-1
@@ -198,11 +197,11 @@ export function WorkspaceMobileDock({
             onToggle={(event) => {
               setIsWorkspaceMenuOpen(event.currentTarget.open);
             }}
-            className="group relative"
+            className="group relative min-w-0"
           >
             <summary
               className="
-                relative flex min-h-14
+                relative flex min-h-14 min-w-0
                 cursor-pointer list-none
                 flex-col items-center justify-center
                 gap-1
@@ -222,7 +221,7 @@ export function WorkspaceMobileDock({
             >
               <LuRadio className="h-4 w-4 shrink-0 text-[#FF5C35]" />
 
-              <div className="flex items-center gap-1">
+              <div className="flex min-w-0 items-center gap-1">
                 <span className="max-w-full truncate leading-none">
                   {getShortWorkspaceName(currentWorkspace?.name)}
                 </span>
@@ -238,7 +237,7 @@ export function WorkspaceMobileDock({
             <div
               className="
                 absolute bottom-full right-0 z-50 mb-2
-                max-h-72 w-56
+                max-h-72 w-[min(14rem,calc(100vw-1rem))]
                 overflow-y-auto
                 rounded-2xl
                 border border-[#E8E8E6]
@@ -280,7 +279,9 @@ export function WorkspaceMobileDock({
             </div>
           </details>
 
-          <LogoutButton variant="workspace-dock" />
+          <div className="min-w-0 [&>button]:w-full [&>button]:min-w-0">
+            <LogoutButton variant="workspace-dock" />
+          </div>
         </nav>
       </div>
     </div>
