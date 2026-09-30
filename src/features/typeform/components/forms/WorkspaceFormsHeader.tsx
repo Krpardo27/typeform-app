@@ -24,7 +24,6 @@ export function WorkspaceFormsHeader({
         </>
       }
       title="Formularios"
-      description="Formularios recuperados desde Typeform para este workspace."
       actions={
         <>
           <p className="rounded-lg border border-[#F5F5F5] bg-[#FFFFFF] px-3 py-2 text-sm text-[#000000]/65">

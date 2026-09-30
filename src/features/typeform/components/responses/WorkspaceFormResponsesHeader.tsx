@@ -23,7 +23,6 @@ export function WorkspaceFormResponsesHeader({
         </>
       }
       title={`Respuestas de: ${formTitle}`}
-      description="Participantes que han completado el formulario."
     />
   );
 }
