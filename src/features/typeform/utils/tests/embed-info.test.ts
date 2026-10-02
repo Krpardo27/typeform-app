@@ -47,6 +47,11 @@ describe("getEmbedInfo", () => {
       expect(code).toContain(`https://concursos.los40.cl/t/?id=${FORM_ID}`);
     });
 
+    it("devuelve la URL publica de concursos LOS40 con el id del form", () => {
+      const { publicUrl } = getEmbedInfo(FORM_ID, LOS40_TYPEFORM_ID);
+      expect(publicUrl).toBe(`https://concursos.los40.cl/t/?id=${FORM_ID}`);
+    });
+
     it("el iframe incluye referrerpolicy unsafe-url", () => {
       const { code } = getEmbedInfo(FORM_ID, LOS40_TYPEFORM_ID);
       expect(code).toContain('referrerpolicy="unsafe-url"');
@@ -101,7 +106,7 @@ describe("getEmbedInfo", () => {
     });
 
     it("genera el iframe exacto de LOS40 desde su plantilla base", () => {
-      const { code, src } = getEmbedInfo(
+      const { code, publicUrl, src } = getEmbedInfo(
         "ACJWBsMI",
         "workspace-nuevo",
         undefined,
@@ -109,6 +114,7 @@ describe("getEmbedInfo", () => {
       );
 
       expect(src).toBe("https://concursos.los40.cl/t/?id=ACJWBsMI");
+      expect(publicUrl).toBe("https://concursos.los40.cl/t/?id=ACJWBsMI");
       expect(code).toBe(
         '<iframe id="concurso" width="100%" height="600px" referrerpolicy="unsafe-url" src="https://concursos.los40.cl/t/?id=ACJWBsMI" scrolling="no" marginwidth="0" marginheight="0" style="border:none;"></iframe>',
       );
