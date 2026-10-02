@@ -21,6 +21,7 @@ export type EmbedConfig = {
   label: string;
   buildSrc: (formId: string) => string;
   buildCode: (formId: string) => string;
+  buildPublicUrl?: (formId: string) => string;
 };
 
 // Agregar un nuevo workspace = agregar una entrada acá, sin tocar getEmbedInfo.
@@ -34,6 +35,7 @@ export const WORKSPACE_EMBED_CONFIG: Record<string, EmbedConfig> = {
   [LOS40_TYPEFORM_ID]: {
     label: "Código iframe (LOS40)",
     buildSrc: (formId) => `https://concursos.los40.cl/t/?id=${formId}`,
+    buildPublicUrl: (formId) => `https://concursos.los40.cl/t/?id=${formId}`,
     // Nota: referrerpolicy="unsafe-url" envía la URL completa (con query params)
     // como referrer al form embebido. Es requisito del proveedor de concursos,
     // no removerlo sin confirmar con LOS40.
@@ -68,7 +70,7 @@ export function getEmbedInfo(
   workspaceTypeformId: string,
   clonedFrom?: string,
   templateFormTypeformId?: string | null,
-): { code: string; label: string; src?: string } {
+): { code: string; label: string; publicUrl?: string; src?: string } {
   const config = resolveEmbedConfig(
     workspaceTypeformId,
     templateFormTypeformId,
@@ -78,6 +80,7 @@ export function getEmbedInfo(
     return {
       code: config.buildCode(formId),
       label: config.label,
+      publicUrl: config.buildPublicUrl?.(formId),
       src: config.buildSrc(formId),
     };
   }
@@ -85,6 +88,6 @@ export function getEmbedInfo(
     code: formId,
     label: clonedFrom
       ? "Typeform ID del duplicado"
-      : "Typeform ID del formulario",
+      : "Typeform ID del formulario base",
   };
 }

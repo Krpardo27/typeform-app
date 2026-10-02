@@ -36,7 +36,7 @@ export function WorkspaceFormCard({
     templateFormTypeformId,
   );
   const embedSrc = embedInfo.src;
-  const publicFormUrl = form._links?.display ?? embedSrc;
+  const publicFormUrl = embedInfo.publicUrl ?? form._links?.display ?? embedSrc;
 
   return (
     <article
