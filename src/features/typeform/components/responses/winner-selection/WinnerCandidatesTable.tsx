@@ -19,7 +19,7 @@ const WINNER_TABLE_COLUMNS = winnerTableColumnHelper.columns([
     id: "participant",
     header: "Participante",
   }),
-  winnerTableColumnHelper.display({ id: "detail", header: "Participante" }),
+  winnerTableColumnHelper.display({ id: "detail", header: "Detalle" }),
   winnerTableColumnHelper.display({ id: "email", header: "Email" }),
   winnerTableColumnHelper.display({ id: "region", header: "Región" }),
   winnerTableColumnHelper.display({ id: "comuna", header: "Comuna" }),

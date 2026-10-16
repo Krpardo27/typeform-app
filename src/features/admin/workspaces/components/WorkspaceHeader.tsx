@@ -46,7 +46,7 @@ export function WorkspaceHeader({
         className={`${hasTopRow ? "mt-4" : "pt-5"} flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6`}
       >
         <div className="min-w-0">
-          <h1 className="text-3xl font-bold tracking-tight text-[#000000]">
+          <h1 className="text-xl lg:text-3xl font-bold tracking-tight text-[#000000]">
             {title}
           </h1>
         </div>
