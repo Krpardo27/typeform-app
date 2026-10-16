@@ -2,8 +2,11 @@
 
 import { useMemo, useState } from "react";
 import {
+  columnFilteringFeature,
   createColumnHelper,
+  createFilteredRowModel,
   createPaginatedRowModel,
+  globalFilteringFeature,
   rowPaginationFeature,
   tableFeatures,
   useTable,
@@ -33,7 +36,10 @@ type ResponseTableItem = {
 };
 
 const RESPONSE_TABLE_FEATURES = tableFeatures({
+  columnFilteringFeature,
+  globalFilteringFeature,
   rowPaginationFeature,
+  filteredRowModel: createFilteredRowModel(),
   paginatedRowModel: createPaginatedRowModel(),
 });
 
@@ -43,6 +49,10 @@ const responseTableColumnHelper = createColumnHelper<
 >();
 
 const RESPONSE_TABLE_COLUMNS = responseTableColumnHelper.columns([
+  responseTableColumnHelper.accessor((row) => getResponseSearchText(row), {
+    id: "search",
+    header: "Buscar",
+  }),
   responseTableColumnHelper.display({
     id: "participant",
     header: "Participante",
@@ -60,6 +70,28 @@ function filterUnavailableExpanded(
   const available = new Set(availableTokens);
 
   return tokens.filter((token) => available.has(token));
+}
+
+function getResponseSearchText(row: ResponseTableItem) {
+  const response = row.response;
+  const values = [
+    row.participantLabel,
+    row.contactOverride,
+    row.variant === "winner" ? "ganador ganador seleccionado" : null,
+    response.token,
+    response.participantNumber,
+    response.submittedAt,
+    response.landedAt,
+    ...response.answers.flatMap((answer) => [
+      answer.question,
+      answer.value,
+      answer.fieldType,
+      answer.answerType,
+    ]),
+    ...response.hidden.flatMap((answer) => [answer.question, answer.value]),
+  ];
+
+  return values.filter(Boolean).join(" ");
 }
 
 export function WorkspaceFormResponsesList({
@@ -123,17 +155,21 @@ export function WorkspaceFormResponsesList({
         pageSize: Math.min(10, Math.max(1, tableRows.length)),
       },
     },
+    getColumnCanGlobalFilter: (column) => column.id === "search",
     getRowId: (row: ResponseTableItem) => row.response.token,
   });
 
-  const columnCount = table.getAllLeafColumns().length;
+  const visibleHeaders = table
+    .getHeaderGroups()[0]
+    ?.headers.filter((header) => header.id !== "search") ?? [];
+  const visibleColumnCount = visibleHeaders.length;
+  const filteredRows = table.getFilteredRowModel().rows;
+  const paginatedRows = table.getPaginatedRowModel().rows;
+  const searchValue = String(table.state.globalFilter ?? "");
 
   const responseTokens = useMemo(
-    () => [
-      ...highlightedResponses.map((response) => response.token),
-      ...paginatedResponses.map(({ response }) => response.token),
-    ],
-    [highlightedResponses, paginatedResponses],
+    () => filteredRows.map((row) => row.original.response.token),
+    [filteredRows],
   );
 
   const [expandedTokens, setExpandedTokens] = useState<string[]>(
@@ -176,6 +212,11 @@ export function WorkspaceFormResponsesList({
     setExpandedTokens([]);
   }
 
+  function handleSearchChange(value: string) {
+    table.setPageIndex(0);
+    table.setGlobalFilter(value || undefined);
+  }
+
   return (
     <section className="mt-8 space-y-5">
       {responseTokens.length === 0 ? (
@@ -211,6 +252,17 @@ export function WorkspaceFormResponsesList({
             </div>
 
             <div className="grid gap-2 sm:flex sm:items-center">
+              <label className="min-w-0 sm:w-64">
+                <span className="sr-only">Buscar filas cargadas</span>
+                <input
+                  type="search"
+                  value={searchValue}
+                  onChange={(event) => handleSearchChange(event.target.value)}
+                  placeholder="Buscar filas cargadas"
+                  className="min-h-10 w-full rounded-lg border border-[#DCDCD9] bg-white px-3 py-2 text-sm text-[#111111] outline-none transition placeholder:text-[#000000]/40 focus:border-[#111111] sm:min-h-8"
+                />
+              </label>
+
               {exportBaseHref && (
                 <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
                   <ResponseExportButton
@@ -269,7 +321,9 @@ export function WorkspaceFormResponsesList({
                     key={headerGroup.id}
                     className="border-b border-[#E8E8E6]"
                   >
-                    {headerGroup.headers.map((header) => (
+                    {headerGroup.headers
+                      .filter((header) => header.id !== "search")
+                      .map((header) => (
                       <th
                         key={header.id}
                         scope="col"
@@ -285,23 +339,40 @@ export function WorkspaceFormResponsesList({
               </thead>
 
               <tbody>
-                {table.getPaginatedRowModel().rows.map((row) => (
-                  <ResponseTableRow
-                    key={row.id}
-                    response={row.original.response}
-                    isExpanded={normalizedExpandedTokens.includes(
-                      row.original.response.token,
-                    )}
-                    participantLabel={row.original.participantLabel}
-                    contactOverride={row.original.contactOverride}
-                    variant={row.original.variant}
-                    colSpan={columnCount}
-                    onToggle={() => toggleToken(row.original.response.token)}
-                  />
-                ))}
+                {paginatedRows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={visibleColumnCount}
+                      className="px-4 py-10 text-center text-sm text-[#000000]/50"
+                    >
+                      No hay respuestas que coincidan con la búsqueda.
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedRows.map((row) => (
+                    <ResponseTableRow
+                      key={row.id}
+                      response={row.original.response}
+                      isExpanded={normalizedExpandedTokens.includes(
+                        row.original.response.token,
+                      )}
+                      participantLabel={row.original.participantLabel}
+                      contactOverride={row.original.contactOverride}
+                      variant={row.original.variant}
+                      colSpan={visibleColumnCount}
+                      onToggle={() => toggleToken(row.original.response.token)}
+                    />
+                  ))
+                )}
               </tbody>
             </table>
           </div>
+
+          {searchValue && (
+            <p className="border-t border-[#E8E8E6] px-4 py-2 text-xs text-[#000000]/50">
+              {filteredRows.length} fila(s) cargadas encontradas para “{searchValue}”.
+            </p>
+          )}
 
           <ResponseTablePagination table={table} />
         </div>

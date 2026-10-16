@@ -1,4 +1,22 @@
+"use client";
+
 import {
+  columnFilteringFeature,
+  createColumnHelper,
+  createFilteredRowModel,
+  createPaginatedRowModel,
+  createSortedRowModel,
+  globalFilteringFeature,
+  rowPaginationFeature,
+  rowSortingFeature,
+  tableFeatures,
+  useTable,
+} from "@tanstack/react-table";
+import { ResponseTablePagination } from "@/features/typeform/components/responses/ResponseTablePagination";
+import {
+  LuArrowDown,
+  LuArrowUp,
+  LuChevronsUpDown,
   LuClock3,
   LuFilePlus2,
   LuKeyRound,
@@ -16,6 +34,50 @@ import {
 type Props = {
   timeline: AuditTimelineEvent[];
 };
+
+const AUDIT_TABLE_FEATURES = tableFeatures({
+  columnFilteringFeature,
+  globalFilteringFeature,
+  rowPaginationFeature,
+  rowSortingFeature,
+  filteredRowModel: createFilteredRowModel(),
+  paginatedRowModel: createPaginatedRowModel(),
+  sortedRowModel: createSortedRowModel(),
+});
+
+const auditTableColumnHelper = createColumnHelper<
+  typeof AUDIT_TABLE_FEATURES,
+  AuditTimelineEvent
+>();
+
+const AUDIT_TABLE_COLUMNS = auditTableColumnHelper.columns([
+  auditTableColumnHelper.accessor((event) => getSearchableEventText(event), {
+    id: "search",
+    header: "Buscar",
+    enableSorting: false,
+  }),
+  auditTableColumnHelper.accessor((event) => event.title, {
+    id: "event",
+    header: "Evento",
+  }),
+  auditTableColumnHelper.accessor((event) => event.actor, {
+    id: "actor",
+    header: "Actor",
+  }),
+  auditTableColumnHelper.accessor((event) => event.detail, {
+    id: "detail",
+    header: "Detalle",
+  }),
+  auditTableColumnHelper.accessor((event) => event.ipAddress ?? "", {
+    id: "ipAddress",
+    header: "IP",
+  }),
+  auditTableColumnHelper.accessor((event) => event.createdAt.getTime(), {
+    id: "createdAt",
+    header: "Fecha",
+    sortDescFirst: true,
+  }),
+]);
 
 function formatDate(value: Date) {
   return new Intl.DateTimeFormat("es-CL", {
@@ -116,7 +178,60 @@ function getWinnerCount(event: AuditTimelineEvent) {
   return String((event.metadata as Record<string, unknown>).winnerCount ?? "");
 }
 
+function getSearchableEventText(event: AuditTimelineEvent) {
+  return [
+    event.title,
+    event.action,
+    event.actor,
+    event.detail,
+    event.ipAddress,
+    event.userAgent,
+    formatDate(event.createdAt),
+    getWinnerCount(event),
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 export function AuditTimeline({ timeline }: Props) {
+  const auditTable = useTable({
+    features: AUDIT_TABLE_FEATURES,
+    data: timeline,
+    columns: AUDIT_TABLE_COLUMNS,
+    initialState: {
+      pagination: {
+        pageIndex: 0,
+        pageSize: Math.min(10, Math.max(1, timeline.length)),
+      },
+      sorting: [{ id: "createdAt", desc: true }],
+    },
+    getColumnCanGlobalFilter: (column) => column.id === "search",
+    getRowId: (event: AuditTimelineEvent) => `${event.source}-${event.id}`,
+  });
+  const visibleHeaders = auditTable
+    .getHeaderGroups()[0]
+    ?.headers.filter((header) => header.id !== "search") ?? [];
+  const paginatedRows = auditTable.getPaginatedRowModel().rows;
+  const filteredRowCount = auditTable.getFilteredRowModel().rows.length;
+  const searchValue = String(auditTable.state.globalFilter ?? "");
+
+  function handleSearchChange(value: string) {
+    auditTable.setPageIndex(0);
+    auditTable.setGlobalFilter(value || undefined);
+  }
+
+  function getSortingLabel(sortDirection: false | "asc" | "desc") {
+    if (sortDirection === "asc") return "Orden ascendente";
+    if (sortDirection === "desc") return "Orden descendente";
+    return "Sin orden";
+  }
+
+  function getSortIcon(sortDirection: false | "asc" | "desc") {
+    if (sortDirection === "asc") return LuArrowUp;
+    if (sortDirection === "desc") return LuArrowDown;
+    return LuChevronsUpDown;
+  }
+
   return (
     <section className="mt-8 rounded-xl border border-[#E5E5E5] bg-[#FFFFFF]">
       {timeline.length === 0 ? (
@@ -125,67 +240,94 @@ export function AuditTimeline({ timeline }: Props) {
         </div>
       ) : (
         <>
-          {/* Mobile: Cards */}
-          <div className="divide-y divide-[#E5E5E5] lg:hidden">
-            {timeline.map((event) => {
-              const Icon =
-                event.action === "LOGIN_SESSION_CREATED"
-                  ? LuLogIn
-                  : getActionIcon(event.action, event.metadata);
-              const style = getActionStyle(event.action, event.metadata);
-              const winnerCount = getWinnerCount(event);
-
-              return (
-                <div
-                  key={`${event.source}-${event.id}`}
-                  className="flex flex-col gap-3 px-5 py-4"
-                >
-                  <div className="flex items-center gap-2">
-                    <Icon className={`size-4 shrink-0 ${style.icon}`} />
-                    <span
-                      className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${style.badge}`}
-                    >
-                      {event.title}
-                    </span>
-                    <span className="ml-auto text-xs text-[#737373] whitespace-nowrap">
-                      {formatDate(event.createdAt)}
-                    </span>
-                  </div>
-
-                  <div className="min-w-0">
-                    <p className="truncate font-medium text-[#171717]">{event.actor}</p>
-                    <p className="mt-0.5 line-clamp-2 text-sm text-[#737373]">{event.detail}</p>
-                    {winnerCount && (
-                      <p className="mt-1 text-xs text-[#16A34A]">
-                        {winnerCount} ganador(es) seleccionados
-                      </p>
-                    )}
-                    {event.userAgent && (
-                      <p className="mt-1 line-clamp-1 text-xs text-[#737373]">{event.userAgent}</p>
-                    )}
-                  </div>
-
-                  {event.ipAddress && (
-                    <p className="text-xs text-[#737373]">{event.ipAddress}</p>
-                  )}
-                </div>
-              );
-            })}
+          <div className="border-b border-[#E5E5E5] bg-white px-4 py-3 sm:px-5">
+            <label className="block max-w-md">
+              <span className="text-xs font-medium uppercase tracking-wider text-[#737373]">
+                Buscar en auditoría
+              </span>
+              <input
+                type="search"
+                value={searchValue}
+                onChange={(event) => handleSearchChange(event.target.value)}
+                placeholder="Evento, actor, detalle, IP o navegador"
+                className="mt-1 min-h-10 w-full rounded-lg border border-[#DCDCD9] bg-white px-3 py-2 text-sm text-[#171717] outline-none transition placeholder:text-[#737373] focus:border-[#171717]"
+              />
+            </label>
           </div>
 
-          {/* Desktop: Table */}
-          <div className="hidden lg:block overflow-x-auto">
-            <div className="min-w-230">
-              <div className="grid grid-cols-[160px_1.1fr_1fr_160px_220px] gap-4 border-b border-[#E5E5E5] px-5 py-3 text-xs font-medium uppercase tracking-wider text-[#737373]">
-                <span>Evento</span>
-                <span>Actor</span>
-                <span>Detalle</span>
-                <span>IP</span>
-                <span>Fecha</span>
-              </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-190 border-collapse lg:min-w-230">
+              <colgroup>
+                <col className="w-40" />
+                <col />
+                <col />
+                <col className="w-40" />
+                <col className="w-55" />
+              </colgroup>
 
-              <div className="max-h-[70vh] divide-y divide-[#E5E5E5] overflow-y-auto">
-                {timeline.map((event) => {
+              <thead className="bg-[#FBFBFA]">
+                {auditTable.getHeaderGroups().map((headerGroup) => (
+                  <tr
+                    key={headerGroup.id}
+                    className="border-b border-[#E5E5E5]"
+                  >
+                    {headerGroup.headers
+                      .filter((header) => header.id !== "search")
+                      .map((header) => (
+                      <th
+                        key={header.id}
+                        scope="col"
+                        className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-[#737373]"
+                      >
+                        {header.isPlaceholder ? null : header.column.getCanSort() ? (() => {
+                          const sortDirection = header.column.getIsSorted();
+                          const SortIcon = getSortIcon(sortDirection);
+
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                auditTable.setPageIndex(0);
+                                header.column.toggleSorting();
+                              }}
+                              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors ${
+                                sortDirection
+                                  ? "bg-[#F5F5F5] text-[#171717]"
+                                  : "text-[#737373] hover:bg-[#F5F5F5] hover:text-[#171717]"
+                              }`}
+                              aria-label={`Ordenar por ${String(header.column.columnDef.header)}. ${getSortingLabel(sortDirection)}`}
+                            >
+                              <auditTable.FlexRender header={header} />
+                              <SortIcon
+                                className={`size-3.5 transition-colors ${
+                                  sortDirection
+                                    ? "text-[#171717]"
+                                    : "text-[#737373]/50"
+                                }`}
+                              />
+                            </button>
+                          );
+                        })() : (
+                          <auditTable.FlexRender header={header} />
+                        )}
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+
+              <tbody>
+                {paginatedRows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={visibleHeaders.length}
+                      className="px-5 py-10 text-center text-sm text-[#737373]"
+                    >
+                      No hay eventos que coincidan con la búsqueda.
+                    </td>
+                  </tr>
+                ) : paginatedRows.map((row) => {
+                  const event = row.original;
                   const Icon =
                     event.action === "LOGIN_SESSION_CREATED"
                       ? LuLogIn
@@ -194,21 +336,23 @@ export function AuditTimeline({ timeline }: Props) {
                   const winnerCount = getWinnerCount(event);
 
                   return (
-                    <div
-                      key={`${event.source}-${event.id}`}
-                      className="relative grid grid-cols-[160px_1.1fr_1fr_160px_220px] items-center gap-4 px-5 py-4 text-sm text-[#737373] transition hover:bg-[#F5F5F5]"
+                    <tr
+                      key={row.id}
+                      className="border-b border-[#E5E5E5] transition-colors last:border-b-0 hover:bg-[#F5F5F5]"
                     >
-                      <div className="flex items-center gap-2 text-[#171717]">
-                        <Icon className={`size-4 ${style.icon}`} />
-                        <span
-                          className={`inline-flex max-w-full items-center truncate rounded px-2 py-0.5 text-xs font-medium ${style.badge}`}
-                        >
-                          {event.title}
-                        </span>
-                      </div>
+                      <td className="px-4 py-4 align-middle">
+                        <div className="flex min-w-0 items-center gap-2 text-[#171717]">
+                          <Icon className={`size-4 shrink-0 ${style.icon}`} />
+                          <span
+                            className={`inline-flex max-w-full items-center truncate rounded px-2 py-0.5 text-xs font-medium ${style.badge}`}
+                          >
+                            {event.title}
+                          </span>
+                        </div>
+                      </td>
 
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-[#171717]">
+                      <td className="min-w-0 px-4 py-4 align-middle">
+                        <p className="truncate text-sm font-medium text-[#171717]">
                           {event.actor}
                         </p>
                         {event.userAgent && (
@@ -216,10 +360,10 @@ export function AuditTimeline({ timeline }: Props) {
                             {event.userAgent}
                           </p>
                         )}
-                      </div>
+                      </td>
 
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-[#171717]">
+                      <td className="min-w-0 px-4 py-4 align-middle">
+                        <p className="truncate text-sm font-medium text-[#171717]">
                           {event.detail}
                         </p>
                         {winnerCount && (
@@ -227,19 +371,29 @@ export function AuditTimeline({ timeline }: Props) {
                             {winnerCount} ganador(es) seleccionados
                           </p>
                         )}
-                      </div>
-                      <p className="truncate text-xs text-[#737373]">
-                        {event.ipAddress ?? "Sin IP"}
-                      </p>
-                      <p className="text-xs text-[#737373]">
+                      </td>
+                      <td className="px-4 py-4 align-middle text-xs text-[#737373]">
+                        <span className="block truncate">
+                          {event.ipAddress ?? "Sin IP"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 align-middle text-xs text-[#737373]">
                         {formatDate(event.createdAt)}
-                      </p>
-                    </div>
+                      </td>
+                    </tr>
                   );
                 })}
-              </div>
-            </div>
+              </tbody>
+            </table>
           </div>
+
+          {searchValue && (
+            <p className="border-t border-[#E5E5E5] px-5 py-2 text-xs text-[#737373]">
+              {filteredRowCount} evento(s) encontrados para “{searchValue}”.
+            </p>
+          )}
+
+          <ResponseTablePagination table={auditTable} />
         </>
       )}
     </section>
