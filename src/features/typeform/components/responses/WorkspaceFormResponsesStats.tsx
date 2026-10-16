@@ -13,7 +13,7 @@ export function WorkspaceFormResponsesStats({
   selectedWinnersCount,
 }: WorkspaceFormResponsesStatsProps) {
   return (
-    <section className="lg:mt-8 grid gap-4 md:grid-cols-3">
+    <section className="lg:mt-8 lg:grid gap-4 md:grid-cols-3 flex flex-wrap">
       <article className={CARD_CLASSNAME}>
         <p className="text-xs font-medium uppercase tracking-wider text-[#000000]/45">
           Participantes
