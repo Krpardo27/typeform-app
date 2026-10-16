@@ -26,7 +26,7 @@ export function WorkspaceShell({
   children,
 }: WorkspaceShellProps) {
   return (
-    <div className="flex min-h-dvh bg-[#F7F7F8] text-zinc-900">
+    <div className="flex min-h-dvh bg-[#F5F5F5] text-[#171717]">
       <div className="hidden h-dvh shrink-0 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:block">
         <WorkspaceSidebar
           user={user}

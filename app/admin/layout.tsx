@@ -22,11 +22,11 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="flex h-dvh min-h-dvh overflow-hidden bg-[#F5F5F5] text-[#171717]">
-      <aside className="hidden h-dvh w-72 shrink-0 flex-col overflow-y-auto border-r border-[#E5E5E5] bg-[#FFFFFF] px-4 py-6 lg:flex">
+    <div className="flex min-h-dvh bg-[#F5F5F5] text-[#171717]">
+      <aside className="hidden h-dvh w-72 shrink-0 flex-col overflow-y-auto border-r border-[#E5E5E5] bg-[#FFFFFF] px-4 py-6 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex">
         <div className="mb-6 flex flex-col gap-4">
           <div className="flex items-center gap-2 rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] px-3 py-2.5 text-sm font-medium text-[#171717]">
-              <span className="flex size-7 items-center justify-center rounded-lg bg-[#18181B]/10 text-[#18181B]">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-[#18181B]/10 text-[#18181B]">
               <svg
                 viewBox="0 0 24 24"
                 className="size-4"
@@ -61,7 +61,7 @@ export default async function AdminLayout({
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1">
+      <main className="min-w-0 flex-1 lg:pl-72">
         <div className="container mx-auto px-4 pb-28 lg:pb-10">
           <section className="sticky top-0 z-20 mb-6 border-b border-[#E5E5E5] bg-[#F5F5F5] py-5 pb-4 md:static md:mb-8 md:border-b-0 md:bg-transparent md:pb-0">
             <div className="max-w-2xl">

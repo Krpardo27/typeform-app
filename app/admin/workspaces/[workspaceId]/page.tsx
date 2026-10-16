@@ -129,7 +129,7 @@ export default async function WorkspaceDetailPage({
   );
 
   return (
-    <div>
+    <>
       <AdminPageHeader
         eyebrow="Workspace Typeform"
         title={typeformWorkspace.name ?? appWorkspace?.name ?? "Sin nombre"}
@@ -263,6 +263,6 @@ export default async function WorkspaceDetailPage({
           </div>
         </>
       )}
-    </div>
+    </>
   );
 }
