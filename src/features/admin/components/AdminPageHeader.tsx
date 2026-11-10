@@ -24,10 +24,10 @@ export function AdminPageHeader({
   const topLeading = backHref && backLabel ? (
     <Link
       href={backHref}
-      className="group inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-[#737373] transition-colors hover:text-[#18181B]"
+      className="group -ml-1 inline-flex min-h-11 max-w-full items-center gap-2 rounded-sm px-1 py-2 text-sm font-medium text-[#595954] underline-offset-4 transition-colors hover:text-[#A33116] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A33116] motion-reduce:transition-none"
     >
-      <LuArrowLeft className="size-3.5 transition-transform duration-200 group-hover:-translate-x-0.5" />
-      {backLabel}
+      <LuArrowLeft aria-hidden="true" className="size-3.5 shrink-0 transition-transform duration-200 ease-out group-hover:-translate-x-0.5 motion-reduce:translate-x-0 motion-reduce:transition-none" />
+      <span className="min-w-0 wrap-anywhere">{backLabel}</span>
     </Link>
   ) : (
     leading
@@ -36,15 +36,13 @@ export function AdminPageHeader({
   const hasTopRow = Boolean(topLeading || eyebrow);
 
   return (
-    <header className="relative mb-8 lg:pb-8">
-      <div className="absolute left-0 top-0 h-px w-16 bg-linear-to-r from-[#18181B] to-transparent" />
-
+    <header className="mb-6 min-w-0 border-b border-[#E5E5E5] pb-5 sm:mb-8 sm:pb-6">
       {hasTopRow && (
-        <div className="flex items-center gap-3 pt-5">
-          {topLeading}
+        <div className="mb-3 flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-1">
+          {topLeading && <div className="min-w-0 max-w-full wrap-anywhere">{topLeading}</div>}
           {eyebrow && (
             <p
-              className={`${topLeading ? "ml-auto" : ""} text-xs font-medium uppercase tracking-wider text-[#737373]`}
+              className="min-w-0 text-sm font-medium text-[#737373] wrap-anywhere"
             >
               {eyebrow}
             </p>
@@ -52,24 +50,21 @@ export function AdminPageHeader({
         </div>
       )}
 
-      <div
-        className={`${hasTopRow ? "mt-4" : "pt-5"} flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6`}
-      >
-        <div className="min-w-0">
-          <h1 className="text-3xl font-bold tracking-tight text-[#171717]">{title}</h1>
+      <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl font-semibold leading-tight tracking-tight text-[#171717] wrap-anywhere">{title}</h1>
           {description && (
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#737373]">
+            <div className="mt-2 max-w-2xl text-sm leading-6 text-[#595954] wrap-anywhere">
               {description}
-            </p>
+            </div>
           )}
         </div>
-
         {actions && (
-          <div className="flex flex-wrap items-center gap-3">{actions}</div>
+          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2 wrap-anywhere *:min-w-0 *:max-w-full lg:max-w-[45%] lg:shrink-0 lg:justify-end">
+            {actions}
+          </div>
         )}
       </div>
-
-      <div className="mt-6 h-px w-full bg-linear-to-r from-[#E5E5E5] via-[#E5E5E5]/40 to-transparent" />
     </header>
   );
 }

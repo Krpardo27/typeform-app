@@ -6,9 +6,10 @@ import { LuCheck, LuCopy } from "react-icons/lu";
 type CopyButtonProps = {
   value: string;
   label?: string;
+  variant?: "default" | "subtle";
 };
 
-export function CopyButton({ value, label = "Copiar ID" }: CopyButtonProps) {
+export function CopyButton({ value, label = "Copiar ID", variant = "default" }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -24,7 +25,10 @@ export function CopyButton({ value, label = "Copiar ID" }: CopyButtonProps) {
     <button
       type="button"
       onClick={handleCopy}
-      className={`cursor-pointer
+      aria-label={copied ? "Copiado al portapapeles" : label}
+      className={variant === "subtle"
+        ? `inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-sm px-1 text-sm font-medium underline-offset-4 transition-colors hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF5C35] motion-reduce:transition-none ${copied ? "text-[#356044]" : "text-[#595954] hover:text-[#A53318]"}`
+        : `cursor-pointer
       inline-flex
       items-center
       gap-2
@@ -57,7 +61,7 @@ export function CopyButton({ value, label = "Copiar ID" }: CopyButtonProps) {
       }
     `}
     >
-      {copied ? <LuCheck className="size-4" /> : <LuCopy className="size-4" />}
+      {copied ? <LuCheck aria-hidden="true" className="size-4" /> : <LuCopy aria-hidden="true" className="size-4" />}
 
       {copied ? "Copiado" : label}
     </button>

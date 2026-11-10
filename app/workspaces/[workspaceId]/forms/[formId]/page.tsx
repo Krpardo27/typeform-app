@@ -1,10 +1,5 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getWorkspaceAccessContext } from "@/features/admin/workspaces/services/workspace-access";
-import { duplicateFormAction } from "@/features/typeform/actions/duplicate-form.action";
-import { DuplicateFormPanel } from "@/features/typeform/components/creation/DuplicateFormPanel";
-import { WorkspaceFormCloneNotice } from "@/features/typeform/components/forms/WorkspaceFormCloneNotice";
-import { WorkspaceFormDetailHeader } from "@/features/typeform/components/forms/WorkspaceFormDetailHeader";
-import { WorkspaceFormMetaCards } from "@/features/typeform/components/forms/WorkspaceFormMetaCards";
 import NewWorkspaceFormPage from "../new/page";
 import {
   formBelongsToWorkspace,
@@ -12,8 +7,6 @@ import {
   isTypeformNotFoundError,
   resolveWorkspaceTypeformId,
 } from "@/features/typeform/services/typeform.service";
-import { getSuggestedDuplicateTitle } from "@/features/typeform/utils/duplicate-title";
-import { getEmbedInfo } from "@/features/typeform/utils/embed-info";
 
 async function getExistingTypeformForm(formId: string) {
   try {
@@ -39,7 +32,7 @@ export default async function WorkspaceFormDetailPage({
   }>;
 }) {
   const { workspaceId, formId } = await params;
-  const { clonedFrom, page, pageSize } = await searchParams;
+  const { page, pageSize } = await searchParams;
 
   if (formId === "new") {
     return (
@@ -50,7 +43,7 @@ export default async function WorkspaceFormDetailPage({
     );
   }
 
-  const { workspace, canCreateForms } = await getWorkspaceAccessContext(workspaceId);
+  const { workspace } = await getWorkspaceAccessContext(workspaceId);
   const form = await getExistingTypeformForm(formId);
   const resolvedWorkspaceTypeformId = await resolveWorkspaceTypeformId(
     workspace.typeformId,
@@ -60,41 +53,7 @@ export default async function WorkspaceFormDetailPage({
     notFound();
   }
 
-  const embedInfo = getEmbedInfo(
-    form.id,
-    workspace.typeformId,
-    clonedFrom,
-    workspace.templateFormTypeformId,
-  );
-  const displayUrl = embedInfo.src ?? form._links?.display;
-  const duplicateForm = duplicateFormAction.bind(null, workspace.id, form.id);
-
-  return (
-    <>
-      <WorkspaceFormDetailHeader
-        workspaceId={workspace.id}
-        workspaceName={workspace.name}
-        formId={form.id}
-        formTitle={form.title}
-        displayUrl={displayUrl}
-      />
-
-      {clonedFrom && <WorkspaceFormCloneNotice clonedFrom={clonedFrom} />}
-
-      {canCreateForms && (
-        <DuplicateFormPanel
-          action={duplicateForm}
-          defaultTitle={getSuggestedDuplicateTitle(form.title)}
-          redirectTo={`/workspaces/${workspace.id}/forms`}
-          clonedFrom={clonedFrom}
-        />
-      )}
-
-      <WorkspaceFormMetaCards
-        formId={form.id}
-        clonedFrom={clonedFrom}
-        embedInfo={embedInfo}
-      />
-    </>
-  );
+  // Compatibilidad con enlaces antiguos: no renderizar una vista intermedia.
+  // La redirección solo ocurre después de autorizar workspace y formulario.
+  redirect(`/workspaces/${encodeURIComponent(workspace.id)}/forms/${encodeURIComponent(form.id)}/responses`);
 }

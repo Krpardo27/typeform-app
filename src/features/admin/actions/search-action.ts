@@ -1,7 +1,7 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { getCurrentUser } from "@/lib/getCurrentUser";
+import { SearchAuthError } from "./search-auth-error";
 import { prisma } from "@/lib/prisma";
 import {
   getAuthorizedWorkspace,
@@ -11,7 +11,9 @@ import {
   getTypeformForm,
   getTypeformFormResponses,
   getWorkspaceForms,
+  formBelongsToWorkspace,
   mapMaskedTypeformResponses,
+  resolveWorkspaceTypeformId,
 } from "@/features/typeform/services/typeform.service";
 
 const MIN_SEARCH_LENGTH = 2;
@@ -244,24 +246,16 @@ async function searchFormParticipants(
   }
 
   const form = await getTypeformForm(options.formId);
-  const winnerCookieName = `winner_selection:${workspace.id}:${form.id}`;
-  const winnerCookieRaw = (await cookies()).get(winnerCookieName)?.value;
-  let winnerTokens = new Set<string>();
-
-  if (winnerCookieRaw) {
-    try {
-      const parsed = JSON.parse(winnerCookieRaw) as {
-        tokens?: string[];
-        by?: string;
-      };
-
-      if (parsed.by === currentUser.id) {
-        winnerTokens = new Set(parsed.tokens ?? []);
-      }
-    } catch {
-      winnerTokens = new Set();
-    }
-  }
+  const resolvedWorkspaceId = await resolveWorkspaceTypeformId(workspace.typeformId);
+  if (!formBelongsToWorkspace(form, resolvedWorkspaceId)) return [];
+  const localForm = await prisma.form.findUnique({
+    where: { typeformId: form.id }, select: { id: true, workspaceId: true },
+  });
+  if (localForm && localForm.workspaceId !== workspace.id) return [];
+  const winners = localForm ? await prisma.formWinner.findMany({
+    where: { formId: localForm.id, workspaceId: workspace.id }, select: { responseToken: true },
+  }) : [];
+  const winnerTokens = new Set(winners.map((winner) => winner.responseToken));
 
   const responses = await getTypeformFormResponses(form.id, {
     page: 1,
@@ -269,7 +263,6 @@ async function searchFormParticipants(
   });
   const maskedResponses = mapMaskedTypeformResponses(form, responses.items, {
     maskSensitive: true,
-    unmaskTokens: winnerTokens,
   });
   const queryLower = options.query.toLowerCase();
 
@@ -288,7 +281,7 @@ async function searchFormParticipants(
 
       const matches =
         searchable.includes(queryLower) ||
-        (isWinner && /ganador|winner/.test(queryLower));
+        (isWinner && /^(ganador(?:es)?|winners?)$/.test(queryLower));
 
       if (!matches) {
         return null;
@@ -332,7 +325,7 @@ export async function searchGlobalAction(
   const currentUser = await getCurrentUser();
 
   if (!currentUser) {
-    throw new Error("Debes iniciar sesión para usar el buscador");
+    throw new SearchAuthError();
   }
 
   const isSuperAdmin = currentUser.globalRole === "SUPER_ADMIN";
@@ -359,10 +352,4 @@ export async function searchGlobalAction(
     forms,
     participants,
   };
-}
-
-export const searchArtistsAction = searchGlobalAction;
-
-export async function searchAuthorizedUsersAndWorkspacesAction(search: string) {
-  return searchGlobalAction(search);
 }

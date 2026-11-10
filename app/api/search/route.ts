@@ -1,4 +1,5 @@
 import { searchGlobalAction } from "@/features/admin/actions/search-action";
+import { SearchAuthError } from "@/features/admin/actions/search-auth-error";
 
 export const dynamic = "force-dynamic";
 
@@ -31,19 +32,15 @@ export async function GET(request: Request) {
       data: result,
     });
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "No se pudo ejecutar la busqueda";
+    if (error instanceof SearchAuthError) {
+      return Response.json({ ok: false, message: error.message }, { status: 401 });
+    }
 
-    const status = message.includes("iniciar sesión") ? 401 : 500;
+    console.error("[SEARCH_ERROR]", error instanceof Error ? error.name : "unknown");
 
     return Response.json(
-      {
-        ok: false,
-        message,
-      },
-      { status },
+      { ok: false, message: "No se pudo ejecutar la busqueda" },
+      { status: 500 },
     );
   }
 }

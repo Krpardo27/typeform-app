@@ -1,33 +1,23 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { prisma } from "@/lib/prisma";
-import { LuArrowUpRight, LuFileText, LuUsers } from "react-icons/lu";
-import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
-import {
-  getTypeformWorkspace,
-  getWorkspaceForms,
-  resolveWorkspaceTypeformId,
-} from "@/features/typeform/services/typeform.service";
-import { getEmbedInfo } from "@/features/typeform/utils/embed-info";
+import { LuFileText } from "react-icons/lu";
+import { WorkspacePageHeader } from "@/features/admin/workspaces/components/WorkspacePageHeader";
+import { AdminWorkspaceFormCard } from "@/features/admin/workspaces/components/AdminWorkspaceFormCard";
+import { getAdminWorkspace, getAdminWorkspaceDetail } from "@/features/admin/workspaces/services/admin-workspace-detail.service";
+import { WORKSPACE_FORMS_PAGE_SIZE } from "@/features/admin/workspaces/utils/workspace-view";
+import { isTypeformNotFoundError } from "@/features/typeform/services/typeform.service";
 import Pagination from "@/shared/components/Pagination";
-
-const ITEMS_PER_PAGE = 10;
+import { templateFormOptions } from "../../../../config/radio-workspaces";
 
 interface Props {
   params: Promise<{ workspaceId: string }>;
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string | string[] }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { workspaceId } = await params;
 
-  const workspace = await prisma.workspace.findFirst({
-    where: {
-      createdFromApp: true,
-      OR: [{ id: workspaceId }, { typeformId: workspaceId }],
-    },
-    select: { name: true },
-  });
+  const workspace = await getAdminWorkspace(workspaceId);
 
   return {
     title: workspace?.name ?? "Workspace",
@@ -41,228 +31,73 @@ export default async function WorkspaceDetailPage({
   const { workspaceId } = await params;
   const { page } = await searchParams;
 
-  const routeWorkspace = await prisma.workspace.findFirst({
-    where: {
-      createdFromApp: true,
-      OR: [{ id: workspaceId }, { typeformId: workspaceId }],
-    },
-    select: {
-      id: true,
-      typeformId: true,
-      templateFormTypeformId: true,
-    },
+  const detail = await getAdminWorkspaceDetail(workspaceId, page).catch((error: unknown) => {
+    if (isTypeformNotFoundError(error)) notFound();
+    throw error;
   });
+  if (!detail) notFound();
 
-  if (!routeWorkspace) {
-    notFound();
-  }
-
-  const typeformWorkspaceId = routeWorkspace?.typeformId ?? workspaceId;
-  const resolvedTypeformWorkspaceId = await resolveWorkspaceTypeformId(
-    typeformWorkspaceId,
-  );
-
-  const typeformWorkspace = await getTypeformWorkspace(
-    resolvedTypeformWorkspaceId,
-  ).catch((error: unknown) => {
-      if (
-        error instanceof Error &&
-        error.message.includes("Typeform API error 404")
-      ) {
-        notFound();
-      }
-
-      throw error;
-    },
-  );
-
-  const [typeformForms, appWorkspace] = await Promise.all([
-    getWorkspaceForms(typeformWorkspace.id),
-    prisma.workspace.findFirst({
-      where: {
-        createdFromApp: true,
-        OR: [
-          { typeformId: typeformWorkspace.id },
-          ...(routeWorkspace ? [{ id: routeWorkspace.id }] : []),
-        ],
-      },
-      select: {
-        id: true,
-        name: true,
-        typeformId: true,
-        templateFormTypeformId: true,
-        forms: {
-          orderBy: { createdAt: "desc" },
-          select: {
-            id: true,
-            title: true,
-            typeformId: true,
-            description: true,
-            createdAt: true,
-          },
-        },
-        _count: {
-          select: { users: true },
-        },
-      },
-    }),
-  ]);
-
-  const appForms = appWorkspace?.forms ?? [];
-
-  const appFormsByTypeformId = new Map(
-    appForms.map((form) => [form.typeformId, form]),
-  );
-
-  const memberCount = typeformWorkspace.members?.length ?? 0;
-  const formCount = typeformWorkspace.forms?.count ?? typeformForms.total_items;
-  const totalItems = typeformForms.items.length;
-  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
-  const requestedPage = Number(page ?? "1");
-  const currentPage = Math.min(
-    Math.max(Number.isInteger(requestedPage) ? requestedPage : 1, 1),
-    Math.max(totalPages, 1),
-  );
-  const paginatedForms = typeformForms.items.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
-  );
+  const { appWorkspace, typeformWorkspace, formsPage, appForms } = detail;
+  const appFormsByTypeformId = new Map(appForms.map((form) => [form.typeformId, form]));
+  const templateId = appWorkspace.templateFormTypeformId?.trim() || null;
+  const template = templateFormOptions.find((option) => option.value === templateId);
 
   return (
-    <>
-      <AdminPageHeader
-        eyebrow="Workspace Typeform"
-        title={typeformWorkspace.name ?? appWorkspace?.name ?? "Sin nombre"}
+    <div className="space-y-7">
+      <WorkspacePageHeader
+        radio={appWorkspace}
+        title={typeformWorkspace.name?.trim() || appWorkspace.name || "Workspace sin nombre"}
         description={
-          <>
-            <span className="block">ID Typeform: {typeformWorkspace.id}</span>
-          </>
+          <dl className="flex flex-wrap gap-x-8 gap-y-3 text-sm leading-5">
+            <div>
+              <dt>ID Typeform</dt>
+              <dd className="mt-1 font-medium text-[#171717] tabular-nums wrap-anywhere">{typeformWorkspace.id}</dd>
+            </div>
+            <div className="border-l-2 border-[#FF5C35]/40 pl-3">
+              <dt>Plantilla de origen</dt>
+              <dd className="mt-1 font-medium text-[#171717] wrap-anywhere">
+                {templateId ? `${template?.label ?? "Formulario de Typeform"} · ${templateId}` : "Sin plantilla registrada"}
+              </dd>
+            </div>
+          </dl>
         }
         backHref="/admin/workspaces"
-        backLabel="Volver a workspaces"
-        actions={
-          <>
-            <div className="rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] px-3 py-2 text-sm text-[#737373]">
-              {formCount} en Typeform
-            </div>
-            <div className="rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] px-3 py-2 text-sm text-[#737373]">
-              {appForms.length} creados por la app
-            </div>
-            <div className="flex items-center gap-2 rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] px-3 py-2 text-sm text-[#737373]">
-              <LuUsers className="size-4 text-[#18181B]" />
-              {memberCount} miembros
-            </div>
-          </>
-        }
       />
 
-      {typeformForms.items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#E5E5E5] py-16 text-center">
-          <LuFileText className="mb-3 size-8 text-[#737373]" />
-          <p className="text-sm font-medium text-[#737373]">
-            No hay formularios en este workspace
-          </p>
-          <p className="mt-1 text-xs text-[#737373]">
-            Typeform no devolvio formularios para este workspace.
-          </p>
-        </div>
-      ) : (
-        <>
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 grid-cols-1">
-            {paginatedForms.map((form) => {
-              const appForm = appFormsByTypeformId.get(form.id);
-              const embedInfo = getEmbedInfo(
-                form.id,
-                typeformWorkspace.id,
-                undefined,
-                appWorkspace?.templateFormTypeformId ??
-                  routeWorkspace.templateFormTypeformId,
-              );
-              const formUrl = embedInfo.src ?? form._links?.display;
-
-              return (
-                <article
-                  key={form.id}
-                  className="rounded-xl border border-[#E5E5E5] bg-[#FFFFFF] p-5"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="text-base font-semibold text-[#171717]">
-                          {form.title}
-                        </h2>
-                      </div>
-
-                      {appForm?.description && (
-                        <p className="mt-1 line-clamp-2 text-xs text-[#737373]">
-                          {appForm.description}
-                        </p>
-                      )}
-
-                      <p className="mt-2 truncate text-xs text-[#737373]">
-                        ID: {form.id}
-                      </p>
-                    </div>
-
-                    {formUrl && (
-                      <a
-                        href={formUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-lg border border-[#E5E5E5] p-2 text-[#737373] transition hover:border-[#18181B] hover:text-[#18181B]"
-                      >
-                        <LuArrowUpRight className="size-4" />
-                      </a>
-                    )}
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-[#737373]">
-                    <span>
-                      Actualizado{" "}
-                      {form.last_updated_at
-                        ? new Date(form.last_updated_at).toLocaleDateString(
-                            "es-CL",
-                            {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            },
-                          )
-                        : "sin fecha"}
-                    </span>
-                    <span>
-                      {form.settings?.is_public === false
-                        ? "Privado"
-                        : "Público"}
-                    </span>
-                  </div>
-
-                  {appForm && (
-                    <div className="mt-2 text-xs text-[#737373]">
-                      Creado el{" "}
-                      {new Date(appForm.createdAt).toLocaleDateString("es-CL", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </div>
-                  )}
-                </article>
-              );
-            })}
-          </section>
-
-          <div className="mt-6">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              itemsPerPage={ITEMS_PER_PAGE}
-              itemLabel="formularios"
-            />
+      <section aria-labelledby="workspace-forms-title" className="space-y-4">
+        {formsPage.items.length === 0 ? (
+          <div className="rounded-md border border-[#FF5C35]/30 bg-white px-5 py-8">
+            <LuFileText aria-hidden="true" className="mb-3 size-5 text-[#A53318]" />
+            <p className="text-base font-medium text-[#171717]">
+              {formsPage.totalItems === 0 ? "Todavía no hay formularios" : "No se recibieron formularios en esta página"}
+            </p>
+            <p className="mt-2 text-sm leading-6 text-[#595954]">
+              {formsPage.totalItems === 0
+                ? "Los formularios de este workspace aparecerán aquí cuando estén disponibles en Typeform."
+                : "El listado puede haber cambiado. Prueba otra página o vuelve a cargar la vista."}
+            </p>
           </div>
-        </>
-      )}
-    </>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {formsPage.items.map((form) => (
+              <AdminWorkspaceFormCard
+                key={form.id}
+                form={form}
+                workspaceTypeformId={typeformWorkspace.id}
+                templateFormTypeformId={templateId}
+                appForm={appFormsByTypeformId.get(form.id)}
+              />
+            ))}
+          </div>
+        )}
+        <Pagination
+          currentPage={formsPage.currentPage}
+          totalPages={formsPage.totalPages}
+          totalItems={formsPage.totalItems}
+          itemsPerPage={WORKSPACE_FORMS_PAGE_SIZE}
+          itemLabel="formularios"
+        />
+      </section>
+    </div>
   );
 }

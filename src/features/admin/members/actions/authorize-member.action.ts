@@ -5,6 +5,8 @@ import { UserStatus, WorkspaceRole } from "@/generated/prisma/client";
 import { createAuditLog } from "@/features/admin/audit/services/audit-log.service";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { prisma } from "@/lib/prisma";
+import { authorizeMemberSchema } from "../schemas/authorize-member.schema";
+import { getAvailableAppWorkspaceWhere } from "@/features/admin/workspaces/services/workspace-availability";
 
 type AuthorizeMemberInput = {
   email: string;
@@ -12,31 +14,17 @@ type AuthorizeMemberInput = {
   role: "VIEWER" | "EDITOR";
 };
 
-type AuthorizeMemberWorkspaceInput = {
-  workspaceId: string;
-  role: "VIEWER" | "EDITOR";
-};
-
-type AuthorizeMemberBatchInput = {
-  email: string;
-  assignments: AuthorizeMemberWorkspaceInput[];
-};
-
 type AuthorizeMemberResult = {
   success: boolean;
   message: string;
 };
-
-function isValidEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
 
 function fallbackNameFromEmail(email: string) {
   return email.split("@")[0] || "usuario";
 }
 
 export async function authorizeMemberBatch(
-  input: AuthorizeMemberBatchInput,
+  input: unknown,
 ): Promise<AuthorizeMemberResult> {
   const currentUser = await getCurrentUser();
 
@@ -51,46 +39,27 @@ export async function authorizeMemberBatch(
     };
   }
 
-  const email = input.email.trim().toLowerCase();
+  const parsed = authorizeMemberSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, message: parsed.error.issues[0]?.message ?? "Revisa el correo y los accesos seleccionados." };
+  }
+
+  const { email, assignments } = parsed.data;
   const roleByWorkspaceId = new Map<string, WorkspaceRole>();
 
-  for (const assignment of input.assignments) {
-    const workspaceId = assignment.workspaceId.trim();
-
-    if (!workspaceId) {
-      continue;
-    }
-
-    roleByWorkspaceId.set(
-      workspaceId,
-      assignment.role === WorkspaceRole.EDITOR
-        ? WorkspaceRole.EDITOR
-        : WorkspaceRole.VIEWER,
-    );
+  for (const assignment of assignments) {
+    roleByWorkspaceId.set(assignment.workspaceId, assignment.role);
   }
 
   const workspaceIds = [...roleByWorkspaceId.keys()];
-
-  if (!email || workspaceIds.length === 0) {
-    return {
-      success: false,
-      message: "Debes completar email y seleccionar al menos un workspace",
-    };
-  }
-
-  if (!isValidEmail(email)) {
-    return {
-      success: false,
-      message: "El email no es valido",
-    };
-  }
+  const workspaceWhere = await getAvailableAppWorkspaceWhere();
 
   const workspaces = await prisma.workspace.findMany({
     where: {
+      ...workspaceWhere,
       id: {
         in: workspaceIds,
       },
-      createdFromApp: true,
     },
     select: { id: true, name: true },
   });

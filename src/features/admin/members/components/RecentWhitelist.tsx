@@ -1,17 +1,19 @@
 "use client";
 
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import {
   createColumnHelper,
   createPaginatedRowModel,
   createSortedRowModel,
   rowPaginationFeature,
   rowSortingFeature,
+  sortFn_alphanumeric,
   tableFeatures,
   useTable,
 } from "@tanstack/react-table";
 import { ResponseTablePagination } from "@/features/typeform/components/responses/ResponseTablePagination";
 import { LuArrowDown, LuArrowUp, LuChevronsUpDown } from "react-icons/lu";
+import { WorkspaceRadioLogo } from "@/features/admin/workspaces/components/WorkspaceRadioLogo";
 
 type AllowedUserItem = {
   id: string;
@@ -25,6 +27,7 @@ type UserWorkspaceAssignment = {
   workspace: {
     name: string;
     typeformId: string;
+    templateFormTypeformId?: string | null;
   };
 };
 
@@ -49,6 +52,7 @@ const RECENT_WHITELIST_TABLE_FEATURES = tableFeatures({
   rowSortingFeature,
   paginatedRowModel: createPaginatedRowModel(),
   sortedRowModel: createSortedRowModel(),
+  sortFns: { alphanumeric: sortFn_alphanumeric },
 });
 
 const recentWhitelistColumnHelper = createColumnHelper<
@@ -60,6 +64,8 @@ const RECENT_WHITELIST_COLUMNS = recentWhitelistColumnHelper.columns([
   recentWhitelistColumnHelper.accessor((row) => row.allowed.email, {
     id: "member",
     header: "Miembro",
+    sortFn: "alphanumeric",
+    sortDescFirst: false,
   }),
   recentWhitelistColumnHelper.accessor((row) => row.user?.workspaces.length ?? 0, {
     id: "workspaces",
@@ -80,46 +86,51 @@ function getSortIcon(sortDirection: false | "asc" | "desc") {
 }
 
 function formatDate(value: Date) {
-  return value.toLocaleString("es-CL");
+  return new Intl.DateTimeFormat("es-CL", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "UTC",
+  }).format(value);
+}
+
+function WorkspaceLabel({ assignment }: { assignment: UserWorkspaceAssignment }) {
+  const role = assignment.role === "VIEWER" ? "Lector" : assignment.role === "EDITOR" ? "Editor" : "Rol no informado";
+
+  return (
+    <li title={`${assignment.workspace.name} · ${role}`} className="min-w-0 max-w-40">
+      <WorkspaceRadioLogo workspace={assignment.workspace} size={80} alt={assignment.workspace.name} />
+      <span className="sr-only"> · {role}</span>
+    </li>
+  );
 }
 
 function WorkspaceSummary({ user }: { user?: WhitelistedUser }) {
   if (!user || user.workspaces.length === 0) {
     return (
-      <span className="text-xs text-[#737373]">Sin workspaces asignados</span>
+      <span className="text-sm leading-5 text-[#595954]">Sin workspaces asignados</span>
     );
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
-      {user.workspaces.slice(0, 4).map((assignment) => (
-        <span
-          key={`${user.id}-${assignment.workspaceId}`}
-          className="rounded-md border border-[#E5E5E5] bg-[#F5F5F5] px-2 py-1 text-xs text-[#171717]"
-        >
-          {assignment.workspace.name} · {assignment.role}
-        </span>
+    <ul className="flex flex-wrap items-center gap-2">
+      {user.workspaces.map((assignment) => (
+        <WorkspaceLabel key={`${user.id}-${assignment.workspaceId}`} assignment={assignment} />
       ))}
-
-      {user.workspaces.length > 4 && (
-        <span className="rounded-md border border-[#E5E5E5] bg-[#F5F5F5] px-2 py-1 text-xs text-[#737373]">
-          +{user.workspaces.length - 4} más
-        </span>
-      )}
-    </div>
+    </ul>
   );
 }
 
 export function RecentWhitelist({ allowedUsers, users }: Props) {
+  const id = useId();
   const tableRows = useMemo<RecentWhitelistRow[]>(
     () => {
       const userByEmail = new Map(
-        users.map((user) => [user.email.toLowerCase(), user]),
+        users.map((user) => [user.email.trim().toLowerCase(), user]),
       );
 
       return allowedUsers.map((allowed) => ({
         allowed,
-        user: userByEmail.get(allowed.email.toLowerCase()),
+        user: userByEmail.get(allowed.email.trim().toLowerCase()),
       }));
     },
     [allowedUsers, users],
@@ -132,28 +143,37 @@ export function RecentWhitelist({ allowedUsers, users }: Props) {
     initialState: {
       pagination: {
         pageIndex: 0,
-        pageSize: Math.min(10, Math.max(1, tableRows.length)),
+        pageSize: 10,
       },
     },
     getRowId: (row: RecentWhitelistRow) => row.allowed.id,
   });
 
   return (
-    <section className="overflow-hidden rounded-xl border border-[#E5E5E5] bg-[#FFFFFF]">
-      <div className="border-b border-[#E5E5E5] px-5 py-3">
-        <h2 className="text-sm font-semibold text-[#171717]">
-          Whitelist reciente
-        </h2>
+    <section aria-labelledby={`${id}-title`} className="min-w-0 overflow-hidden rounded-md border border-[#FF5C35]/35 bg-white text-[#171717]">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 border-b border-[#FF5C35]/20 px-5 py-4">
+        <div>
+          <h2 id={`${id}-title`} className="text-base font-semibold">
+            Miembros autorizados recientes
+          </h2>
+          <p id={`${id}-description`} className="mt-1 text-sm leading-5 text-[#595954]">
+            Registros recientes de autorización y sus accesos actuales. Fechas en UTC.
+          </p>
+        </div>
+        <p className="text-sm leading-5 text-[#595954] tabular-nums">
+          {allowedUsers.length} {allowedUsers.length === 1 ? "registro cargado" : "registros cargados"}
+        </p>
       </div>
 
       {allowedUsers.length === 0 ? (
-        <div className="px-5 py-4 text-sm text-[#737373]">
-          Aun no hay miembros autorizados.
+        <div className="px-5 py-8 text-sm leading-6 text-[#595954]">
+          Aún no hay miembros autorizados.
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-160 border-collapse lg:min-w-190">
+          <div role="region" aria-label="Tabla de miembros autorizados" tabIndex={0} className="overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#FF5C35]">
+            <table aria-describedby={`${id}-description`} className="w-full min-w-160 border-collapse lg:min-w-190">
+              <caption className="sr-only">Miembros autorizados y workspaces asignados</caption>
               <colgroup>
                 <col className="w-80" />
                 <col />
@@ -163,13 +183,14 @@ export function RecentWhitelist({ allowedUsers, users }: Props) {
                 {whitelistTable.getHeaderGroups().map((headerGroup) => (
                   <tr
                     key={headerGroup.id}
-                    className="border-b border-[#E5E5E5]"
+                    className="border-b border-[#E8E8E6]"
                   >
                     {headerGroup.headers.map((header) => (
                       <th
                         key={header.id}
                         scope="col"
-                        className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-[#737373] sm:px-5"
+                        aria-sort={header.column.getIsSorted() === "asc" ? "ascending" : header.column.getIsSorted() === "desc" ? "descending" : "none"}
+                        className="px-4 py-2 text-left text-sm font-medium text-[#595954] sm:px-5"
                       >
                         {header.isPlaceholder ? null : header.column.getCanSort() ? (() => {
                           const sortDirection = header.column.getIsSorted();
@@ -182,19 +203,20 @@ export function RecentWhitelist({ allowedUsers, users }: Props) {
                                 whitelistTable.setPageIndex(0);
                                 header.column.toggleSorting();
                               }}
-                              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors ${
+                              className={`-ml-1.5 inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-sm px-1.5 py-1 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF5C35] motion-reduce:transition-none ${
                                 sortDirection
-                                  ? "bg-[#F5F5F5] text-[#171717]"
-                                  : "text-[#737373] hover:bg-[#F5F5F5] hover:text-[#171717]"
+                                  ? "text-[#A53318]"
+                                  : "text-[#595954] hover:bg-[#FFF1EC] hover:text-[#171717]"
                               }`}
                               aria-label={`Ordenar por ${String(header.column.columnDef.header)}. ${getSortingLabel(sortDirection)}`}
                             >
                               <whitelistTable.FlexRender header={header} />
                               <SortIcon
+                                aria-hidden="true"
                                 className={`size-3.5 transition-colors ${
                                   sortDirection
-                                    ? "text-[#171717]"
-                                    : "text-[#737373]/50"
+                                    ? "text-[#A53318]"
+                                    : "text-[#737373]"
                                 }`}
                               />
                             </button>
@@ -212,14 +234,14 @@ export function RecentWhitelist({ allowedUsers, users }: Props) {
                 {whitelistTable.getPaginatedRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
-                    className="border-b border-[#E5E5E5] transition-colors last:border-b-0 hover:bg-[#F5F5F5]"
+                    className="border-b border-[#E8E8E6] transition-colors last:border-b-0 hover:bg-[#FFFDFB] motion-reduce:transition-none"
                   >
                     <td className="min-w-0 px-4 py-3 align-middle text-sm sm:px-5">
-                      <p className="truncate text-[#171717]">
+                      <p className="font-medium text-[#171717] wrap-anywhere">
                         {row.original.allowed.email}
                       </p>
-                      <p className="text-xs text-[#737373]">
-                        {formatDate(row.original.allowed.createdAt)}
+                      <p className="mt-1 text-sm leading-5 text-[#595954]">
+                        <time dateTime={row.original.allowed.createdAt.toISOString()}>{formatDate(row.original.allowed.createdAt)} UTC</time>
                       </p>
                     </td>
 

@@ -1,9 +1,12 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { normalizeFormTitle } from "@/features/typeform/utils/normalize-form-title";
+import { usesTypeformResponseFixtures } from "./typeform-fixture-mode";
 
 const TYPEFORM_API_BASE_URL =
   process.env.TYPEFORM_API_BASE_URL ?? "https://api.typeform.com";
 const TYPEFORM_RESOLVE_WORKSPACE_TTL_MS = 5 * 60 * 1000;
+const TYPEFORM_REQUEST_TIMEOUT_MS = 15_000;
 const TYPEFORM_FIXTURES_RESPONSES_DIR = path.join(
   process.cwd(),
   "src/features/typeform/fixtures/responses",
@@ -124,8 +127,10 @@ type TypeformField = {
   ref?: string;
   title?: string;
   type?: string;
+  fields?: TypeformField[];
   properties?: {
     description?: string;
+    fields?: TypeformField[];
   };
 };
 
@@ -179,6 +184,7 @@ type TypeformResponsesFixture =
 export type MaskedResponseAnswer = {
   id: string;
   question: string;
+  fieldLabel?: string;
   fieldType?: string;
   answerType?: string;
   value: string;
@@ -187,6 +193,8 @@ export type MaskedResponseAnswer = {
 
 export type MaskedTypeformResponse = {
   token: string;
+  // Ausente también significa anónimo para consumidores anteriores.
+  visibility?: "anonymous" | "winner";
   submittedAt?: string;
   landedAt?: string;
   participantNumber?: string;
@@ -281,6 +289,7 @@ async function typeformRequest<T>(path: string, fetchInit?: TypeformRequestInit)
       Authorization: `Bearer ${getTypeformToken()}`,
       Accept: "application/json",
     },
+    signal: AbortSignal.timeout(TYPEFORM_REQUEST_TIMEOUT_MS),
     ...fetchInit,
     ...(hasExplicitCacheStrategy ? {} : { cache: "no-store" }),
   });
@@ -327,14 +336,95 @@ export async function getWorkspaceForms(
   }
 }
 
-export async function getTypeformWorkspaces() {
+export async function findWorkspaceFormsByTitle(
+  workspaceTypeformId: string,
+  title: string,
+): Promise<{ id: string; title: string }[]> {
+  const canonicalWorkspaceId = await resolveWorkspaceTypeformId(workspaceTypeformId);
+  const normalizedTitle = normalizeFormTitle(title);
+  const matches: { id: string; title: string }[] = [];
+  let page = 1;
+  let pageCount: number;
+
+  do {
+    const searchParams = new URLSearchParams({
+      workspace_id: canonicalWorkspaceId,
+      page_size: "200",
+      page: String(page),
+    });
+    const response = await typeformRequest<TypeformFormsResponse>(
+      `/forms?${searchParams}`,
+      { method: "GET", cache: "no-store" },
+    );
+    if (!Number.isInteger(response.page_count) || response.page_count < 0) {
+      throw new Error("Typeform devolvió una paginación de formularios inválida");
+    }
+    for (const form of response.items) {
+      if (normalizeFormTitle(form.title) === normalizedTitle) {
+        matches.push({ id: form.id, title: form.title });
+      }
+    }
+    pageCount = response.page_count;
+    page++;
+  } while (page <= pageCount);
+
+  return matches;
+}
+
+export async function getTypeformWorkspaces(options?: { page: number }) {
   const searchParams = new URLSearchParams({
     page_size: "200",
   });
+  if (options) {
+    if (!Number.isSafeInteger(options.page) || options.page < 1) {
+      throw new RangeError("La página de workspaces debe ser un entero positivo.");
+    }
+    searchParams.set("page", String(options.page));
+  }
 
   return typeformRequest<TypeformWorkspacesResponse>(
     `/workspaces?${searchParams}`,
   );
+}
+
+/** Catálogo completo y sin caché persistente; nunca inferir bajas de una página parcial. */
+export async function getAllTypeformWorkspaces(): Promise<TypeformWorkspace[]> {
+  function validatePage(response: TypeformWorkspacesResponse) {
+    if (
+      !response || !Array.isArray(response.items) ||
+      !Number.isSafeInteger(response.total_items) || response.total_items < 0 ||
+      !Number.isSafeInteger(response.page_count) || response.page_count < 0 ||
+      response.page_count > Math.max(1, response.total_items) ||
+      (response.total_items > 0 && (response.page_count === 0 || response.items.length === 0))
+    ) {
+      throw new Error("Typeform devolvió un catálogo de workspaces inválido o incompleto.");
+    }
+  }
+
+  const firstPage = await getTypeformWorkspaces();
+  validatePage(firstPage);
+  const workspaces: TypeformWorkspace[] = [];
+  const ids = new Set<string>();
+
+  // Secuencial: no lanzar una ráfaga de peticiones por cada página o workspace.
+  for (let page = 1; page <= Math.max(1, firstPage.page_count); page++) {
+    const response = page === 1 ? firstPage : await getTypeformWorkspaces({ page });
+    validatePage(response);
+    if (response.total_items !== firstPage.total_items || response.page_count !== firstPage.page_count) {
+      throw new Error("El catálogo de workspaces cambió durante la consulta. Vuelve a intentarlo.");
+    }
+    for (const workspace of response.items) {
+      if (!workspace || typeof workspace.id !== "string" || !workspace.id.trim() || workspace.id !== workspace.id.trim() || ids.has(workspace.id)) {
+        throw new Error("Typeform devolvió IDs de workspace inválidos o repetidos.");
+      }
+      ids.add(workspace.id);
+      workspaces.push(workspace);
+    }
+  }
+  if (workspaces.length !== firstPage.total_items) {
+    throw new Error("No se pudo cargar el catálogo completo de workspaces de Typeform.");
+  }
+  return workspaces;
 }
 
 export async function getTypeformWorkspace(workspaceTypeformId: string) {
@@ -359,7 +449,7 @@ export async function getTypeformFormResponses(
     includedResponseIds?: string[];
   },
 ) {
-  if (process.env.TYPEFORM_RESPONSES_SOURCE === "fixture") {
+  if (usesTypeformResponseFixtures(formId)) {
     return getFixtureTypeformFormResponses(formId, options);
   }
 
@@ -413,13 +503,19 @@ async function getFixtureTypeformFormResponses(
     const nodeError = error as NodeJS.ErrnoException;
 
     if (nodeError.code === "ENOENT") {
-      return { total_items: 0, page_count: 1, items: [] };
+      throw new Error("No se encontró el archivo de respuestas de prueba para este formulario.");
     }
 
     throw error;
   }
 
-  let items = Array.isArray(fixture) ? fixture : (fixture.items ?? []);
+  const fixtureItems = Array.isArray(fixture) ? fixture : fixture?.items;
+
+  if (!Array.isArray(fixtureItems)) {
+    throw new Error("El archivo de respuestas de prueba tiene un formato inválido.");
+  }
+
+  let items: TypeformResponseItem[] = fixtureItems;
 
   if (includedResponseIds.length > 0) {
     const included = new Set(includedResponseIds);
@@ -495,11 +591,14 @@ export async function createTypeformWorkspace(name: string) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ name }),
+    signal: AbortSignal.timeout(TYPEFORM_REQUEST_TIMEOUT_MS),
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(`Typeform error: ${error.description ?? response.status}`);
+    const error = (await response.json().catch(() => null)) as {
+      description?: string;
+    } | null;
+    throw new Error(`Typeform error: ${error?.description ?? response.status}`);
   }
 
   const data = (await response.json()) as Partial<TypeformWorkspace>;
@@ -527,6 +626,7 @@ export async function createTypeformForm(payload: TypeformCreateFormPayload) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(TYPEFORM_REQUEST_TIMEOUT_MS),
   });
 
   if (!response.ok) {
@@ -680,47 +780,6 @@ function getAnswerValue(answer: TypeformAnswer) {
   return "Sin respuesta";
 }
 
-function hasSensitiveKeyword(value?: string) {
-  if (!value) return false;
-
-  return /email|correo|mail|rut|r\.u\.t|telefono|teléfono|phone|celular|mobile|whatsapp|dni|documento|document|pasaporte|passport|identificador|identifier|nombre|apellido|name|address|direccion|dirección/i.test(
-    value,
-  );
-}
-
-function maskEmail(value: string) {
-  const [name, domain] = value.split("@");
-
-  if (!name || !domain) return "***";
-
-  return `${name.slice(0, 2)}***@${domain}`;
-}
-
-function maskText(value: string) {
-  if (value.length <= 4) return "***";
-
-  return `${value.slice(0, 2)}***${value.slice(-2)}`;
-}
-
-function maskAnswerValue(value: string, answerType?: string) {
-  if (value === "Sin respuesta") return value;
-  if (answerType === "email" || value.includes("@")) return maskEmail(value);
-
-  return maskText(value);
-}
-
-function isSensitiveAnswer(answer: TypeformAnswer, field?: TypeformField) {
-  return (
-    answer.type === "email" ||
-    answer.type === "phone_number" ||
-    field?.type === "email" ||
-    field?.type === "phone_number" ||
-    hasSensitiveKeyword(field?.title) ||
-    hasSensitiveKeyword(field?.ref) ||
-    hasSensitiveKeyword(answer.field?.ref)
-  );
-}
-
 function normalizeParticipantNumber(value: string) {
   return value.replace(/^#/, "").trim();
 }
@@ -741,51 +800,131 @@ function getTypeformResponseParticipantNumber(response: TypeformResponseItem) {
   return preferredEntry?.[1] ?? numericHiddenEntries[0]?.[1];
 }
 
+// Solo refs semánticas conocidas: un token arbitrario nunca es una etiqueta.
+const readableFieldRefs: Record<string, string> = {
+  nombre: "Nombre", nombres: "Nombres", nombre_completo: "Nombre completo",
+  first_name: "Nombre", given_name: "Nombre", full_name: "Nombre completo",
+  apellido: "Apellido", apellidos: "Apellidos", last_name: "Apellido",
+  primer_apellido: "Primer apellido", segundo_apellido: "Segundo apellido",
+  rut: "RUT:", email: "Correo electrónico", correo: "Correo electrónico",
+  correo_electronico: "Correo electrónico", phone_number: "Teléfono", telefono: "Teléfono",
+  region: "Región", state: "Región", comuna: "Comuna", city: "Ciudad",
+  address_line_1: "Dirección", address_line_2: "Detalle de dirección",
+  country: "País", zip_code: "Código postal",
+};
+
+function readableFieldTitle(value?: string) {
+  const label = value?.trim().replace(/\s+/g, " ");
+  if (!label || label.length > 300 || /[<>_{}@=\\]/.test(label)) return undefined;
+  if (/https?:|\b(?:field|ref|id|question|answer)[-_:]|[a-f\d]{12,}|\S-\S/i.test(label) ||
+      /[a-záéíóúñ][A-ZÁÉÍÓÚÑ]/.test(label)) return undefined;
+  // Una sola palabra minúscula desconocida puede ser un identificador opaco.
+  if (!/\s/.test(label) && !/^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+[:?]?$/.test(label) &&
+      !readableFieldRefs[label.toLocaleLowerCase("es").replace(/:$/, "")]) return undefined;
+  return label;
+}
+
+/** Etiqueta segura de una respuesta mapeada; también admite question de DTOs antiguos.
+ * Solo servidor: este módulo usa fs. El modal mantiene su guardia local de presentación.
+ */
+export function getTypeformAnswerFieldLabel(
+  answer: { fieldLabel?: string; question?: string },
+  index = 0,
+) {
+  return readableFieldTitle(answer.fieldLabel) ?? readableFieldTitle(answer.question) ?? `Respuesta ${index + 1}`;
+}
+
+function flattenResponseAnswers(answers: TypeformAnswer[], fieldsById: Map<string, TypeformField>, fieldsByRef: Map<string, TypeformField>) {
+  const flattened: TypeformAnswer[] = [];
+  // El extractor de perfiles ya pasa padres, hijos y valores sintéticos alineados.
+  // Conservar ese contrato 1:1, sin expandirlos por segunda vez.
+  const topLevel = new Set(answers);
+  const alreadyFlattened = answers.some((answer) =>
+    (Array.isArray(answer.answers) && answer.answers.some((child) => topLevel.has(child))) ||
+    ((answer.contact_info || answer.address) && answers.some((item) => !item.field && item.type === "text")),
+  );
+  if (alreadyFlattened) return answers;
+  function visit(items: TypeformAnswer[]) {
+    for (const answer of items) {
+      if (Array.isArray(answer.answers)) {
+        visit(answer.answers);
+        continue;
+      }
+      const field = (answer.field?.id ? fieldsById.get(answer.field.id) : undefined) ??
+        (answer.field?.ref ? fieldsByRef.get(answer.field.ref) : undefined);
+      const compound = answer.contact_info ?? answer.address;
+      if (compound && typeof compound === "object" && !Array.isArray(compound)) {
+        const children = field?.properties?.fields ?? field?.fields ?? [];
+        for (const [key, value] of Object.entries(compound)) {
+          if (typeof value !== "string" || !value.trim()) continue;
+          const child = children.find((item) => item.ref === key || item.id === key);
+          flattened.push({ type: "text", text: value, field: { id: child?.id, ref: child?.ref ?? key, type: child?.type } });
+        }
+        continue;
+      }
+      flattened.push(answer);
+    }
+  }
+  visit(answers);
+  return flattened;
+}
+
 export function mapMaskedTypeformResponses(
   form: TypeformFormDetail,
   responses: TypeformResponseItem[],
   options?: {
+    /** Compatibilidad: nunca concede visibilidad sin un token autorizado. */
     maskSensitive?: boolean;
     unmaskTokens?: Set<string>;
   },
 ) {
-  const maskSensitive = options?.maskSensitive ?? true;
   const unmaskTokens = options?.unmaskTokens;
-  const fields = (form.fields ?? []) as TypeformField[];
-  const fieldsById = new Map(fields.map((field) => [field.id, field]));
-  const fieldsByRef = new Map(fields.map((field) => [field.ref, field]));
+  const fieldsById = new Map<string, TypeformField>();
+  const fieldsByRef = new Map<string, TypeformField>();
+  function visitFields(fields: TypeformField[]) {
+    for (const field of fields) {
+      if (field.id) fieldsById.set(field.id, field);
+      if (field.ref) fieldsByRef.set(field.ref, field);
+      visitFields(field.properties?.fields ?? field.fields ?? []);
+    }
+  }
+  visitFields((form.fields ?? []) as TypeformField[]);
 
-  return responses.map<MaskedTypeformResponse>((response) => ({
-    token: response.token,
-    submittedAt: response.submitted_at,
-    landedAt: response.landed_at,
-    participantNumber: getTypeformResponseParticipantNumber(response),
-    answers: (response.answers ?? []).map((answer, index) => {
-      const field =
-        fieldsById.get(answer.field?.id) ?? fieldsByRef.get(answer.field?.ref);
-      const rawValue = getAnswerValue(answer);
-      const sensitive = isSensitiveAnswer(answer, field);
-      const isWinnerRevealed = unmaskTokens?.has(response.token) ?? false;
-      const masked = maskSensitive && sensitive && !isWinnerRevealed;
-
-      return {
-        id: answer.field?.id ?? answer.field?.ref ?? `${response.token}-${index}`,
-        question: field?.title ?? answer.field?.ref ?? "Pregunta sin titulo",
-        fieldType: field?.type ?? answer.field?.type,
-        answerType: answer.type,
-        value: masked ? maskAnswerValue(rawValue, answer.type) : rawValue,
-        masked,
-      };
-    }),
-    hidden: Object.entries(response.hidden ?? {}).map(([key, value]) => ({
-      id: key,
-      question: key,
-      answerType: "hidden",
-      value:
-        maskSensitive && !(unmaskTokens?.has(response.token) ?? false)
-          ? maskAnswerValue(value, "text")
-          : value,
-      masked: maskSensitive && !(unmaskTokens?.has(response.token) ?? false),
-    })),
-  }));
+  return responses.map<MaskedTypeformResponse>((response) => {
+    if (!unmaskTokens?.has(response.token)) {
+      // No enviar fragmentos, texto libre, hidden ni fechas al navegador.
+      return { token: response.token, visibility: "anonymous", answers: [], hidden: [] };
+    }
+    return {
+      token: response.token,
+      visibility: "winner",
+      submittedAt: response.submitted_at,
+      landedAt: response.landed_at,
+      participantNumber: getTypeformResponseParticipantNumber(response),
+      answers: flattenResponseAnswers(response.answers ?? [], fieldsById, fieldsByRef).map((answer, index) => {
+        const field =
+          (answer.field?.id ? fieldsById.get(answer.field.id) : undefined) ??
+          (answer.field?.ref ? fieldsByRef.get(answer.field.ref) : undefined);
+        const fieldLabel = readableFieldTitle(field?.title) ??
+          readableFieldRefs[(field?.ref ?? answer.field?.ref ?? "").trim().toLocaleLowerCase("es").replace(/[ -]+/g, "_")] ??
+          `Respuesta ${index + 1}`;
+        return {
+          id: answer.field?.id ?? answer.field?.ref ?? `${response.token}-${index}`,
+          question: fieldLabel,
+          fieldLabel,
+          fieldType: field?.type ?? answer.field?.type,
+          answerType: answer.type,
+          value: getAnswerValue(answer),
+          masked: false,
+        };
+      }),
+      hidden: Object.entries(response.hidden ?? {}).map(([key, value]) => ({
+        id: key,
+        question: key,
+        answerType: "hidden",
+        value,
+        masked: false,
+      })),
+    };
+  });
 }

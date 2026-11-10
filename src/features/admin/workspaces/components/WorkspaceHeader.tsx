@@ -17,46 +17,38 @@ export function WorkspaceHeader({
   backHref,
   backLabel,
 }: WorkspaceHeaderProps) {
-  const hasTopRow = Boolean((backHref && backLabel) || eyebrow);
-
   return (
-    <header className="relative">
-      <div className="absolute left-0 top-0 h-px w-16 bg-linear-to-r from-[#FF5C35] to-transparent" />
-      {hasTopRow && (
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          {backHref && backLabel && (
-            <Link
-              href={backHref}
-              className="group inline-flex my-4 items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-[#000000]/55 transition-colors hover:text-[#FF5C35]"
-            >
-              <LuArrowLeft className="size-3.5 transition-transform duration-200 group-hover:-translate-x-0.5" />
-              {backLabel}
-            </Link>
-          )}
-
-          {eyebrow && (
-            <div className="flex mt-5 items-center gap-2 text-sm font-medium uppercase tracking-wider text-[#000000]/45 sm:justify-end">
-              {eyebrow}
-            </div>
-          )}
+    <header className="min-w-0 border-b border-[#E5E5E5] pb-6 pt-5">
+      {backHref && backLabel && (
+        <div className="mb-4">
+          <Link
+            href={backHref}
+            className="inline-flex min-h-10 items-center gap-2 rounded-sm text-md font-medium text-[#595954] underline-offset-4 transition-colors hover:text-[#A33116] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A33116] motion-reduce:transition-none"
+          >
+            <LuArrowLeft aria-hidden="true" className="size-3.5 shrink-0" />
+            {backLabel}
+          </Link>
         </div>
       )}
 
-      <div
-        className={`${hasTopRow ? "mt-4" : "pt-5"} flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6`}
-      >
-        <div className="min-w-0">
-          <h1 className="text-xl lg:text-3xl font-bold tracking-tight text-[#000000]">
+      <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+        <div className="min-w-0 flex-1">
+          {eyebrow && (
+            <div className="mb-1.5 flex min-w-0 items-center gap-2 text-sm font-medium leading-5 text-[#595954]">
+              {eyebrow}
+            </div>
+          )}
+          <h1 className="wrap-anywhere text-2xl font-semibold leading-tight tracking-tight text-[#171717]">
             {title}
           </h1>
         </div>
 
         {actions && (
-          <div className="flex flex-wrap items-center gap-3">{actions}</div>
+          <div className="flex min-w-0 flex-wrap items-center gap-3 lg:justify-end justify-between">
+            {actions}
+          </div>
         )}
       </div>
-
-      <div className="mt-6 h-px w-full bg-linear-to-r from-[#F5F5F5] via-[#F5F5F5]/60 to-transparent" />
     </header>
   );
 }

@@ -1,154 +1,75 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import Swal from "sweetalert2";
 import { LuFilePlus2, LuLoaderCircle } from "react-icons/lu";
-import { toast } from "sonner";
-import { duplicateFormAction } from "@/features/typeform/actions/duplicate-form.action";
+import { duplicateFormAction, recoverDuplicatedFormAction } from "@/features/typeform/actions/duplicate-form.action";
 import { getSuggestedDuplicateTitle } from "@/features/typeform/utils/duplicate-title";
-import { WORKSPACE_FORMS_GRID_LOADING_EVENT } from "./WorkspaceFormsGridLoadingGate";
+import DuplicateFormDialog from "./DuplicateFormDialog";
+import { useFormDuplication } from "./useFormDuplication";
 
 type WorkspaceFormDuplicateButtonProps = {
   workspaceId: string;
   formId: string;
   formTitle: string;
+  label?: string;
 };
 
 export function WorkspaceFormDuplicateButton({
   workspaceId,
   formId,
   formTitle,
+  label,
 }: WorkspaceFormDuplicateButtonProps) {
-  const router = useRouter();
-  const isMountedRef = useRef(true);
-  const [isPending, setIsPending] = useState(false);
-
-  useEffect(() => {
-    isMountedRef.current = true;
-
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
-
-  function setGridLoading(isLoading: boolean) {
-    window.dispatchEvent(
-      new CustomEvent(WORKSPACE_FORMS_GRID_LOADING_EVENT, {
-        detail: { isLoading },
-      }),
-    );
-  }
-
-  async function handleDuplicate() {
-    if (isPending) {
-      return;
-    }
-
-    const suggestedTitle = getSuggestedDuplicateTitle(formTitle);
-
-    const result = await Swal.fire<string>({
-      title: "Duplicar formulario",
-      text: "Puedes ajustar el nombre antes de crear la copia.",
-      input: "text",
-      inputValue: suggestedTitle,
-      inputAttributes: {
-        autocapitalize: "off",
-        autocomplete: "off",
-      },
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Duplicar",
-      cancelButtonText: "Cancelar",
-      background: "#FFFFFF",
-      color: "#000000",
-      confirmButtonColor: "#FF5C35",
-      scrollbarPadding: false,
-      heightAuto: false,
-      inputValidator: (value) => {
-        if (!value?.trim()) {
-          return "Ingresa un nombre para el formulario duplicado.";
-        }
-
-        return undefined;
-      },
-    });
-
-    if (!result.isConfirmed) {
-      return;
-    }
-
-    const title = result.value?.trim() ?? "";
-
-    if (!title) {
-      toast.error("Ingresa un nombre para el formulario duplicado.");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.set("title", title);
-    formData.set("_skipRedirect", "1");
-
-    setIsPending(true);
-    setGridLoading(true);
-
-    try {
-      await duplicateFormAction(workspaceId, formId, formData);
-
-      toast.success("Formulario duplicado", {
-        description: `"${title}" se creó correctamente.`,
-      });
-
-      router.refresh();
-
-      window.setTimeout(() => {
-        setGridLoading(false);
-
-        if (isMountedRef.current) {
-          setIsPending(false);
-        }
-      }, 900);
-    } catch {
-      setGridLoading(false);
-
-      if (isMountedRef.current) {
-        setIsPending(false);
-      }
-
-      toast.error("No se pudo duplicar el formulario", {
-        description: "Intenta nuevamente en unos segundos.",
-      });
-    }
-  }
+  const { duplicate, isPending, dialogProps } = useFormDuplication({
+    suggestedTitle: getSuggestedDuplicateTitle(formTitle),
+    redirectTo: `/workspaces/${encodeURIComponent(workspaceId)}/forms`,
+    recoveryKey: `duplicate-recovery:${workspaceId}:${formId}`,
+    create: (title, allowSameTitle) => {
+      const formData = new FormData();
+      formData.set("title", title);
+      formData.set("_skipRedirect", "1");
+      if (allowSameTitle) formData.set("_allowSameTitle", "1");
+      return duplicateFormAction(workspaceId, formId, formData);
+    },
+    recover: (createdFormId) => recoverDuplicatedFormAction(workspaceId, formId, createdFormId),
+  });
 
   return (
+    <>
     <button
       type="button"
-      onClick={handleDuplicate}
+      onClick={() => void duplicate()}
       disabled={isPending}
-      title="Duplicar formulario"
-      aria-label={`Duplicar ${formTitle}`}
-      className="
+      title={label ?? "Duplicar formulario"}
+      aria-label={label ? `${label}: ${formTitle}` : `Duplicar ${formTitle}`}
+      aria-haspopup="dialog"
+      className={`
         cursor-pointer
-        flex size-11 shrink-0 items-center justify-center
-        rounded-xl
-        border border-[#FF5C35]/25
-        bg-[#FFF4F0]
-        text-[#FF5C35]
-        transition-all
+        flex min-h-11 shrink-0 items-center justify-center gap-2
+        ${label ? "w-full px-3 py-2 text-sm font-medium" : "size-11"}
+        rounded-md
+        border border-[#FF5C35]/35
+        bg-white
+        text-[#A53318]
+        transition-colors
+        focus-visible:outline-2
+        focus-visible:outline-offset-2
+        focus-visible:outline-[#FF5C35]
+        motion-reduce:transition-none
         hover:border-[#FF5C35]/45
-        hover:bg-white
-        hover:text-[#FF5C35]
+        hover:bg-[#FFF1EC]
+        hover:text-[#A53318]
         disabled:cursor-wait
         disabled:opacity-60
-        sm:size-9
-      "
+      `}
     >
       {isPending ? (
-        <LuLoaderCircle className="size-4 animate-spin" />
+        <LuLoaderCircle aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" />
       ) : (
-        <LuFilePlus2 className="size-4" />
+        <LuFilePlus2 aria-hidden="true" className="size-4" />
       )}
+      {label && <span>{label}</span>}
     </button>
+    {dialogProps && <DuplicateFormDialog {...dialogProps} />}
+    </>
   );
 }

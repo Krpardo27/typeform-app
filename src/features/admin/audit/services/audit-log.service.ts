@@ -39,11 +39,14 @@ export async function createAuditLog({
   actor,
   target,
   context,
+  required = false,
 }: {
   action: AuditAction;
   actor?: AuditActor;
   target?: AuditTarget;
   context?: AuditContext;
+  /** Impide continuar si no se pudo persistir el evento. Por defecto best-effort. */
+  required?: boolean;
 }) {
   const requestContext = await getRequestAuditContext().catch(() => ({
     ipAddress: null,
@@ -68,7 +71,9 @@ export async function createAuditLog({
         metadata: context?.metadata ?? undefined,
       },
     });
-  } catch (error) {
-    console.error("[AUDIT] Failed to create audit log", error);
+  } catch {
+    // Prisma puede incluir parámetros sensibles en el error: nunca registrarlos.
+    console.error("[AUDIT] Failed to create audit log");
+    if (required) throw new Error("No se pudo registrar la auditoría requerida.");
   }
 }

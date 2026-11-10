@@ -2,27 +2,51 @@ import { getCurrentUser } from "@/lib/getCurrentUser";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "xlsx";
 import { getAuthorizedWorkspace } from "@/features/admin/workspaces/services/workspace-permissions";
+import { requireWinnerRevealGrant, WinnerRevealDenied } from "@/features/typeform/services/winner-reveal.service";
+import { createAuditLog } from "@/features/admin/audit/services/audit-log.service";
+import { loadFormResponses } from "@/features/typeform/services/load-form-responses";
+import {
+  getWinnerCandidateProfiles,
+  maskWinnerCandidateProfile,
+} from "@/features/typeform/components/responses/winner-selection/utils";
 import {
   formBelongsToWorkspace,
+  getTypeformAnswerFieldLabel,
   getTypeformForm,
-  getTypeformFormResponses,
   getTypeformResponseParticipantEmail,
   isTypeformNotFoundError,
   mapMaskedTypeformResponses,
   resolveWorkspaceTypeformId,
   type MaskedTypeformResponse,
+  type MaskedResponseAnswer,
+  type TypeformFormDetail,
   type TypeformResponseItem,
 } from "@/features/typeform/services/typeform.service";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const EXPORT_PAGE_SIZE = 100;
+function exportMessage(message: string, status: number) {
+  return Response.json({ message }, { status, headers: { "Cache-Control": "private, no-store" } });
+}
+
+function getExportTitle(title?: string | null) {
+  return title
+    ?.normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .slice(0, 100)
+    .replace(/^-+|-+$/g, "") || "concurso";
+}
 
 function csvEscape(value: unknown) {
   const text = String(value ?? "");
+  // Las comillas CSV no impiden fórmulas. Preservar el literal completo,
+  // incluso si Excel ignora espacios/controles antes del operador.
+  const literal = /^[\s\p{Cc}\p{Cf}]*[=+\-@\p{Cc}\p{Cf}]/u.test(text) ? `'${text}` : text;
 
-  return `"${text.replaceAll('"', '""')}"`;
+  return `"${literal.replaceAll('"', '""')}"`;
 }
 
 function buildCsv(headers: string[], rows: unknown[][]) {
@@ -33,7 +57,8 @@ function buildCsv(headers: string[], rows: unknown[][]) {
 }
 
 function getParticipantContact(response: MaskedTypeformResponse) {
-  const candidates = [...response.answers, ...response.hidden];
+  if (response.visibility !== "winner") return "";
+  const candidates = response.answers;
   const byQuestionHint = candidates.find((answer) => {
     const question = answer.question.toLowerCase();
 
@@ -51,95 +76,136 @@ function getParticipantContact(response: MaskedTypeformResponse) {
   return byEmailPattern?.value?.trim() ?? "";
 }
 
-function getUniqueQuestions(responses: MaskedTypeformResponse[]) {
-  const questions = new Set<string>();
+const metadataHeaders = ["participant_number", "token", "submitted_at", "contact", "selected_at", "winner_reason"];
 
+function normalizedLabel(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/:$/, "");
+}
+
+type ExportColumn = { key: string; header: string; geography?: "region" | "city" };
+type ExportField = { id?: string; ref?: string; title?: string; type?: string; fields?: ExportField[]; properties?: { fields?: ExportField[] } };
+
+function getExportColumns(form: TypeformFormDetail, responses: MaskedTypeformResponse[], rawResponses: TypeformResponseItem[]) {
+  const columns: ExportColumn[] = [];
+  const byIdentity = new Map<string, ExportColumn>();
+  const fieldsById = new Map<string, ExportField>();
+  const fieldsByRef = new Map<string, ExportField>();
+  const columnsByField = new Map<ExportField, ExportColumn>();
+  const usedHeaders = new Set(metadataHeaders);
+  function add(key: string, label: string, geography?: ExportColumn["geography"]) {
+    let header = label;
+    let suffix = 2;
+    while (usedHeaders.has(header)) header = `${label} (${suffix++})`;
+    usedHeaders.add(header);
+    const column = { key, header, geography };
+    columns.push(column);
+    return column;
+  }
+  // Incluir también preguntas sin respuesta, en el orden del esquema real.
+  function visit(fields: unknown[]) {
+    for (const value of fields) {
+      if (!value || typeof value !== "object") continue;
+      const field = value as ExportField;
+      if (field.id) fieldsById.set(field.id, field);
+      if (field.ref) fieldsByRef.set(field.ref, field);
+      const children = field.properties?.fields ?? field.fields;
+      if (children?.length) { visit(children); continue; }
+      if (field.type === "statement" || (!field.id && !field.ref)) continue;
+      const key = `schema:${columns.length}`;
+      const label = getTypeformAnswerFieldLabel({ fieldLabel: field.title }, columns.length);
+      // Solo títulos del esquema habilitan ubicación visible, nunca refs de respuestas.
+      const normalized = normalizedLabel(field.title ?? "");
+      const geography = normalized === "region" ? "region"
+        : /^(comuna|ciudad|city)$/.test(normalized) ? "city" : undefined;
+      const column = add(key, label, geography);
+      columnsByField.set(field, column);
+    }
+  }
+  visit(form.fields ?? []);
+  const rawByToken = new Map(rawResponses.map((response) => [response.token, response]));
+  // El DTO del mapper usa id ?? ref. Mantener aquí sus espacios de identidad
+  // separados evita que una ref sintética "city" se confunda con un ID real.
+  function answerKeys(response: TypeformResponseItem) {
+    const keys: string[] = [];
+    function key(field?: { id?: string; ref?: string }) {
+      const schema = (field?.id ? fieldsById.get(field.id) : undefined) ??
+        (field?.ref ? fieldsByRef.get(field.ref) : undefined);
+      return (schema ? columnsByField.get(schema)?.key : undefined) ??
+        (field?.id ? `id:${field.id}` : field?.ref ? `ref:${field.ref}` : `position:${keys.length}`);
+    }
+    function visitAnswers(answers: NonNullable<TypeformResponseItem["answers"]>) {
+      for (const answer of answers) {
+        if (Array.isArray(answer.answers)) { visitAnswers(answer.answers); continue; }
+        const compound = answer.contact_info ?? answer.address;
+        if (compound && typeof compound === "object" && !Array.isArray(compound)) {
+          const parent = (answer.field?.id ? fieldsById.get(answer.field.id) : undefined) ??
+            (answer.field?.ref ? fieldsByRef.get(answer.field.ref) : undefined);
+          const children = parent?.properties?.fields ?? parent?.fields ?? [];
+          for (const [ref, value] of Object.entries(compound)) {
+            if (typeof value !== "string" || !value.trim()) continue;
+            const child = children.find((field) => field.id === ref || field.ref === ref);
+            keys.push(key({ id: child?.id, ref: child?.ref ?? ref }));
+          }
+        } else keys.push(key(answer.field));
+      }
+    }
+    visitAnswers(response.answers ?? []);
+    return keys;
+  }
+  const keysByToken = new Map<string, Map<string, MaskedResponseAnswer>>();
   for (const response of responses) {
-    for (const answer of response.answers) {
-      questions.add(answer.question);
-    }
-  }
-
-  return [...questions];
-}
-
-function getAnswerValueByQuestion(
-  response: MaskedTypeformResponse,
-  question: string,
-) {
-  return response.answers.find((answer) => answer.question === question)?.value ?? "";
-}
-
-function deduplicateByToken<T extends { token: string }>(items: T[]) {
-  const seen = new Set<string>();
-
-  return items.filter((item) => {
-    if (seen.has(item.token)) {
-      return false;
-    }
-
-    seen.add(item.token);
-    return true;
-  });
-}
-
-function deduplicateParticipantsByEmail(responses: TypeformResponseItem[]) {
-  const seenEmails = new Set<string>();
-
-  return responses.filter((response) => {
-    const email = getTypeformResponseParticipantEmail(response);
-
-    if (!email) {
-      return true;
-    }
-
-    if (seenEmails.has(email)) {
-      return false;
-    }
-
-    seenEmails.add(email);
-    return true;
-  });
-}
-
-async function getAllFormResponses(formId: string) {
-  const allResponses: TypeformResponseItem[] = [];
-  let before: string | undefined;
-  let expectedTotal: number | null = null;
-
-  while (true) {
-    const pageResult = await getTypeformFormResponses(formId, {
-      pageSize: EXPORT_PAGE_SIZE,
-      before,
+    const answers = new Map<string, MaskedResponseAnswer>();
+    const raw = rawByToken.get(response.token);
+    const identities = raw ? answerKeys(raw) : [];
+    response.answers.forEach((answer, index) => {
+      const identity = identities[index] ?? `position:${index}`;
+      let column = columns.find((column) => column.key === identity) ?? byIdentity.get(identity);
+      if (!column) {
+        column = add(identity, getTypeformAnswerFieldLabel(answer, index));
+        byIdentity.set(identity, column);
+      }
+      answers.set(column.key, answer);
     });
-
-    if (expectedTotal === null) {
-      expectedTotal = pageResult.total_items;
-    }
-
-    if (pageResult.items.length === 0) {
-      break;
-    }
-
-    allResponses.push(...pageResult.items);
-
-    if (pageResult.items.length < EXPORT_PAGE_SIZE) {
-      break;
-    }
-
-    if (expectedTotal !== null && allResponses.length >= expectedTotal) {
-      break;
-    }
-
-    const lastToken = pageResult.items.at(-1)?.token;
-    if (!lastToken || lastToken === before) {
-      break;
-    }
-
-    before = lastToken;
+    keysByToken.set(response.token, answers);
   }
+  return { columns, keysByToken };
+}
 
-  return deduplicateByToken(allResponses);
+function maskExportAnswer(answer: MaskedResponseAnswer | undefined, column: ExportColumn) {
+  if (!answer || !answer.value.trim() || answer.value === "Sin respuesta") return "";
+  const value = answer.value.trim();
+  if (column.geography === "region" && maskWinnerCandidateProfile({ region: value }).region) return value;
+  if (column.geography === "city" && /^[\p{L}\p{M}][\p{L}\p{M} .'-]{0,99}$/u.test(value)) return value;
+  const label = normalizedLabel(getTypeformAnswerFieldLabel(answer));
+  if (answer.answerType === "email" || /\b(email|correo)\b/.test(label)) {
+    return maskWinnerCandidateProfile({ email: value }).email ?? "";
+  }
+  if (/\b(nombre|nombres|apellido|apellidos)\b/.test(label)) {
+    return maskWinnerCandidateProfile({ label: value }).label ?? "";
+  }
+  // Texto libre, RUT, teléfono y fechas personales: denegar por defecto.
+  return "****";
+}
+
+function getParticipantNumbers(responses: TypeformResponseItem[]) {
+  function time(response: TypeformResponseItem) {
+    const value = Date.parse(response.submitted_at ?? response.landed_at ?? "");
+    return Number.isNaN(value) ? 0 : value;
+  }
+  const chronological = [...responses].sort((a, b) => time(a) - time(b) || a.token.localeCompare(b.token));
+  const emails = new Set<string>();
+  const numbers = new Map<string, number>();
+  // Numeración cronológica de la tabla, sin perder respuestas por email repetido.
+  for (const response of chronological) {
+    const email = getTypeformResponseParticipantEmail(response);
+    if (email && emails.has(email)) continue;
+    if (email) emails.add(email);
+    numbers.set(response.token, numbers.size + 1);
+  }
+  for (const response of responses) {
+    if (!numbers.has(response.token)) numbers.set(response.token, numbers.size + 1);
+  }
+  return numbers;
 }
 
 function createCsvResponse(csv: string, filename: string) {
@@ -147,6 +213,7 @@ function createCsvResponse(csv: string, filename: string) {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": `attachment; filename="${filename}"`,
+      "Cache-Control": "private, no-store",
     },
   });
 }
@@ -198,6 +265,7 @@ function createXlsxResponse({
       "Content-Type":
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "Content-Disposition": `attachment; filename="${filename}"`,
+      "Cache-Control": "private, no-store",
     },
   });
 }
@@ -213,7 +281,7 @@ export async function GET(
   const user = await getCurrentUser();
 
   if (!user) {
-    return Response.json({ message: "Debes iniciar sesión." }, { status: 401 });
+    return exportMessage("Debes iniciar sesión.", 401);
   }
 
   if (user.globalRole !== "SUPER_ADMIN") {
@@ -223,39 +291,43 @@ export async function GET(
     });
 
     if (!allowedUser) {
-      return Response.json({ message: "No autorizado." }, { status: 403 });
+      return exportMessage("No autorizado.", 403);
     }
   }
 
   const workspace = await getAuthorizedWorkspace(user, workspaceId);
 
   if (!workspace) {
-    return Response.json({ message: "Workspace no encontrado." }, { status: 404 });
+    return exportMessage("Workspace no encontrado.", 404);
   }
 
   if (workspace.role !== "EDITOR") {
-    return Response.json(
-      { message: "Solo los usuarios con rol editor pueden exportar respuestas." },
-      { status: 403 },
-    );
+    return exportMessage("Solo los usuarios con rol editor pueden exportar respuestas.", 403);
   }
 
   try {
+    const flowToken = request.headers.get("X-Winner-Flow");
+    const reveal = scope === "winners"
+      ? await requireWinnerRevealGrant(flowToken ?? "", workspaceId, formId)
+      : null;
     const form = await getTypeformForm(formId);
     const resolvedWorkspaceTypeformId = await resolveWorkspaceTypeformId(
       workspace.typeformId,
     );
 
     if (!formBelongsToWorkspace(form, resolvedWorkspaceTypeformId)) {
-      return Response.json({ message: "Formulario no encontrado." }, { status: 404 });
+      return exportMessage("Formulario no encontrado.", 404);
     }
 
     const localForm = await prisma.form.findUnique({
       where: { typeformId: form.id },
-      select: { id: true },
+      select: { id: true, workspaceId: true },
     });
+    if (localForm && localForm.workspaceId !== workspace.id) {
+      return exportMessage("Formulario no encontrado.", 404);
+    }
 
-    const winners = localForm
+    const winners = scope === "winners" && localForm
       ? await prisma.formWinner.findMany({
           where: {
             formId: localForm.id,
@@ -272,83 +344,120 @@ export async function GET(
       : [];
 
     if (scope === "winners" && winners.length === 0) {
-      return Response.json(
-        { message: "No hay ganadores para exportar." },
-        { status: 400 },
-      );
+      return exportMessage("No hay ganadores para exportar.", 400);
     }
 
-    const winnerTokens = new Set(winners.map((winner) => winner.responseToken));
+    const winnerTokens = new Set(winners
+      .filter((winner) => scope !== "winners" || reveal?.grant.responseTokens.includes(winner.responseToken))
+      .map((winner) => winner.responseToken));
+    const incompleteWinners = () => exportMessage(
+      "No se puede exportar: faltan respuestas de ganadores o el conjunto está incompleto. Vuelve a consultar los ganadores guardados.",
+      409,
+    );
+    if (reveal && (!winnerTokens.size || winnerTokens.size !== reveal.grant.responseTokens.length ||
+      reveal.grant.responseTokens.some((token) => !token.trim() || !winnerTokens.has(token)))) {
+      return incompleteWinners();
+    }
+    function containsAllWinners(responses: { token: string }[]) {
+      return responses.length === winnerTokens.size &&
+        new Set(responses.map((response) => response.token)).size === winnerTokens.size &&
+        responses.every((response) => winnerTokens.has(response.token));
+    }
     const winnersByToken = new Map(
       winners.map((winner) => [winner.responseToken, winner] as const),
     );
-    const rawResponses = await getAllFormResponses(form.id);
+    const rawResponses = await loadFormResponses(form.id);
+    if (reveal) await requireWinnerRevealGrant(flowToken!, workspaceId, formId);
     const scopedRawResponses =
       scope === "winners"
         ? rawResponses.filter((response) => winnerTokens.has(response.token))
-        : deduplicateParticipantsByEmail(rawResponses);
+        : rawResponses;
+    if (reveal && !containsAllWinners(scopedRawResponses)) return incompleteWinners();
 
     if (scope === "participants" && scopedRawResponses.length === 0) {
-      return Response.json(
-        { message: "No hay participantes para exportar." },
-        { status: 400 },
-      );
+      return exportMessage("No hay participantes para exportar.", 400);
     }
 
-    const maskedResponses = mapMaskedTypeformResponses(form, scopedRawResponses, {
+    const participantProfiles = scope === "participants"
+      ? new Map([...getWinnerCandidateProfiles(form, scopedRawResponses, mapMaskedTypeformResponses)]
+          .map(([token, profile]) => [token, maskWinnerCandidateProfile(profile)] as const))
+      : null;
+    // Datos completos solo en memoria del servidor: participants se enmascara
+    // celda por celda antes de cualquier serialización CSV/XLSX.
+    const projectedResponses = mapMaskedTypeformResponses(form, scopedRawResponses, {
       maskSensitive: true,
-      unmaskTokens: scope === "winners" ? winnerTokens : undefined,
+      unmaskTokens: scope === "winners" ? winnerTokens : new Set(scopedRawResponses.map((response) => response.token)),
     });
-    const questions = getUniqueQuestions(maskedResponses);
-    const headers = [
-      "participant_number",
-      "token",
-      "submitted_at",
-      "contact",
-      ...(scope === "winners" ? ["selected_at", "winner_reason"] : []),
-      ...questions,
-    ];
-    const rows = maskedResponses.map((response, index) => {
+    if (reveal && (!containsAllWinners(projectedResponses) ||
+      projectedResponses.some((response) => response.visibility !== "winner"))) return incompleteWinners();
+    const maskedResponses: MaskedTypeformResponse[] = scope === "winners"
+      ? projectedResponses.filter((response) => winnerTokens.has(response.token) && response.visibility === "winner")
+      : projectedResponses;
+    const participantNumbers = getParticipantNumbers(rawResponses);
+    const rawByToken = new Map(rawResponses.map((response) => [response.token, response]));
+    const { columns, keysByToken } = getExportColumns(form, maskedResponses, scopedRawResponses);
+    const headers = [...metadataHeaders, ...columns.map((column) => column.header)];
+    const rows = maskedResponses.map((response) => {
       const winner = winnersByToken.get(response.token);
+      const profile = participantProfiles?.get(response.token);
+      const answers = keysByToken.get(response.token);
 
       return [
-        index + 1,
+        participantNumbers.get(response.token),
         response.token,
-        response.submittedAt ?? "",
-        winner?.participantEmail ?? getParticipantContact(response),
-        ...(scope === "winners"
-          ? [winner?.selectedAt.toISOString() ?? "", winner?.reason ?? ""]
-          : []),
-        ...questions.map((question) => getAnswerValueByQuestion(response, question)),
+        rawByToken.get(response.token)?.submitted_at ?? response.submittedAt ?? "",
+        scope === "winners"
+          ? winner?.participantEmail ?? getParticipantContact(response)
+          : profile?.email ?? "",
+        scope === "winners" ? winner?.selectedAt.toISOString() ?? "" : "",
+        scope === "winners" ? winner?.reason ?? "" : "",
+        ...columns.map((column) => scope === "winners"
+          ? answers?.get(column.key)?.value ?? ""
+          : maskExportAnswer(answers?.get(column.key), column)),
       ];
     });
+    if (reveal) {
+      await createAuditLog({ action: "SENSITIVE_DATA_VIEWED", required: true, actor: reveal.actor.user,
+        target: { type: "form_winner_data", id: form.id }, context: {
+          workspaceId: workspace.id, formId: form.id, formTitle: form.title,
+          metadata: {
+            scope: "winner_export", format, displayedResponses: maskedResponses.length,
+            revealedTokens: maskedResponses.map((response) => response.token).join(","),
+            reasons: JSON.stringify(maskedResponses.map((response) => ({
+              responseToken: response.token, reason: winnersByToken.get(response.token)?.reason ?? "",
+            }))),
+          },
+        } });
+      await requireWinnerRevealGrant(flowToken!, workspaceId, formId);
+    }
+
+    const exportName = scope === "winners" ? "ganadores" : "participantes";
+    const filename = `${exportName}-${getExportTitle(form.title)}-${form.id}.${format}`;
 
     if (format === "csv") {
       const csv = buildCsv(headers, rows);
-      const filename = `${scope}-${form.id}.csv`;
 
       return createCsvResponse(csv, filename);
     }
 
-    const exportName = scope === "winners" ? "ganadores" : "participantes";
     const sheetName = scope === "winners" ? "Ganadores" : "Participantes";
 
     return createXlsxResponse({
       headers,
       rows,
-      filename: `${exportName}-${form.id}.xlsx`,
+      filename,
       sheetName,
     });
   } catch (error) {
+    if (error instanceof WinnerRevealDenied) {
+      return exportMessage(error.message, 403);
+    }
     if (isTypeformNotFoundError(error)) {
-      return Response.json({ message: "Formulario no encontrado." }, { status: 404 });
+      return exportMessage("Formulario no encontrado.", 404);
     }
 
-    console.error("[RESPONSES_EXPORT_ERROR]", error);
+    console.error("[RESPONSES_EXPORT_ERROR]");
 
-    return Response.json(
-      { message: "No se pudo generar la exportación." },
-      { status: 500 },
-    );
+    return exportMessage("No se pudo generar la exportación.", 500);
   }
 }

@@ -26,14 +26,6 @@ export default async function proxy(request: NextRequest) {
     return apiResponse;
   }
 
-  // Temporarily allow protected routes during local UI review so the app does not
-  // loop with 307 redirects before a valid auth session is present.
-  if (process.env.NODE_ENV !== "production") {
-    const response = NextResponse.next();
-    applyStandardSecurityHeaders(response);
-    return response;
-  }
-
   const session = await auth.api.getSession({
     headers: request.headers,
   });

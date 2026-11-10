@@ -1,9 +1,10 @@
-import { LuLoader } from "react-icons/lu";
+import { useId } from "react";
+import { getSafeRandomWinnerCount } from "./utils";
 
 type RandomSelectionControlsProps = {
   filteredCandidatesCount: number;
   isPending: boolean;
-  isRandomizing: boolean;
+  isRandomCooldown?: boolean;
   maxRandomWinnerCount: number;
   randomWinnerCount: string;
   reason: string;
@@ -19,7 +20,7 @@ type RandomSelectionControlsProps = {
 export function RandomSelectionControls({
   filteredCandidatesCount,
   isPending,
-  isRandomizing,
+  isRandomCooldown = false,
   maxRandomWinnerCount,
   randomWinnerCount,
   reason,
@@ -31,24 +32,34 @@ export function RandomSelectionControls({
   onRegionFilterChange,
   onSelectRandomWinners,
 }: RandomSelectionControlsProps) {
-  const controlsDisabled = isPending || isRandomizing;
+  const controlsDisabled = isPending;
+  const id = useId();
+  const regionId = `${id}-region`;
+  const countId = `${id}-count`;
+  const reasonId = `${id}-reason`;
+  const countHintId = `${id}-count-hint`;
+  const reasonHintId = `${id}-reason-hint`;
+  const scopeHintId = `${id}-scope-hint`;
+  const inputClassName =
+    "min-h-11 w-full min-w-0 rounded-md border border-[#DCDCD9] bg-white px-3 py-2 text-sm text-[#000000] outline-none transition focus-visible:border-[#C4513D] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C4513D] disabled:cursor-not-allowed disabled:opacity-60";
 
   return (
-    <aside className="min-w-0 rounded-xl border border-[#E8E8E6] bg-[#FBFBFA] p-4">
-      <div className="space-y-3 border-b border-[#E8E8E6] pb-4">
-        <p className="text-sm font-medium text-[#000000]">
-          Selección aleatoria
-        </p>
-
-        <label className="block text-xs font-medium uppercase tracking-wider text-[#000000]/45">
+    <aside className="min-w-0 space-y-4 rounded-md border border-[#E8E8E6] bg-[#FBFBFA] p-4">
+      <div className="min-w-0 space-y-3">
+        <label
+          htmlFor={regionId}
+          className="block text-sm font-medium text-[#000000]"
+        >
           Región
         </label>
 
         <select
+          id={regionId}
+          aria-describedby={scopeHintId}
           value={regionFilter}
           onChange={(event) => onRegionFilterChange(event.target.value)}
           disabled={controlsDisabled || regionOptions.length === 0}
-          className="w-full rounded-lg border border-[#DCDCD9] bg-white px-3 py-2.5 text-sm text-[#000000] outline-none transition focus:border-[#000000] disabled:cursor-not-allowed disabled:opacity-60"
+          className={inputClassName}
         >
           <option value="">Todas las regiones</option>
           {regionOptions.map((region) => (
@@ -58,15 +69,29 @@ export function RandomSelectionControls({
           ))}
         </select>
 
-        <label className="block text-xs font-medium uppercase tracking-wider text-[#000000]/45">
+        <p className="text-sm leading-5 text-[#000000]/60">
+          Filtra tabla y sorteo. La selección fuera del filtro se conserva.
+        </p>
+
+        <p className="border-t border-[#E8E8E6] pt-3 text-sm font-medium text-[#000000]">
+          Selección aleatoria
+        </p>
+
+        <label
+          htmlFor={countId}
+          className="block text-sm font-medium text-[#000000]"
+        >
           Cantidad
         </label>
 
         <input
+          id={countId}
+          aria-describedby={countHintId}
           type="number"
           min={1}
           max={maxRandomWinnerCount}
-          value={randomWinnerCount === "" ? "" : String(safeRandomWinnerCount)}
+          step={1}
+          value={randomWinnerCount}
           onChange={(event) => {
             const nextValue = event.target.value;
 
@@ -75,59 +100,73 @@ export function RandomSelectionControls({
               return;
             }
 
-            const nextCount = Number.parseInt(nextValue, 10);
-
+            const nextCount = Number(nextValue);
+            if (!Number.isFinite(nextCount) || !Number.isInteger(nextCount))
+              return;
             onRandomWinnerCountChange(
-              String(Math.min(Math.max(1, nextCount), maxRandomWinnerCount)),
+              String(getSafeRandomWinnerCount(nextValue, maxRandomWinnerCount)),
             );
           }}
           onBlur={() => {
             onRandomWinnerCountChange(String(safeRandomWinnerCount));
           }}
           disabled={controlsDisabled || filteredCandidatesCount === 0}
-          className="w-full rounded-lg border border-[#DCDCD9] bg-white px-3 py-2.5 text-sm text-[#000000] outline-none transition focus:border-[#000000] disabled:cursor-not-allowed disabled:opacity-60"
+          className={inputClassName}
         />
 
-        <p className="text-xs leading-relaxed text-[#000000]/50">
-          Máximo disponible con los filtros actuales: {filteredCandidatesCount}.
+        <p id={countHintId} className="text-sm leading-5 text-[#000000]/60">
+          Disponibles: {filteredCandidatesCount}. Se sortearán{" "}
+          {filteredCandidatesCount === 0 ? 0 : safeRandomWinnerCount}{" "}
+          participantes.
         </p>
 
         <button
           type="button"
           onClick={onSelectRandomWinners}
-          disabled={controlsDisabled || filteredCandidatesCount === 0}
-          className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#D5B45D]/40 bg-[#D5B45D]/15 px-3 py-2.5 text-sm font-medium text-[#8A6A00] transition-colors hover:border-[#D5B45D]/60 hover:bg-[#D5B45D]/25 disabled:cursor-not-allowed disabled:opacity-50"
+          aria-describedby={scopeHintId}
+          disabled={
+            controlsDisabled ||
+            isRandomCooldown ||
+            filteredCandidatesCount === 0
+          }
+          className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center rounded-md border border-[#C4513D]/40 bg-[#C4513D]/8 px-3 py-2 text-sm font-medium text-[#A43E2D] transition-colors hover:bg-[#C4513D]/12 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C4513D] disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isRandomizing && <LuLoader className="size-4 animate-spin" />}
-          {isRandomizing ? "Sorteando..." : "Elegir aleatorio"}
+          {isRandomCooldown
+            ? "Sorteo realizado"
+            : "Sortear y reemplazar selección"}
         </button>
 
-        <p className="text-xs leading-relaxed text-[#000000]/50">
-          El sorteo usa los participantes visibles con el filtro aplicado.
+        <p id={scopeHintId} className="text-sm leading-5 text-[#000000]/60">
+          Sortea entre los participantes cargados según búsqueda y región.
+          Reemplaza toda la selección, incluidos los seleccionados fuera del
+          filtro.
         </p>
       </div>
 
-      <label
-        htmlFor="winner-reason"
-        className="mt-4 block text-sm font-medium text-[#000000]"
-      >
-        Motivo de selección
-      </label>
+      <div className="min-w-0 space-y-3">
+        <label
+          htmlFor={reasonId}
+          className="block text-sm font-medium text-[#000000]"
+        >
+          Motivo de selección
+        </label>
 
-      <input
-        id="winner-reason"
-        type="text"
-        name="reason"
-        value={reason}
-        onChange={(event) => onReasonChange(event.target.value)}
-        required
-        disabled={isPending}
-        className="mt-3 w-full rounded-lg border border-[#DCDCD9] bg-white px-3 py-2.5 text-sm text-[#000000] outline-none transition focus:border-[#000000] disabled:cursor-not-allowed disabled:opacity-60"
-      />
+        <input
+          id={reasonId}
+          aria-describedby={reasonHintId}
+          type="text"
+          name="reason"
+          value={reason}
+          onChange={(event) => onReasonChange(event.target.value)}
+          required
+          disabled={controlsDisabled}
+          className={inputClassName}
+        />
 
-      <p className="mt-3 text-xs leading-relaxed text-[#000000]/50">
-        Este texto queda registrado junto a la selección de ganadores.
-      </p>
+        <p id={reasonHintId} className="text-sm leading-5 text-[#000000]/60">
+          Queda registrado con los ganadores.
+        </p>
+      </div>
     </aside>
   );
 }

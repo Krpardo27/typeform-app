@@ -1,7 +1,7 @@
 export const radioWorkspaceTemplates = [
   {
     typeformId: "1530584",
-    templateFormTypeformId: "HePVkesf",
+    templateFormTypeformId: "vvKVCLO5",
     name: "CONCIERTO",
     accountId: "local",
   },
@@ -11,12 +11,7 @@ export const radioWorkspaceTemplates = [
     name: "LOS40",
     accountId: "local",
   },
-  {
-    typeformId: "414850",
-    templateFormTypeformId: "VxoT54si",
-    name: "ROCKANDPOP",
-    accountId: "local",
-  },
+  
   {
     typeformId: "371901",
     templateFormTypeformId: "r1aIO4Xh",
@@ -31,7 +26,7 @@ export const radioWorkspaceTemplates = [
   },
   {
     typeformId: "282794",
-    templateFormTypeformId: "pkgiqZ1g",
+    templateFormTypeformId: "FqchWVxU",
     name: "FMDOS",
     accountId: "local",
   },

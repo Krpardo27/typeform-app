@@ -10,82 +10,49 @@ import {
   LuUsers,
 } from "react-icons/lu";
 
-export default function AdminWorkspacesNav() {
-  const pathname = usePathname();
+const adminNavItems = [
+  { href: "/admin/dashboard", label: "Dashboard", icon: LuChartPie },
+  { href: "/admin/workspaces", label: "Workspaces", icon: LuFolder },
+  { href: "/admin/users", label: "Usuarios", icon: LuUsers },
+  { href: "/admin/miembros", label: "Agregar miembros", icon: LuUserPlus },
+  { href: "/admin/auditoria", label: "Auditoría", icon: LuClipboardList },
+] as const;
 
-  const isDashboard = pathname === "/admin/dashboard";
-  const isWorkspaces = pathname.startsWith("/admin/workspaces");
-  const isUsers = pathname.startsWith("/admin/users");
-  const isMembers = pathname.startsWith("/admin/miembros");
-  const isAudit = pathname.startsWith("/admin/auditoria");
+export default function AdminWorkspacesNav() {
+  const pathname = usePathname()?.replace(/\/$/, "") ?? "";
 
   return (
-    <div className="text-[#171717]">
-      <p className="mb-3 px-2 text-xs font-medium uppercase tracking-wider text-[#737373]">
-        Administración
-      </p>
+    <nav aria-label="Administración">
+      <ul className="space-y-1">
+        {adminNavItems.map((item) => {
+          const Icon = item.icon;
+          const isCurrentPage = pathname === item.href;
+          const isActive = isCurrentPage || pathname.startsWith(`${item.href}/`);
 
-      <nav className="space-y-1">
-        <Link
-          href="/admin/dashboard"
-          className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition ${
-            isDashboard
-              ? "bg-[#18181B]/10 text-[#18181B]"
-              : "text-[#737373] hover:bg-[#F5F5F5] hover:text-[#171717]"
-          }`}
-        >
-          <LuChartPie className="size-4" />
-          Dashboard
-        </Link>
-
-        <Link
-          href="/admin/workspaces"
-          className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition ${
-            isWorkspaces
-              ? "bg-[#18181B]/10 text-[#18181B]"
-              : "text-[#737373] hover:bg-[#F5F5F5] hover:text-[#171717]"
-          }`}
-        >
-          <LuFolder className="size-4" />
-          Workspaces
-        </Link>
-
-        <Link
-          href="/admin/users"
-          className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition ${
-            isUsers
-              ? "bg-[#18181B]/10 text-[#18181B]"
-              : "text-[#737373] hover:bg-[#F5F5F5] hover:text-[#171717]"
-          }`}
-        >
-          <LuUsers className="size-4" />
-          Usuarios
-        </Link>
-
-        <Link
-          href="/admin/miembros"
-          className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition ${
-            isMembers
-              ? "bg-[#18181B]/10 text-[#18181B]"
-              : "text-[#737373] hover:bg-[#F5F5F5] hover:text-[#171717]"
-          }`}
-        >
-          <LuUserPlus className="size-4" />
-          Agregar miembros
-        </Link>
-
-        <Link
-          href="/admin/auditoria"
-          className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition ${
-            isAudit
-              ? "bg-[#18181B]/10 text-[#18181B]"
-              : "text-[#737373] hover:bg-[#F5F5F5] hover:text-[#171717]"
-          }`}
-        >
-          <LuClipboardList className="size-4" />
-          Auditoría
-        </Link>
-      </nav>
-    </div>
+          return (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                aria-current={isCurrentPage ? "page" : isActive ? "location" : undefined}
+                onNavigate={(event) => {
+                  if (isCurrentPage) event.preventDefault();
+                }}
+                className={`group flex min-h-10 min-w-0 items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm leading-5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A33116] motion-reduce:transition-none ${
+                  isActive
+                    ? "bg-[#FFF1EB] font-medium text-[#FF5C35]"
+                    : "text-[#525252] hover:bg-[#F5F5F5] hover:text-[#171717]"
+                }`}
+              >
+                <Icon
+                  aria-hidden="true"
+                  className={`size-4 shrink-0 ${isActive ? "text-[#FF5C35]" : "text-[#737373] group-hover:text-[#525252]"}`}
+                />
+                <span className="min-w-0 flex-1 wrap-anywhere">{item.label}</span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
   );
 }

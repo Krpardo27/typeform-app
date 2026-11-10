@@ -12,11 +12,7 @@ export function QuestionAnswerCard({
         md:grid-cols-[minmax(180px,0.8fr)_minmax(0,1.2fr)]
       "
     >
-      <p className="text-xs font-medium leading-relaxed text-[#000000]/45">
-        {answer.question}
-      </p>
-
-      <p className="wrap-break-word text-sm leading-relaxed text-[#111111]">
+      <p className="wrap-break-word text-md leading-relaxed text-[#111111]">
         {answer.value}
       </p>
     </div>

@@ -1,52 +1,71 @@
+"use client";
+
 import { createPortal } from "react-dom";
-import { LuLoaderCircle } from "react-icons/lu";
+import { LuArrowRight, LuLogOut } from "react-icons/lu";
+
+export type LoaderScreenVariant = "default" | "logout";
 
 type LoaderScreenProps = {
   title: string;
   description: string;
+  variant?: LoaderScreenVariant;
 };
 
 export default function LoaderScreen({
   title,
   description,
+  variant = "default",
 }: LoaderScreenProps) {
   if (typeof document === "undefined") {
     return null;
   }
 
+  const isLogout = variant === "logout";
+
   return createPortal(
-    <main
-      role="status"
-      aria-live="polite"
-      className="fixed inset-0 z-2147483647 flex min-h-screen items-center justify-center bg-[#F5F5F5]/95 px-4 py-6 backdrop-blur-sm"
-    >
-      <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-[#E5E5E5] bg-white shadow-[0_18px_50px_rgba(23,23,23,0.08)]">
-        <div className="border-b border-[#E5E5E5] bg-[#FAFAFA] px-5 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-xl border border-[#E5E5E5] bg-white text-[#18181B]">
-              <LuLoaderCircle className="size-5 animate-spin" />
+    <div className="fixed inset-0 z-2147483647 flex flex-col overflow-y-auto bg-[#F7F7F6] px-5 text-[#171717] sm:px-10">
+      <div className="mx-auto w-full max-w-5xl shrink-0 border-b border-[#D1D1CD] py-6 sm:py-8">
+        <p className="border-l-[3px] border-[#FF5C35] pl-3 text-lg leading-tight font-medium tracking-tight sm:text-xl">
+          <span className="block">Plataforma de</span>
+          <span className="block">Formularios</span>
+        </p>
+      </div>
+
+      <div className="flex flex-1 items-center justify-center py-16 sm:py-24">
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          className={isLogout
+            ? "w-full max-w-md rounded-md border border-[#FF5C35]/40 bg-white p-6 sm:p-8"
+            : "w-full max-w-sm"
+          }
+        >
+          {isLogout && (
+            <div className="mb-6 flex items-center gap-2.5 text-[#A53318]">
+              <LuLogOut aria-hidden="true" className="size-5 shrink-0" strokeWidth={1.6} />
+              <p className="text-sm font-medium">Sesión cerrada</p>
             </div>
-
-            <div className="min-w-0 text-left">
-              <p className="text-sm font-semibold text-[#171717]">{title}</p>
-              <p className="mt-0.5 text-xs text-[#737373]">Redirigiendo</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="px-5 py-5 text-left">
-          <p className="text-sm leading-6 text-[#525252]">{description}</p>
-
-          <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-[#F5F5F5]">
-            <div className="h-full w-1/2 animate-pulse rounded-full bg-[#18181B]" />
-          </div>
-
-          <p className="mt-3 text-xs text-[#A3A3A3]">
-            Esto tomara solo un momento.
+          )}
+          <h2 className="text-2xl leading-tight font-medium tracking-tight sm:text-3xl">
+            {title}
+          </h2>
+          <p className="mt-3 text-sm leading-6 text-[#595954]">
+            {description}
           </p>
+
+          <div className={isLogout ? "mt-8 border-t border-[#FF5C35]/20 pt-5" : "mt-7"}>
+            <p className="flex items-center justify-between gap-3 text-sm leading-5 text-[#595954]">
+              <span>{isLogout ? "Volviendo al inicio de sesión" : "Continuarás automáticamente."}</span>
+              {isLogout && <LuArrowRight aria-hidden="true" className="size-4 shrink-0 text-[#A53318]" />}
+            </p>
+            <div aria-hidden="true" className="mt-4 h-0.5 w-full overflow-hidden bg-[#FF5C35]/15">
+              <div className="h-full w-1/3 animate-infinite-loading bg-[#FF5C35] motion-reduce:mx-auto motion-reduce:animate-none" />
+            </div>
+          </div>
         </div>
       </div>
-    </main>,
+    </div>,
     document.body,
   );
 }

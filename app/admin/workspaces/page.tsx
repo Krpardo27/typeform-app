@@ -1,80 +1,49 @@
-import { Suspense } from "react";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { prisma } from "@/lib/prisma";
-import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
+import { LuUsers } from "react-icons/lu";
+import { WorkspacePageHeader } from "@/features/admin/workspaces/components/WorkspacePageHeader";
 import WorkspacesPageClient from "@/features/admin/workspaces/components/WorkspacesPageClient";
 import { AdminWorkspacesContent } from "@/features/admin/workspaces/components/AdminWorkspacesContent";
-import { AdminWorkspacesGridSkeleton } from "@/features/admin/workspaces/components/AdminWorkspacesGridSkeleton";
+import { getAdminWorkspacesPage } from "@/features/admin/workspaces/services/admin-workspaces-list.service";
+import { WORKSPACE_PAGE_SIZES, parseWorkspacePage, parseWorkspacePageSize } from "@/features/admin/workspaces/utils/workspace-view";
 
 export const metadata: Metadata = {
   title: "Workspaces",
 };
 
-const PAGE_SIZE_OPTIONS = [12, 24, 48] as const;
-const DEFAULT_PAGE_SIZE = 12;
-
-function getFallbackCount(totalCount: number, currentPage: number, itemsPerPage: number) {
-  if (totalCount <= 0) return 4;
-
-  const offset = (currentPage - 1) * itemsPerPage;
-  const remaining = Math.max(totalCount - offset, 0);
-  const countForPage = remaining > 0 ? Math.min(itemsPerPage, remaining) : itemsPerPage;
-
-  return Math.min(countForPage, 24);
-}
-
-function resolveItemsPerPage(pageSize?: string) {
-  const parsed = Number.parseInt(pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
-  return PAGE_SIZE_OPTIONS.includes(parsed as (typeof PAGE_SIZE_OPTIONS)[number])
-    ? parsed
-    : DEFAULT_PAGE_SIZE;
-}
-
 export default async function AdminWorkspacesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; pageSize?: string }>;
+  searchParams: Promise<{ page?: string | string[]; pageSize?: string | string[] }>;
 }) {
   const { page, pageSize } = await searchParams;
-  const itemsPerPage = resolveItemsPerPage(pageSize);
-  const requestedPage = Number.parseInt(page ?? "1", 10) || 1;
+  const itemsPerPage = parseWorkspacePageSize(pageSize);
+  const requestedPage = parseWorkspacePage(page);
 
-  const workspaceCount = await prisma.workspace.count({
-    where: {
-      createdFromApp: true,
-    },
-  });
-  const totalPages = Math.max(1, Math.ceil(workspaceCount / itemsPerPage));
-  const currentPage = Math.min(Math.max(requestedPage, 1), totalPages);
-  const fallbackCount = getFallbackCount(workspaceCount, currentPage, itemsPerPage);
+  const workspacesPage = await getAdminWorkspacesPage(requestedPage, itemsPerPage);
+  const workspaceCount = workspacesPage.totalItems;
 
   return (
-    <>
-      <AdminPageHeader
+    <div className="space-y-7">
+      <WorkspacePageHeader
         title="Workspaces disponibles"
-        description="Inventario completo de radios y marcas configuradas en la app."
+        description={<p>{workspaceCount} {workspaceCount === 1 ? "workspace registrado" : "workspaces registrados"} desde la aplicación, con su plantilla de origen.</p>}
         actions={
           <>
             <WorkspacesPageClient />
 
             <Link
               href="/admin/users"
-              className="inline-flex items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-300 transition hover:border-[#C8A96E] hover:text-[#C8A96E]"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#FF5C35]/40 bg-white px-4 py-3 text-sm font-medium text-[#A53318] transition-colors hover:border-[#FF5C35] hover:bg-[#FFF1EC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF5C35] motion-reduce:transition-none"
             >
+              <LuUsers aria-hidden="true" className="size-4 shrink-0" />
               Gestionar usuarios
             </Link>
           </>
         }
       />
 
-      <Suspense fallback={<AdminWorkspacesGridSkeleton count={fallbackCount} />}>
-        <AdminWorkspacesContent
-          currentPage={currentPage}
-          itemsPerPage={itemsPerPage}
-          pageSizeOptions={[...PAGE_SIZE_OPTIONS]}
-        />
-      </Suspense>
-    </>
+      <AdminWorkspacesContent page={workspacesPage} pageSizeOptions={[...WORKSPACE_PAGE_SIZES]} />
+    </div>
   );
 }

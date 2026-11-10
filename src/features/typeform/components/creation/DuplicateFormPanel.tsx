@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useTransition } from "react";
+import { useEffect, useRef, type SubmitEvent } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import Swal from "sweetalert2";
 import { LuFilePlus2, LuLoaderCircle } from "react-icons/lu";
 import { toast } from "sonner";
+import type { DuplicateFormResult } from "@/features/typeform/types/duplicate-form";
+import DuplicateFormDialog from "../forms/DuplicateFormDialog";
+import { useFormDuplication } from "../forms/useFormDuplication";
 
 type DuplicateFormPanelProps = {
-  action: (formData: FormData) => void | Promise<void>;
+  action: (formData: FormData) => Promise<DuplicateFormResult>;
+  recoverAction: (createdFormId: string) => Promise<DuplicateFormResult>;
+  recoveryKey: string;
   defaultTitle: string;
   redirectTo: string;
   clonedFrom?: string;
@@ -15,6 +19,8 @@ type DuplicateFormPanelProps = {
 
 export function DuplicateFormPanel({
   action,
+  recoverAction,
+  recoveryKey,
   defaultTitle,
   redirectTo,
   clonedFrom,
@@ -23,7 +29,19 @@ export function DuplicateFormPanel({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const formRef = useRef<HTMLFormElement>(null);
-  const [isPending, startTransition] = useTransition();
+  const { duplicate, isPending, dialogProps } = useFormDuplication({
+    suggestedTitle: defaultTitle,
+    redirectTo,
+    recoveryKey,
+    create: (title, allowSameTitle) => {
+      const data = new FormData();
+      data.set("title", title);
+      data.set("_skipRedirect", "1");
+      if (allowSameTitle) data.set("_allowSameTitle", "1");
+      return action(data);
+    },
+    recover: recoverAction,
+  });
 
   useEffect(() => {
     if (!clonedFrom) {
@@ -51,9 +69,7 @@ export function DuplicateFormPanel({
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname);
   }, [clonedFrom, pathname, router, searchParams]);
 
-  const handleSubmit: NonNullable<
-    React.ComponentProps<"form">["onSubmit"]
-  > = async (event) => {
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (isPending) {
@@ -78,50 +94,17 @@ export function DuplicateFormPanel({
       return;
     }
 
-    const result = await Swal.fire({
-      title: "Guardar y duplicar formulario",
-      text: title
-        ? `Se creará una copia llamada "${title}".`
-        : "Se creará una copia del formulario base.",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Sí, guardar y duplicar",
-      cancelButtonText: "Cancelar",
-      background: "#FFFFFF",
-      color: "#000000",
-      confirmButtonColor: "#FF5C35",
-      scrollbarPadding: false,
-      heightAuto: false,
-    });
-
-    if (!result.isConfirmed) {
-      return;
-    }
-
-    const formData = new FormData(form);
-    formData.set("_skipRedirect", "1");
-
-    startTransition(() => {
-      void action(formData);
-    });
-
-    router.push(redirectTo);
-  };
+    void duplicate(title);
+  }
 
   return (
+    <>
     <section
       aria-busy={isPending}
-      className="
-        mt-6
-    rounded-2xl
-    border border-[#D1D1CD]
-    bg-white
-    p-5
-    shadow-[0_8px_30px_-18px_rgba(0,0,0,0.18)]
-      "
+      className="mt-6 rounded-md border border-[#FF5C35]/35 bg-white p-5 text-[#171717] sm:p-6"
     >
-      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-[#000000]/45">
-        <LuFilePlus2 className="size-3.5 text-[#FF5C35]" />
+      <div className="flex items-center gap-2 text-sm font-medium text-[#595954]">
+        <LuFilePlus2 aria-hidden="true" className="size-4 text-[#A53318]" />
         <span>Duplicación</span>
       </div>
 
@@ -129,14 +112,13 @@ export function DuplicateFormPanel({
         Crear nuevo formulario desde esta base
       </h2>
 
-      <p className="mt-1 text-sm leading-6 text-[#000000]/55">
+      <p className="mt-2 text-sm leading-6 text-[#595954]">
         Cambia el nombre y luego guárdalo para crear el duplicado. El formulario
         actual no se modifica.
       </p>
 
       <form
         ref={formRef}
-        action={action}
         onSubmit={handleSubmit}
         className="mt-5 flex flex-col gap-3 md:flex-row md:items-start"
       >
@@ -149,28 +131,12 @@ export function DuplicateFormPanel({
             required
             defaultValue={defaultTitle}
             readOnly={isPending}
-            className="
-        w-full
-        rounded-xl
-        border border-[#D1D1CD]
-        bg-[#FAFAF9]
-        px-3 py-2.5
-        text-sm text-[#111111]
-        outline-none
-        transition-all
-        placeholder:text-[#000000]/40
-        focus:border-[#FF5C35]
-        focus:bg-white
-        focus:ring-2
-        focus:ring-[#FF5C35]/10
-        read-only:cursor-wait
-        read-only:opacity-70
-      "
+            className="min-h-12 w-full rounded-md border border-[#FF5C35]/35 bg-white px-3 py-3 text-base text-[#171717] outline-none focus:border-[#FF5C35] focus:outline-2 focus:outline-offset-2 focus:outline-[#FF5C35] read-only:cursor-wait read-only:opacity-70"
           />
 
-          <p className="mt-1.5 text-xs text-[#000000]/50">
+          <p className="mt-2 text-sm leading-5 text-[#595954]">
             Este nombre se aplicará al nuevo formulario al presionar{" "}
-            <span className="font-medium text-[#000000]/65">
+            <span className="font-medium text-white">
               Guardar y duplicar
             </span>
             .
@@ -180,40 +146,24 @@ export function DuplicateFormPanel({
         <button
           type="submit"
           disabled={isPending}
-          className="
-      cursor-pointer
-      inline-flex
-      items-center
-      justify-center
-      gap-2
-      rounded-xl
-      bg-[#FF5C35]
-      px-4 py-2.5
-      text-sm font-semibold
-      text-white
-      shadow-[0_4px_12px_-4px_rgba(255,92,53,0.4)]
-      transition-all
-      hover:-translate-y-0.5
-      hover:opacity-90
-      active:translate-y-0
-      disabled:cursor-wait
-      disabled:opacity-70
-      disabled:hover:translate-y-0
-    "
+          aria-haspopup="dialog"
+          className="inline-flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-md bg-[#FF5C35] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#F4512B] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#171717] disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none"
         >
           {isPending ? (
             <>
-              <LuLoaderCircle className="size-4 animate-spin" />
-              Redirigiendo...
+              <LuLoaderCircle aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" />
+              Procesando…
             </>
           ) : (
             <>
-              <LuFilePlus2 className="size-4" />
+              <LuFilePlus2 aria-hidden="true" className="size-4" />
               Guardar y duplicar
             </>
           )}
         </button>
       </form>
     </section>
+    {dialogProps && <DuplicateFormDialog {...dialogProps} />}
+    </>
   );
 }

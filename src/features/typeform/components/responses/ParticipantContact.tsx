@@ -31,5 +31,6 @@ export function ParticipantContact({
   response: MaskedTypeformResponse;
   contactOverride?: string;
 }) {
+  if (response.visibility !== "winner") return <>Datos ocultos</>;
   return <>{contactOverride ?? getParticipantContact(response)}</>;
 }

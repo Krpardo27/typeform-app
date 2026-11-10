@@ -9,45 +9,35 @@ type EmailOptions = {
   text: string;
 };
 
-const apiKey = process.env.RESEND_API_KEY;
+let client: Resend | undefined;
 
-if (!apiKey) {
-  throw new Error("RESEND_API_KEY no está definido en variables de entorno");
+// Inicialización diferida: la falta de la clave no debe romper la carga de módulos de auth.
+function getResend() {
+  const apiKey = process.env.RESEND_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY no está definido en variables de entorno");
+  }
+
+  return (client ??= new Resend(apiKey));
 }
-
-const resend = new Resend(apiKey);
 
 export class EmailService {
   static async send(options: EmailOptions): Promise<void> {
+    const resend = getResend();
     const from = options.from ?? emailConfig.from.verification;
 
-    console.log("[EMAIL SERVICE] send called", {
+    const result = await resend.emails.send({
       from,
       to: options.to,
       subject: options.subject,
+      html: options.html,
+      text: options.text,
     });
 
-    try {
-      console.log("[EMAIL SERVICE] sending email...");
-
-      const result = await resend.emails.send({
-        from,
-        to: options.to,
-        subject: options.subject,
-        html: options.html,
-        text: options.text,
-      });
-
-      console.log("[EMAIL SERVICE] resend response", result);
-
-      if (result.error) {
-        console.error("[EMAIL SERVICE] RESEND ERROR RESPONSE", result.error);
-        throw new Error("Resend failed to send email");
-      }
-    } catch (err) {
-      console.error("[EMAIL SERVICE] ERROR sending email", err);
-
-      throw err;
+    if (result.error) {
+      console.error("[EMAIL SERVICE] RESEND ERROR", result.error.name);
+      throw new Error("Resend failed to send email");
     }
   }
 }

@@ -1,19 +1,23 @@
 import { WorkspaceSidebar } from "./WorkspaceSidebar";
 import { WorkspaceMobileDock } from "./WorkspaceMobileDock";
 import GlobalSearchForm from "@/features/admin/components/GlobalSearchForm";
+import { MobileUserIdentity } from "@/shared/components/MobileUserIdentity";
+import { WorkspaceRadioLogo } from "./WorkspaceRadioLogo";
 
 type WorkspaceShellProps = {
   user: {
     name?: string | null;
     email: string;
+    globalRole?: string;
   };
   workspaces: {
     id: string;
     name: string;
+    typeformId?: string;
+    templateFormTypeformId?: string | null;
   }[];
   currentWorkspaceId?: string;
   currentSection?: "home" | "forms";
-  showGlobalSearch?: boolean;
   children: React.ReactNode;
 };
 
@@ -22,9 +26,12 @@ export function WorkspaceShell({
   workspaces,
   currentWorkspaceId,
   currentSection,
-  showGlobalSearch = true,
   children,
 }: WorkspaceShellProps) {
+  const currentWorkspace = workspaces.find(
+    (workspace) => workspace.id === currentWorkspaceId,
+  );
+
   return (
     <div className="flex min-h-dvh bg-[#F5F5F5] text-[#171717]">
       <div className="hidden h-dvh shrink-0 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:block">
@@ -37,10 +44,14 @@ export function WorkspaceShell({
       </div>
 
       <main className="min-w-0 flex-1 lg:pl-72">
-        <div className="container mx-auto px-4 pb-28 md:px-8 lg:px-10 lg:py-8">
-          {showGlobalSearch && (
-            <section className="sticky top-4 z-20 border-b border-[#F5F5F5] shadow-sm shadow-black/3 backdrop-blur md:static md:mb-8 md:border-b-0 md:bg-transparent md:pb-0 md:shadow-none md:backdrop-blur-none">
-              <div className="w-full max-w-3xl">
+        <div className="container mx-auto px-4 pb-[calc(9rem+env(safe-area-inset-bottom))] md:px-8 lg:px-10 lg:py-2">
+          <MobileUserIdentity user={user} />
+          <section
+            aria-label="Contexto del workspace"
+            className="sticky top-4 z-20 bg-[#F5F5F5] md:static"
+          >
+            <div className="flex min-w-0 items-center justify-between gap-3 py-3 sm:gap-6">
+              <div className="min-w-0 max-w-3xl flex-1">
                 <GlobalSearchForm
                   placeholder="Buscar..."
                   debounceMs={300}
@@ -50,9 +61,23 @@ export function WorkspaceShell({
                   includeForms={Boolean(currentWorkspaceId)}
                 />
               </div>
-            </section>
-          )}
-
+              {currentWorkspace && (
+                <div
+                  className="ml-auto hidden w-25 max-w-full shrink-0 lg:block"
+                  title={currentWorkspace.name}
+                >
+                  <WorkspaceRadioLogo
+                    workspace={{
+                      ...currentWorkspace,
+                      typeformId:
+                        currentWorkspace.typeformId ?? currentWorkspace.id,
+                    }}
+                    size={100}
+                  />
+                </div>
+              )}
+            </div>
+          </section>
           {children}
         </div>
       </main>

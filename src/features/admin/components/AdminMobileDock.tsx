@@ -4,39 +4,28 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LuChartPie,
-  LuClipboardList,
   LuFolder,
-  LuUserPlus,
   LuUsers,
 } from "react-icons/lu";
 import { LogoutButton } from "@/shared/components/LogoutButton";
+import { AdminMobileMoreMenu } from "./AdminMobileMoreMenu";
 
 const ADMIN_MOBILE_ROUTES = [
   {
-    href: "/admin",
+    href: "/admin/dashboard",
     label: "Inicio",
     icon: LuChartPie,
     exact: true,
   },
   {
     href: "/admin/workspaces",
-    label: "Workspaces",
+    label: "Radios",
     icon: LuFolder,
   },
   {
     href: "/admin/users",
     label: "Usuarios",
     icon: LuUsers,
-  },
-  {
-    href: "/admin/miembros",
-    label: "Miembros",
-    icon: LuUserPlus,
-  },
-  {
-    href: "/admin/auditoria",
-    label: "Auditoría",
-    icon: LuClipboardList,
   },
 ];
 
@@ -49,67 +38,46 @@ function isRouteActive(pathname: string, href: string, exact?: boolean) {
 }
 
 export default function AdminMobileDock() {
-  const pathname = usePathname();
-
-  const triggerHapticFeedback = () => {
-    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-      navigator.vibrate(12);
-    }
-  };
+  const pathname = usePathname()?.replace(/\/$/, "") ?? "";
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 lg:hidden">
-      <div className="relative mx-auto max-w-xl overflow-hidden rounded-[1.35rem] border border-[#E5E5E5] bg-[#FFFFFF] shadow-[0_-4px_20px_rgba(0,0,0,0.08)] backdrop-blur-xl">
-        {/* Top accent */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-[#18181B]/20 to-transparent" />
-
-        <nav className="grid grid-cols-[repeat(6,minmax(0,1fr))] gap-0.5 p-1.5">
+    <div className="fixed inset-x-0 bottom-0 z-40 w-full min-w-0 max-w-dvw px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 lg:hidden">
+      <div className="relative mx-auto w-full min-w-0 max-w-xl rounded-xl border border-[#E5E5E5] bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+        <nav aria-label="Administración móvil" className="grid min-w-0 grid-cols-5 gap-1 p-1.5">
           {ADMIN_MOBILE_ROUTES.map((route) => {
             const active = isRouteActive(pathname, route.href, route.exact);
+            const isCurrentPage = pathname === route.href;
             const Icon = route.icon;
 
             return (
               <Link
                 key={route.href}
                 href={route.href}
-                onClick={triggerHapticFeedback}
-                className={`group relative flex min-w-0 min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 py-1 transition-colors duration-200 ${
+                aria-label={route.label}
+                title={route.label}
+                aria-current={isCurrentPage ? "page" : active ? "location" : undefined}
+                onNavigate={(event) => {
+                  if (isCurrentPage) event.preventDefault();
+                }}
+                className={`flex min-h-16 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-0.5 py-1 text-[10px] leading-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[#A33116] motion-reduce:transition-none min-[390px]:text-xs ${
                   active
-                    ? "text-[#171717]"
-                    : "text-[#737373] hover:text-[#171717]"
+                    ? "bg-[#FFF1EB] font-semibold text-[#FF5C35]"
+                    : "font-medium text-[#595954] hover:bg-[#F5F5F5] hover:text-[#171717]"
                 }`}
               >
-                <Icon
-                  className={`size-[17px] shrink-0 transition-transform duration-200 ${
-                    active
-                      ? "text-[#18181B]"
-                      : "group-hover:text-[#171717]"
-                  }`}
-                  strokeWidth={active ? 2.2 : 1.8}
-                />
-
-                <span
-                  className={`w-full truncate text-center text-[10px] leading-none tracking-[-0.01em] ${
-                    active
-                      ? "font-semibold text-[#171717]"
-                      : "font-medium text-[#737373]"
-                  }`}
-                >
-                  {route.label}
+                <span className="flex size-8 items-center justify-center">
+                  <Icon aria-hidden="true" className="size-5 shrink-0" />
                 </span>
-
-                <span
-                  className={
-                    active
-                      ? "absolute bottom-1 left-1/2 h-0.5 w-5 -translate-x-1/2 rounded-full bg-[#18181B]"
-                      : "absolute bottom-1 left-1/2 h-0.5 w-0 -translate-x-1/2 rounded-full bg-[#18181B] opacity-0 transition-all duration-200 group-hover:w-4 group-hover:opacity-100"
-                  }
-                />
+                <span className="max-w-full text-center tracking-tight">{route.label}</span>
               </Link>
             );
           })}
 
-          <LogoutButton variant="dock" />
+          <AdminMobileMoreMenu key={pathname} pathname={pathname} />
+
+          <div className="min-w-0 max-w-full self-stretch *:h-full *:w-full *:min-w-0 *:max-w-full">
+            <LogoutButton variant="dock" />
+          </div>
         </nav>
       </div>
     </div>

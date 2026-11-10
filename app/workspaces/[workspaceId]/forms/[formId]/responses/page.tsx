@@ -1,117 +1,30 @@
+import { createHash } from "node:crypto";
 import { notFound } from "next/navigation";
-import { cookies } from "next/headers";
 import Link from "next/link";
+import { LuArrowUpRight } from "react-icons/lu";
 import { getWorkspaceAccessContext } from "@/features/admin/workspaces/services/workspace-access";
 import { WorkspaceFormResponsesHeader } from "@/features/typeform/components/responses/WorkspaceFormResponsesHeader";
 import { WorkspaceFormResponsesStats } from "@/features/typeform/components/responses/WorkspaceFormResponsesStats";
-import { WorkspaceFormResponsesList } from "@/features/typeform/components/responses/WorkspaceFormResponsesList";
-import { selectWinnersAction } from "@/features/typeform/actions/select-winners.action";
+import { confirmWinnersForRevealAction } from "@/features/typeform/actions/select-winners.action";
+import {
+  beginSavedWinnerDataAction,
+  readWinnerDataAction,
+  finishWinnerDataAction,
+} from "@/features/typeform/actions/winner-reveal.action";
 import { WinnerSelectionPanel } from "@/features/typeform/components/responses/WinnerSelectionPanel";
 import {
   formBelongsToWorkspace,
   getTypeformForm,
-  getTypeformFormResponses,
   getTypeformResponseParticipantEmail,
   isTypeformNotFoundError,
-  mapMaskedTypeformResponses,
   resolveWorkspaceTypeformId,
+  type TypeformFormDetail,
+  type TypeformResponseItem,
 } from "@/features/typeform/services/typeform.service";
-import { createAuditLog } from "@/features/admin/audit/services/audit-log.service";
 import { prisma } from "@/lib/prisma";
-
-const WINNER_CANDIDATES_PAGE_SIZE = 100;
-
-const REGION_ALIASES = [
-  {
-    name: "Arica y Parinacota",
-    aliases: ["arica", "parinacota"],
-  },
-  {
-    name: "Tarapacá",
-    aliases: ["tarapaca", "iquique"],
-  },
-  {
-    name: "Antofagasta",
-    aliases: ["antofagasta"],
-  },
-  {
-    name: "Atacama",
-    aliases: ["atacama", "copiapo"],
-  },
-  {
-    name: "Coquimbo",
-    aliases: ["coquimbo", "la serena"],
-  },
-  {
-    name: "Valparaíso",
-    aliases: ["valparaiso", "valpo"],
-  },
-  {
-    name: "Región Metropolitana",
-    aliases: ["rm", "metropolitana", "santiago"],
-  },
-  {
-    name: "O'Higgins",
-    aliases: ["ohiggins", "o higgins", "rancagua"],
-  },
-  {
-    name: "Maule",
-    aliases: ["maule", "talca"],
-  },
-  {
-    name: "Ñuble",
-    aliases: ["nuble", "chillan"],
-  },
-  {
-    name: "Biobío",
-    aliases: ["biobio", "bio bio", "bio-bio", "concepcion"],
-  },
-  {
-    name: "La Araucanía",
-    aliases: ["araucania", "temuco"],
-  },
-  {
-    name: "Los Ríos",
-    aliases: ["los rios", "valdivia"],
-  },
-  {
-    name: "Los Lagos",
-    aliases: ["los lagos", "puerto montt"],
-  },
-  {
-    name: "Aysén",
-    aliases: ["aysen", "aisen", "coyhaique"],
-  },
-  {
-    name: "Magallanes",
-    aliases: ["magallanes", "punta arenas"],
-  },
-] as const;
-
-function normalizeText(value: string) {
-  return value
-    .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-}
-
-function normalizeRegion(value?: string) {
-  if (!value?.trim()) return undefined;
-
-  const normalizedValue = normalizeText(value);
-  const match = REGION_ALIASES.find((region) =>
-    region.aliases.some(
-      (alias) => normalizedValue === alias || normalizedValue.includes(alias),
-    ),
-  );
-
-  return match?.name ?? value.trim();
-}
-
-function normalizeComuna(value?: string) {
-  return value?.trim() || undefined;
-}
+import { loadFormResponses } from "@/features/typeform/services/load-form-responses";
+import { getEmbedInfo } from "@/features/typeform/utils/embed-info";
+import { usesTypeformResponseFixtures } from "@/features/typeform/services/typeform-fixture-mode";
 
 function getResponseSubmittedTime(response: {
   submitted_at?: string;
@@ -124,57 +37,22 @@ function getResponseSubmittedTime(response: {
   return Number.isNaN(timestamp) ? 0 : timestamp;
 }
 
-function getWinnerLabel(
-  response: {
-    token: string;
-    answers: { question: string; value: string }[];
-  },
-  index: number,
+async function getCandidateProfiles(
+  form: TypeformFormDetail,
+  responses: TypeformResponseItem[],
 ) {
-  const preferred = response.answers.find((answer) => {
-    const question = answer.question.toLowerCase();
-    return (
-      /nombre|correo|email|rut/.test(question) &&
-      answer.value !== "Sin respuesta"
-    );
-  });
-
-  return {
-    label: preferred?.value ?? `Participante ${index + 1}`,
-  };
-}
-
-function getCandidateRegion(response: {
-  answers: { question: string; value: string }[];
-}) {
-  const region = response.answers.find((answer) =>
-    /región|region/i.test(answer.question),
-  )?.value;
-
-  return normalizeRegion(region);
-}
-
-function getCandidateComuna(response: {
-  answers: { question: string; value: string }[];
-}) {
-  const comuna = response.answers.find((answer) =>
-    /comuna|comune|municipio|municipality/i.test(answer.question),
-  )?.value;
-
-  return normalizeComuna(comuna);
-}
-
-function getCandidateEmail(response: {
-  answers: { question: string; value: string; answerType?: string }[];
-}) {
-  return response.answers.find((answer) => {
-    const question = answer.question.toLowerCase();
-
-    return (
-      answer.value !== "Sin respuesta" &&
-      (answer.answerType === "email" || /correo|email|mail/.test(question))
-    );
-  })?.value;
+  // Esta extracción se ejecuta solo en el servidor y después de autorizar.
+  // Mantener las dependencias del servicio fuera del módulo cliente de utils.
+  const [{ getWinnerCandidateProfiles, maskWinnerCandidateProfile }, { mapMaskedTypeformResponses }] = await Promise.all([
+    import("@/features/typeform/components/responses/winner-selection/utils"),
+    import("@/features/typeform/services/typeform.service"),
+  ]);
+  const profiles = getWinnerCandidateProfiles(
+    form,
+    responses,
+    mapMaskedTypeformResponses,
+  );
+  return new Map([...profiles].map(([token, profile]) => [token, maskWinnerCandidateProfile(profile)]));
 }
 
 async function getExistingTypeformForm(formId: string) {
@@ -244,53 +122,6 @@ function getParticipantNumbersByToken<T extends { token: string }>(items: T[]) {
   return new Map(items.map((item, index) => [item.token, String(index + 1)]));
 }
 
-async function getWinnerCandidateResponses(formId: string) {
-  const allResponses: Awaited<
-    ReturnType<typeof getTypeformFormResponses>
-  >["items"] = [];
-
-  let before: string | undefined;
-  let expectedTotal: number | null = null;
-
-  while (true) {
-    const pageResult = await getTypeformFormResponses(formId, {
-      pageSize: WINNER_CANDIDATES_PAGE_SIZE,
-      before,
-    });
-
-    if (expectedTotal === null) {
-      expectedTotal = pageResult.total_items;
-    }
-
-    if (pageResult.items.length === 0) {
-      break;
-    }
-
-    allResponses.push(...pageResult.items);
-
-    if (pageResult.items.length < WINNER_CANDIDATES_PAGE_SIZE) {
-      break;
-    }
-
-    if (expectedTotal !== null && allResponses.length >= expectedTotal) {
-      break;
-    }
-
-    const lastToken = pageResult.items.at(-1)?.token;
-    if (!lastToken || lastToken === before) {
-      break;
-    }
-
-    before = lastToken;
-  }
-
-  return deduplicateByToken(allResponses);
-}
-
-async function getAllFormResponses(formId: string) {
-  return getWinnerCandidateResponses(formId);
-}
-
 export default async function FormResponsesPage({
   params,
   searchParams,
@@ -306,14 +137,14 @@ export default async function FormResponsesPage({
 }) {
   const { workspaceId, formId } = await params;
   const { user, workspace } = await getWorkspaceAccessContext(workspaceId);
-  const { page, pageSize, winnerRegionFilter, winnerSelection, winnerError } =
+  const { winnerRegionFilter, winnerSelection, winnerError } =
     await searchParams;
 
   const userWorkspaceMembership = await prisma.userWorkspace.findUnique({
     where: {
       userId_workspaceId: {
         userId: user.id,
-        workspaceId,
+        workspaceId: workspace.id,
       },
     },
     select: {
@@ -321,26 +152,21 @@ export default async function FormResponsesPage({
     },
   });
 
+  const effectiveRole = userWorkspaceMembership?.role ?? workspace.role;
   const canSelectWinners =
-    user.globalRole === "SUPER_ADMIN" ||
-    userWorkspaceMembership?.role === "EDITOR" ||
-    workspace.role === "EDITOR";
-  const canExportResponses = workspace.role === "EDITOR";
-  const currentPage = Math.max(1, Number.parseInt(page ?? "1", 10) || 1);
-  const showAllResponses = (pageSize ?? "").toLowerCase() === "all";
-  const requestedPageSize = Number.parseInt(pageSize ?? "20", 10) || 20;
-  const selectedItemsPerPage = [10, 20, 50, 100].includes(requestedPageSize)
-    ? requestedPageSize
-    : 20;
+    user.globalRole === "SUPER_ADMIN" || effectiveRole === "EDITOR";
   const form = await getExistingTypeformForm(formId);
 
   const localForm = await prisma.form.findUnique({
     where: { typeformId: form.id },
-    select: { id: true },
+    select: { id: true, workspaceId: true },
   });
 
+  if (localForm && localForm.workspaceId !== workspace.id) notFound();
+
   const persistedWinnerTokens = new Set<string>();
-  const persistedWinnerRows = localForm
+  const isFixturePreview = usesTypeformResponseFixtures(form.id);
+  const persistedWinnerRows = localForm && !isFixturePreview
     ? await prisma.formWinner.findMany({
         where: {
           formId: localForm.id,
@@ -348,9 +174,7 @@ export default async function FormResponsesPage({
         },
         select: {
           responseToken: true,
-          participantEmail: true,
-          reason: true,
-          selectedByUserId: true,
+          selectedAt: true,
         },
       })
     : [];
@@ -359,35 +183,20 @@ export default async function FormResponsesPage({
     persistedWinnerTokens.add(winner.responseToken);
   }
 
-  const winnerContactsByToken = Object.fromEntries(
-    persistedWinnerRows.flatMap((winner) =>
-      winner.participantEmail
-        ? [[winner.responseToken, winner.participantEmail] as const]
-        : [],
-    ),
-  );
-
-  const winnerCookieName = `winner_selection:${workspace.id}:${form.id}`;
-  const winnerCookieRaw = (await cookies()).get(winnerCookieName)?.value;
-  let revealedWinnerTokens = new Set<string>(persistedWinnerTokens);
-  let winnerSelectionReason: string | null = null;
-
-  if (winnerCookieRaw && persistedWinnerTokens.size === 0) {
-    try {
-      const parsed = JSON.parse(winnerCookieRaw) as {
-        tokens?: string[];
-        by?: string;
-        reason?: string;
-      };
-
-      if (parsed.by === user.id) {
-        revealedWinnerTokens = new Set(parsed.tokens ?? []);
-        winnerSelectionReason = parsed.reason ?? null;
-      }
-    } catch {
-      revealedWinnerTokens = new Set();
-    }
-  }
+  // Firma opaca, estable al reordenar filas y acotada al formulario local.
+  // Los mocks/filas antiguos sin fecha usan null; nunca se proyectan fechas
+  // ni motivos a los candidatos del cliente.
+  const winnerRevision = createHash("sha256").update(JSON.stringify([
+    workspace.id,
+    form.id,
+    localForm?.id ?? null,
+    persistedWinnerRows.map(({ responseToken, selectedAt }) => [
+      responseToken,
+      selectedAt instanceof Date && Number.isFinite(selectedAt.getTime())
+        ? selectedAt.toISOString()
+        : null,
+    ]).sort(([first], [second]) => (first ?? "").localeCompare(second ?? "")),
+  ])).digest("hex");
 
   const resolvedWorkspaceTypeformId = await resolveWorkspaceTypeformId(
     workspace.typeformId,
@@ -397,97 +206,41 @@ export default async function FormResponsesPage({
     notFound();
   }
 
-  const allResponses = await getAllFormResponses(form.id);
+  const allResponses = await loadFormResponses(form.id);
   const chronologicalParticipantResponses =
     getChronologicalParticipantResponses(allResponses);
   const participantNumbersByToken = getParticipantNumbersByToken(
     chronologicalParticipantResponses,
   );
-  const canonicalParticipantTokens = new Set(participantNumbersByToken.keys());
-  const rawResponses = showAllResponses
-    ? {
-        page_count: 1,
-        total_items: chronologicalParticipantResponses.length,
-        items: chronologicalParticipantResponses,
-      }
-    : await getTypeformFormResponses(form.id, {
-        page: currentPage,
-        pageSize: selectedItemsPerPage,
-      });
-  const visibleResponseItems = rawResponses.items.filter((response) =>
-    canonicalParticipantTokens.has(response.token),
-  );
-  const responses = {
-    ...rawResponses,
-    items: visibleResponseItems,
-    total_items: chronologicalParticipantResponses.length,
-  };
-  const itemsPerPage = showAllResponses
-    ? Math.max(1, responses.total_items)
-    : selectedItemsPerPage;
-  const totalResponsePages = Math.max(1, responses.page_count);
-  const isPageOutOfRange =
-    responses.total_items > 0 && currentPage > totalResponsePages;
-  const winnerCandidateResponses =
-    canSelectWinners && !isPageOutOfRange
-      ? showAllResponses
-        ? chronologicalParticipantResponses
-        : deduplicateByToken(await getWinnerCandidateResponses(form.id)).filter(
-            (response) => canonicalParticipantTokens.has(response.token),
-          )
-      : [];
+  // Incluso los ganadores persistidos se proyectan enmascarados antes de
+  // enviarlos al cliente. Solo el flujo explícito con grant permite revelarlos.
+  const totalParticipants = chronologicalParticipantResponses.length;
+  const winnerCandidateResponses = canSelectWinners
+    ? deduplicateByToken([
+        ...chronologicalParticipantResponses,
+        // No retirar implícitamente un ganador persistido cuyo correo se
+        // deduplicó: debe continuar visible para poder conservarlo o quitarlo.
+        ...allResponses.filter((response) =>
+          persistedWinnerTokens.has(response.token),
+        ),
+      ])
+    : [];
 
-  const selectWinners = selectWinnersAction.bind(null, workspace.id, form.id);
-  const maskedResponses = mapMaskedTypeformResponses(form, responses.items, {
-    maskSensitive: true,
-    unmaskTokens: revealedWinnerTokens,
-  }).map((response) => ({
-    ...response,
-    participantNumber:
-      participantNumbersByToken.get(response.token) ??
-      response.participantNumber,
-  }));
-  const maskedWinnerCandidateResponses = mapMaskedTypeformResponses(
-    form,
-    winnerCandidateResponses,
-    {
-      maskSensitive: true,
-      unmaskTokens: revealedWinnerTokens,
-    },
-  ).map((response) => ({
-    ...response,
-    participantNumber:
-      participantNumbersByToken.get(response.token) ??
-      response.participantNumber,
-  }));
-  const highlightedWinnerResponses = maskedWinnerCandidateResponses.filter(
-    (response) => revealedWinnerTokens.has(response.token),
+  const selectWinners = confirmWinnersForRevealAction.bind(
+    null,
+    workspace.id,
+    form.id,
   );
-  const revealedResponses = maskedResponses.filter((response) =>
-    revealedWinnerTokens.has(response.token),
-  );
-
-  if (revealedResponses.length > 0) {
-    await createAuditLog({
-      action: "SENSITIVE_DATA_VIEWED",
-      actor: user,
-      target: { type: "form_winner_data", id: form.id },
-      context: {
-        workspaceId: workspace.id,
-        workspaceName: workspace.name,
-        formId: form.id,
-        formTitle: form.title,
-        metadata: {
-          displayedResponses: revealedResponses.length,
-          revealedTokens: revealedResponses
-            .map((response) => response.token)
-            .join(","),
-          reason: winnerSelectionReason,
-          scope: "winner_selection_flow",
-        },
-      },
-    });
-  }
+  const candidateProfiles = canSelectWinners
+    ? await getCandidateProfiles(form, winnerCandidateResponses)
+    : undefined;
+  const embedInfo = getEmbedInfo(form.id, workspace.typeformId, undefined, workspace.templateFormTypeformId);
+  const publicFormUrl = embedInfo.publicUrl ?? form._links?.display ?? embedInfo.src ?? `https://form.typeform.com/to/${encodeURIComponent(form.id)}`;
+  const missingWinnerTokens = [...persistedWinnerTokens]
+    .filter((token) => !winnerCandidateResponses.some((response) => response.token === token))
+    .sort();
+  const showWinnerPanel = canSelectWinners &&
+    (winnerCandidateResponses.length > 0 || persistedWinnerTokens.size > 0);
 
   return (
     <>
@@ -498,86 +251,101 @@ export default async function FormResponsesPage({
       />
 
       <WorkspaceFormResponsesStats
-        totalParticipants={responses.total_items}
-        shownParticipants={maskedResponses.length}
-        selectedWinnersCount={revealedWinnerTokens.size}
+        totalParticipants={totalParticipants}
+        selectedWinnersCount={persistedWinnerTokens.size}
       />
 
-      {isPageOutOfRange && (
-        <section className="mt-8 rounded-lg border border-gray-200 bg-white p-5">
-          <h2 className="text-base font-semibold text-gray-900">
-            Página fuera de rango
-          </h2>
+      {showWinnerPanel && (
+        <WinnerSelectionPanel
+          action={selectWinners}
+          beginWinnerData={beginSavedWinnerDataAction.bind(null, workspace.id, form.id)}
+          currentPage={1}
+          initialRegionFilter={winnerRegionFilter}
+          itemsPerPage={Math.max(1, totalParticipants)}
+          pageSizeValue="all"
+          winnerSelection={winnerSelection}
+          winnerRevision={winnerRevision}
+          winnerError={winnerError}
+          readWinnerData={readWinnerDataAction.bind(
+            null,
+            workspace.id,
+            form.id,
+          )}
+          finishWinnerData={finishWinnerDataAction.bind(
+            null,
+            workspace.id,
+            form.id,
+          )}
+          exportBaseHref={`/workspaces/${workspace.id}/forms/${form.id}/responses/export`}
+          publicFormUrl={publicFormUrl}
+          isFixturePreview={isFixturePreview}
+          candidates={[...winnerCandidateResponses.map((response, index) => {
+            const participantNumber = participantNumbersByToken.get(
+              response.token,
+            ) ?? String(index + 1);
+            const selected = persistedWinnerTokens.has(response.token);
+            const profile = candidateProfiles?.get(response.token);
+            const label = profile?.label ?? `Participante ${participantNumber}`;
 
-          <p className="mt-1 text-sm text-gray-600">
-            La página {currentPage} no existe para este formulario. Actualmente
-            hay {totalResponsePages} página
-            {totalResponsePages === 1 ? "" : "s"} de participantes.
-          </p>
-
-          <Link
-            href={`/workspaces/${workspace.id}/forms/${form.id}/responses?pageSize=${itemsPerPage}&page=${totalResponsePages}`}
-            className="mt-4 inline-flex rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800"
-          >
-            Ir a la última página válida
-          </Link>
-        </section>
+            return {
+              token: response.token,
+              label,
+              detail: `#${participantNumber}`,
+              participantNumber,
+              email: profile?.email,
+              region: profile?.region,
+              city: profile?.city,
+              selected,
+            };
+          }), ...missingWinnerTokens.map((token, index) => ({
+            token,
+            label: "Participante no disponible",
+            participantNumber: String(winnerCandidateResponses.length + index + 1),
+            selected: true,
+            missingResponse: true,
+          }))]}
+        />
       )}
 
-      {!isPageOutOfRange &&
-        canSelectWinners &&
-        maskedWinnerCandidateResponses.length > 0 && (
-          <WinnerSelectionPanel
-            action={selectWinners}
-            currentPage={currentPage}
-            initialRegionFilter={winnerRegionFilter}
-            itemsPerPage={itemsPerPage}
-            pageSizeValue={showAllResponses ? "all" : String(itemsPerPage)}
-            winnerSelection={winnerSelection}
-            winnerError={winnerError}
-            candidates={maskedWinnerCandidateResponses.map(
-              (response, index) => {
-                const { label } = getWinnerLabel(response, index);
-                const participantNumber =
-                  participantNumbersByToken.get(response.token) ??
-                  String(index + 1);
-
-                return {
-                  token: response.token,
-                  label,
-                  detail: `#${participantNumber}`,
-                  participantNumber,
-                  email: getCandidateEmail(response),
-                  region: getCandidateRegion(response),
-                  comuna: getCandidateComuna(response),
-                  selected: revealedWinnerTokens.has(response.token),
-                };
-              },
-            )}
-          />
-        )}
-
-      {!isPageOutOfRange && maskedResponses.length === 0 ? (
-        <section className="mt-8 rounded-xl border border-[#F5F5F5] bg-[#FFFFFF] p-6">
-          <h2 className="text-base font-semibold text-[#000000]">
-            Sin respuestas
+      {totalParticipants === 0 ? (
+        <section
+          aria-labelledby="empty-responses-title"
+          className="mt-6 rounded-lg border border-[#E5E5E5] bg-white px-5 py-8 sm:px-6"
+        >
+          <h2
+            id="empty-responses-title"
+            className="text-base font-semibold text-[#171717]"
+          >
+            {persistedWinnerTokens.size > 0 ? "No hay respuestas disponibles" : "Aún no hay participantes"}
           </h2>
-          <p className="mt-1 text-sm text-[#000000]/55">
-            Typeform no devolvió participantes para este formulario.
+          <p className="mt-2 max-w-xl text-sm leading-6 text-[#595954]">
+            {persistedWinnerTokens.size > 0
+              ? "No hay respuestas disponibles en este concurso. Los ganadores guardados se conservan hasta que confirmes su retirada."
+              : "Este concurso todavía no tiene respuestas registradas. Cuando alguien complete el formulario, sus respuestas aparecerán aquí."}
           </p>
+          {!showWinnerPanel && (
+            <a
+              href={publicFormUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Abrir formulario en una nueva pestaña"
+              className="mt-4 mr-2 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-md border border-[#D1D1CD] bg-white px-3 py-2 text-sm font-medium text-[#595954] transition-colors hover:border-[#FF5C35]/60 hover:text-[#A53318] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF5C35] motion-reduce:transition-none"
+            >
+              Abrir formulario
+              <LuArrowUpRight aria-hidden="true" className="size-3.5 shrink-0" />
+            </a>
+          )}
+          <Link
+            href={`/workspaces/${encodeURIComponent(workspace.id)}/forms`}
+            className="mt-4 inline-flex min-h-10 items-center rounded-md border border-[#D1D1CD] px-3 py-2 text-sm font-medium text-[#595954] transition-colors hover:border-[#FF5C35] hover:text-[#A53318] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF5C35] motion-reduce:transition-none"
+          >
+            Volver a formularios
+          </Link>
         </section>
-      ) : !isPageOutOfRange ? (
-        <WorkspaceFormResponsesList
-          highlightedResponses={highlightedWinnerResponses}
-          highlightedContactsByToken={winnerContactsByToken}
-          responses={maskedResponses}
-          currentPage={currentPage}
-          totalPages={totalResponsePages}
-          totalItems={responses.total_items}
-          itemsPerPage={itemsPerPage}
-          exportBaseHref={`/workspaces/${workspace.id}/forms/${form.id}/responses/export`}
-          canExportResponses={canExportResponses}
-        />
+      ) : !canSelectWinners ? (
+        <p className="mt-6 text-sm leading-6 text-[#595954]">
+          Necesitas permisos de edición para consultar los participantes y gestionar los ganadores.
+        </p>
       ) : null}
     </>
   );

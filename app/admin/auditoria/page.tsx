@@ -4,60 +4,23 @@ import { AuditDateFilter } from "@/features/admin/audit/components/AuditDateFilt
 import { AuditStatsGrid } from "@/features/admin/audit/components/AuditStatsGrid";
 import { AuditTimeline } from "@/features/admin/audit/components/AuditTimeline";
 import { buildAuditTimeline } from "@/features/admin/audit/services/audit-timeline.service";
+import { getAuditDateFilter } from "@/features/admin/audit/utils/audit-date-range";
 
 export const dynamic = "force-dynamic";
-
-function normalizeDateParam(value?: string) {
-  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return undefined;
-  }
-
-  return value;
-}
-
-function parseDateParam(value?: string) {
-  const normalizedValue = normalizeDateParam(value);
-
-  if (!normalizedValue) {
-    return undefined;
-  }
-
-  const date = new Date(`${normalizedValue}T00:00:00.000Z`);
-
-  return Number.isNaN(date.getTime()) ? undefined : date;
-}
-
-function getAuditDateRange(from?: string, to?: string) {
-  const startDate = parseDateParam(from);
-  const endDate = parseDateParam(to);
-
-  if (!startDate && !endDate) {
-    return undefined;
-  }
-
-  return {
-    ...(startDate ? { gte: startDate } : {}),
-    ...(endDate
-      ? { lt: new Date(endDate.getTime() + 24 * 60 * 60 * 1000) }
-      : {}),
-  };
-}
 
 export default async function AdminAuditPage({
   searchParams,
 }: {
   searchParams: Promise<{
-    from?: string;
-    to?: string;
+    from?: string | string[];
+    to?: string | string[];
   }>;
 }) {
   const rawSearchParams = await searchParams;
-  const from = normalizeDateParam(rawSearchParams.from);
-  const to = normalizeDateParam(rawSearchParams.to);
-  const createdAt = getAuditDateRange(from, to);
+  const { from, to, error, createdAt } = getAuditDateFilter(rawSearchParams.from, rawSearchParams.to);
   const where = createdAt ? { createdAt } : undefined;
 
-  const [auditLogs, sessions] = await Promise.all([
+  const [auditLogs, sessions] = error ? [[], []] : await Promise.all([
     prisma.auditLog.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -83,14 +46,16 @@ export default async function AdminAuditPage({
   return (
     <div>
       <AdminAuditHeader />
-      <AuditStatsGrid
-        timeline={timeline}
-        sessionCount={sessions.length}
-        auditLogCount={auditLogs.length}
-      />
-      <AuditDateFilter from={from} to={to} />
+      {!error && (
+        <AuditStatsGrid
+          timeline={timeline}
+          sessionCount={sessions.length}
+          auditLogCount={auditLogs.length}
+        />
+      )}
+      <AuditDateFilter from={from} to={to} error={error} />
 
-      <AuditTimeline timeline={timeline} />
+      {!error && <AuditTimeline timeline={timeline} />}
     </div>
   );
 }

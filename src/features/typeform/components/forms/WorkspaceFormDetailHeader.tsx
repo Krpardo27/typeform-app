@@ -23,8 +23,8 @@ export function WorkspaceFormDetailHeader({
       backLabel="Volver a formularios"
       eyebrow={
         <>
-          <LuFileText className="size-3.5 text-[#FF5C35]" />
-          <span>{workspaceName}</span>
+          <LuFileText aria-hidden="true" className="size-3.5 shrink-0 text-[#FF5C35]" />
+          <span className="min-w-0 wrap-anywhere">{workspaceName}</span>
         </>
       }
       title={formTitle}

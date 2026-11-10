@@ -14,12 +14,18 @@ type Props = {
 };
 
 function formatDate(value?: string) {
-  if (!value) return "Sin fecha";
+  if (!value) return null;
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return null;
 
-  return new Intl.DateTimeFormat("es-CL", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+  return {
+    dateTime: date.toISOString(),
+    label: new Intl.DateTimeFormat("es-CL", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: "UTC",
+    }).format(date),
+  };
 }
 
 export function WorkspaceFormCard({
@@ -37,155 +43,65 @@ export function WorkspaceFormCard({
   );
   const embedSrc = embedInfo.src;
   const publicFormUrl = embedInfo.publicUrl ?? form._links?.display ?? embedSrc;
+  const title = form.title?.trim() || "Formulario sin título";
+  const updatedAt = formatDate(form.last_updated_at);
+  const responsesHref = `/workspaces/${encodeURIComponent(workspaceId)}/forms/${encodeURIComponent(form.id)}/responses`;
 
   return (
-    <article
-      className="
-    group
-    rounded-2xl
-    border border-[#D1D1CD]
-    bg-white
-    p-4
-    shadow-[0_8px_30px_-18px_rgba(0,0,0,0.18)]
-    transition-all
-    duration-200
-    hover:-translate-y-0.5
-    hover:border-[#FF5C35]/50
-    hover:shadow-[0_14px_35px_-18px_rgba(0,0,0,0.22)]
-    sm:p-5
-  "
-    >
+    <article className="flex h-full min-w-0 flex-col rounded-md border border-[#FF5C35]/30 bg-white p-4 text-[#171717] transition-colors hover:border-[#FF5C35]/60 focus-within:border-[#FF5C35] motion-reduce:transition-none sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <Link href={`/workspaces/${workspaceId}/forms/${form.id}`}>
-            <h2
-              className="
-                line-clamp-2
-                wrap-break-word
-                text-base
-                font-semibold
-                leading-snug
-                text-[#111111]
-                transition-colors
-                hover:text-[#FF5C35]
-                sm:text-lg
-              "
-            >
-              {form.title}
+          <Link href={responsesHref} className="rounded-sm text-[#171717] underline-offset-4 hover:text-[#A53318] hover:underline focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#FF5C35]">
+            <h2 className="text-base leading-snug font-semibold wrap-anywhere sm:text-lg">
+              {title}
             </h2>
           </Link>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[#000000]/50">
-            <span className="rounded-lg border border-[#E8E8E6] bg-[#FAFAF9] px-2 py-1 font-mono text-[11px] text-[#000000]/60">
-              ID: {form.id}
-            </span>
-          </div>
+          <p className="mt-2 text-sm leading-5 text-[#595954] tabular-nums wrap-anywhere">ID: {form.id}</p>
         </div>
 
-        <div className="flex shrink-0 flex-col gap-2">
           {canCreateForms && (
             <WorkspaceFormDuplicateButton
               workspaceId={workspaceId}
               formId={form.id}
-              formTitle={form.title}
+              formTitle={title}
             />
           )}
+      </div>
 
-          {publicFormUrl ? (
-            <a
-              href={publicFormUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="
-              flex size-11 shrink-0 items-center justify-center
-              rounded-xl
-              border border-[#E8E8E6]
-              bg-[#F7F7F6]
-              text-[#000000]/60
-              transition-all
-              hover:border-[#FF5C35]/30
-              hover:bg-white
-              hover:text-[#FF5C35]
-              sm:size-9
-            "
-              aria-label={`Abrir formulario ${form.title}`}
-            >
-              <LuArrowUpRight className="size-4" />
+      <p className="mt-4 flex items-center gap-2 text-sm leading-5 text-[#595954]">
+        <LuCalendarClock aria-hidden="true" className="size-4 shrink-0" />
+        {updatedAt ? (
+          <span>
+            Actualizado <time dateTime={updatedAt.dateTime} className="tabular-nums">{updatedAt.label} UTC</time>
+          </span>
+        ) : (
+          <span>Sin fecha informada</span>
+        )}
+      </p>
+
+      <div className="mt-auto pt-5">
+        <div className="flex min-w-0 flex-col gap-3 border-t border-[#E8E8E6] pt-4">
+          <Link
+            href={responsesHref}
+            aria-label={`Ver respuestas de ${title}`}
+            className="inline-flex min-h-11 w-full items-center justify-between gap-2 rounded-md border border-[#FF5C35]/35 bg-[#FFF8F5] px-3 py-3 text-sm font-medium text-[#A53318] transition-colors hover:border-[#FF5C35] hover:bg-[#FFF1EC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF5C35] motion-reduce:transition-none"
+          >
+            Ver respuestas
+            <LuArrowUpRight aria-hidden="true" className="size-4 shrink-0" />
+          </Link>
+
+          {publicFormUrl && (
+            <a href={publicFormUrl} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${title} en una nueva pestaña`} className="inline-flex min-h-11 items-center gap-1.5 self-start rounded-sm text-sm font-medium text-[#595954] underline-offset-4 hover:text-[#A53318] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF5C35]">
+              Abrir formulario<LuArrowUpRight aria-hidden="true" className="size-3.5 shrink-0" />
             </a>
-          ) : (
-            <Link
-              href={`/workspaces/${workspaceId}/forms/${form.id}`}
-              className="
-              flex size-11 shrink-0 items-center justify-center
-              rounded-xl
-              border border-[#E8E8E6]
-              bg-[#F7F7F6]
-              text-[#000000]/60
-              transition-all
-              hover:border-[#FF5C35]/30
-              hover:bg-white
-              hover:text-[#FF5C35]
-              sm:size-9
-            "
-              aria-label={`Abrir detalle de ${form.title}`}
-            >
-              <LuArrowUpRight className="size-4" />
-            </Link>
           )}
-        </div>
-      </div>
 
-      <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-[#000000]/65">
-        <span className="flex items-center gap-2">
-          <LuCalendarClock className="size-4 shrink-0 text-[#7C3AED]" />
-          {formatDate(form.last_updated_at)}
-        </span>
-      </div>
-
-      <div className="mt-5 flex min-w-0 flex-col gap-2 border-t border-[#F0F0EE] pt-4">
-        <Link
-          href={`/workspaces/${workspaceId}/forms/${form.id}/responses`}
-          className="
-    group/responses
-    inline-flex
-    w-full
-    items-center
-    justify-center
-    gap-2
-    rounded-lg
-    border border-[#E8E8E6]
-    bg-[#FAFAF9]
-    px-3
-    py-2
-    text-xs
-    font-medium
-    text-[#18181B]
-    transition-all
-    hover:border-[#FF5C35]/25
-    hover:bg-[#FFF7F4]
-    hover:text-[#FF5C35]
-  "
-        >
-          <span>Ver respuestas</span>
-          <LuArrowUpRight
-            className="
-      size-3.5
-      text-[#A1A1AA]
-      transition-colors
-      group-hover/responses:text-[#FF5C35]
-    "
-          />
-        </Link>
-
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          {embedSrc ? (
-            <>
-              <CopyButton value={embedSrc} label="src" />
-              <CopyButton value={embedInfo.code} label="iframe" />
-            </>
-          ) : (
-            <CopyButton value={form.id} label="ID" />
-          )}
+          <div role="group" aria-label={`Copiar datos de ${title}`} className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 border-t border-[#E8E8E6] pt-1">
+            {embedSrc ? (
+              <><CopyButton value={embedSrc} label="Copiar src" variant="subtle" /><CopyButton value={embedInfo.code} label="Copiar iframe" variant="subtle" /></>
+            ) : <CopyButton value={form.id} label="Copiar ID" variant="subtle" />}
+          </div>
         </div>
       </div>
     </article>

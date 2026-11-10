@@ -56,7 +56,7 @@ export function NoWorkspaceActions() {
               )}
               {isRefreshing ? "Actualizando" : "Actualizar acceso"}
             </span>
-            <span className="mt-2 text-xs leading-5 text-[#737373]">
+            <span className="mt-2 text-sm leading-5 text-[#737373]">
               Vuelve a consultar tus permisos sin cerrar esta sesion.
             </span>
           </span>
@@ -78,7 +78,7 @@ export function NoWorkspaceActions() {
               )}
               {isSigningOut ? "Saliendo" : "Cambiar de cuenta"}
             </span>
-            <span className="mt-2 text-xs leading-5 text-[#737373]">
+            <span className="mt-2 text-sm leading-5 text-[#737373]">
               Cierra esta sesion y abre el login para usar otro correo.
             </span>
           </span>
@@ -86,7 +86,7 @@ export function NoWorkspaceActions() {
         </button>
       </div>
 
-      {error && <p className="text-xs text-[#C2412D]">{error}</p>}
+      {error && <p className="text-sm text-[#C2412D]">{error}</p>}
     </div>
   );
 }

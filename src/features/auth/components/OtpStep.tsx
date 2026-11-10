@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
   LuArrowLeft,
-  LuKeyRound,
+  LuArrowRight,
+  LuCheck,
   LuLoader,
-  LuMail,
-  LuRefreshCw,
-  LuTriangle,
+  LuCircleAlert,
 } from "react-icons/lu";
 import { toast } from "sonner";
 
@@ -22,12 +21,18 @@ type OtpStepProps = {
 };
 
 export function OtpStep({ email, onBack }: OtpStepProps) {
+  const inputId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const pendingOperation = useRef(false);
   const [otp, setOtp] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resent, setResent] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [verifyCooldown, setVerifyCooldown] = useState(0);
+  const isBusy = isLoading || isResending;
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
@@ -49,21 +54,24 @@ export function OtpStep({ email, onBack }: OtpStepProps) {
     return () => clearInterval(timer);
   }, [verifyCooldown]);
 
-  async function onSubmit() {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (pendingOperation.current || redirecting) return;
+
     if (verifyCooldown > 0) {
-      const message = loginCopy.tooManyAttempts(verifyCooldown);
-      setError(message);
-      toast.error(message);
       return;
     }
 
-    if (otp.length !== 6) {
-      setError("Ingresa los 6 dígitos del código");
+    if (!/^\d{6}$/.test(otp)) {
+      setError("Completa los 6 dígitos del código para continuar.");
+      inputRef.current?.focus();
       return;
     }
 
+    pendingOperation.current = true;
     setIsLoading(true);
     setError(null);
+    setResent(false);
 
     try {
       const result = await verifyOtpAction(email, otp);
@@ -74,7 +82,9 @@ export function OtpStep({ email, onBack }: OtpStepProps) {
           const message = loginCopy.tooManyAttempts(retryAfter);
 
           setVerifyCooldown(retryAfter);
-          setError(message);
+          setError(
+            "Has realizado demasiados intentos. Espera antes de verificar de nuevo.",
+          );
           toast.error(message);
         } else if (result.reason === "invalid-otp") {
           setError(
@@ -87,30 +97,30 @@ export function OtpStep({ email, onBack }: OtpStepProps) {
             "Has superado el número máximo de intentos. Solicita un nuevo código.",
           );
         } else {
-          setError(loginCopy.genericError);
+          setError(
+            "No pudimos verificar el acceso. Intenta de nuevo o solicita otro código.",
+          );
         }
 
-        setIsLoading(false);
         return;
       }
 
       setRedirecting(true);
-    } catch (err) {
-      const rawMessage = err instanceof Error ? err.message : "";
-      setError(rawMessage || loginCopy.genericError);
+    } catch {
+      setError("No pudimos verificar el código. Intenta nuevamente.");
+    } finally {
+      pendingOperation.current = false;
       setIsLoading(false);
     }
   }
 
   async function handleResend() {
-    if (resendCooldown > 0) {
-      const message = loginCopy.tooManyAttempts(resendCooldown);
-      setError(message);
-      toast.error(message);
-      return;
-    }
+    if (pendingOperation.current || redirecting || resendCooldown > 0) return;
 
+    pendingOperation.current = true;
+    setIsResending(true);
     setError(null);
+    setResent(false);
 
     try {
       const result = await requestOtpAction(email);
@@ -120,7 +130,7 @@ export function OtpStep({ email, onBack }: OtpStepProps) {
         const message = loginCopy.tooManyAttempts(retryAfter);
 
         setResendCooldown(retryAfter);
-        setError(message);
+        setError("Has solicitado varios códigos. Espera antes de pedir otro.");
         toast.error(message);
         return;
       }
@@ -132,14 +142,27 @@ export function OtpStep({ email, onBack }: OtpStepProps) {
       }
 
       setOtp("");
+      setResent(true);
+      setResendCooldown(30);
+      inputRef.current?.focus();
       toast.success("Te reenviamos un nuevo código de verificación");
     } catch {
-      setError(loginCopy.genericError);
-      toast.error(loginCopy.genericError);
+      const message = "No pudimos reenviar el código. Intenta nuevamente.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      pendingOperation.current = false;
+      setIsResending(false);
     }
   }
 
-  const maskedEmail = email.replace(/^(.{3}).*(@.*)$/, "$1••••••$2");
+  const emailSeparator = email.lastIndexOf("@");
+  const localPart = email.slice(0, emailSeparator);
+  const visibleCharacters = Math.min(3, Math.max(0, localPart.length - 1));
+  const maskedEmail =
+    emailSeparator > 0
+      ? `${localPart.slice(0, visibleCharacters)}•••${email.slice(emailSeparator)}`
+      : "•••";
 
   if (redirecting) {
     return (
@@ -152,100 +175,154 @@ export function OtpStep({ email, onBack }: OtpStepProps) {
   }
 
   return (
-    <div className="space-y-7">
-      {/* HEADER */}
-      <div className="space-y-5">
+    <form
+      onSubmit={onSubmit}
+      noValidate
+      aria-labelledby={`${inputId}-title`}
+      className="space-y-7 text-[#171717]"
+    >
+      <header>
         <button
           type="button"
           onClick={onBack}
-          className="group flex cursor-pointer items-center gap-2 text-xs font-medium text-black transition-colors hover:text-black"
+          disabled={isBusy}
+          className="-ml-2 mb-5 inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-sm px-2 text-sm text-[#595954] underline-offset-4 transition-colors hover:text-[#171717] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#171717] disabled:cursor-wait disabled:opacity-50 motion-reduce:transition-none"
         >
-          <LuArrowLeft className="size-3.5 transition-transform group-hover:-translate-x-0.5" />
-          Cambiar email
+          <LuArrowLeft aria-hidden="true" className="size-3.5 shrink-0" />
+          {loginCopy.otpBack}
         </button>
 
-        <div className="space-y-4">
-          <div className="flex size-10 items-center justify-center rounded-xl border border-[#FF5C35]/40">
-            <LuKeyRound className="size-5 text-[#FF5C35]" strokeWidth={1.8} />
-          </div>
-
-          <div className="space-y-1.5">
-            <h2 className="text-xl font-semibold text-black">
-              Verifica tu email
-            </h2>
-
-            <p className="max-w-sm text-sm leading-5 text-black/50">
-              Introduce el código de 6 dígitos que enviamos a tu correo
-              electrónico.
-            </p>
-          </div>
-
-          <div className="inline-flex items-center gap-2 text-sm font-medium text-black/75">
-            <LuMail className="size-5 text-black/40" />
-            <span>{maskedEmail}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* OTP */}
-      <div className="space-y-3">
-        <div className="flex justify-center">
-          <OtpInput value={otp} onChange={setOtp} />
-        </div>
-
-        <p className="text-center text-[12px] text-black">
-          El código es válido por un tiempo limitado.
+        <h2
+          id={`${inputId}-title`}
+          className="text-2xl leading-tight font-medium tracking-tight sm:text-3xl"
+        >
+          Revisa tu correo
+        </h2>
+        <p className="mt-3 text-sm leading-6 text-[#595954]">
+          Introduce el código de 6 dígitos que te enviamos.
         </p>
+
+        <div className="mt-5">
+          <p className="text-sm text-[#737373]">
+            Enviado a
+          </p>
+          <p className="mt-1 text-sm leading-6 font-medium wrap-anywhere">
+            {maskedEmail}
+          </p>
+        </div>
+      </header>
+
+      <div>
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <label htmlFor={inputId} className="text-sm font-medium">
+            {loginCopy.otpLabel}
+          </label>
+          <span aria-hidden="true" className="text-[11px] text-[#595954]">
+            6 dígitos
+          </span>
+        </div>
+        <OtpInput
+          id={inputId}
+          inputRef={inputRef}
+          value={otp}
+          onChange={(value) => {
+            setOtp(value);
+            setError(null);
+            setResent(false);
+          }}
+          readOnly={isBusy}
+          invalid={Boolean(error)}
+          describedBy={`${inputId}-hint${error ? ` ${inputId}-error` : ""}`}
+        />
+        <p
+          id={`${inputId}-hint`}
+          className="mt-3 text-sm leading-5 text-[#595954]"
+        >
+          Puedes pegar el código completo. Es válido durante 5 minutos.
+        </p>
+
+        <div aria-live="polite" aria-atomic="true">
+          {error && (
+            <p
+              id={`${inputId}-error`}
+              className="mt-4 flex items-start gap-2 border-l-2 border-[#B42318] bg-[#FFF4F2] px-3 py-3 text-sm leading-5 text-[#9B231B]"
+            >
+              <LuCircleAlert
+                aria-hidden="true"
+                className="mt-0.5 size-4 shrink-0"
+              />
+              <span>{error}</span>
+            </p>
+          )}
+          {resent && (
+            <p className="mt-4 flex items-start gap-2 text-sm leading-5 text-[#356044]">
+              <LuCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+              Enviamos otro código. Usa el más reciente.
+            </p>
+          )}
+        </div>
       </div>
 
-      {/* ERROR */}
-      {error && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-xs leading-5 text-rose-600">
-          <LuTriangle className="mt-0.5 size-3.5 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {/* PRIMARY ACTION */}
       <button
-        type="button"
-        onClick={onSubmit}
-        disabled={isLoading || verifyCooldown > 0}
-        className="flex w-full cursor-pointer items-center justify-center rounded-xl bg-[#FF5C35] py-3.5 text-sm font-semibold text-white transition-all hover:bg-[#f4512b] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+        type="submit"
+        disabled={isBusy || verifyCooldown > 0}
+        aria-label={isLoading ? "Verificando código" : undefined}
+        className="flex min-h-13 text-white w-full cursor-pointer items-center justify-between gap-3 rounded-md border border-transparent bg-[#FF5C35] px-4 py-3.5 text-left text-sm font-semibold transition-colors hover:bg-[#F4512B] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#171717] disabled:cursor-not-allowed disabled:border-[#D1D1CD] disabled:bg-[#F0F0ED] disabled:text-[#65655F] motion-reduce:transition-none"
       >
         {isLoading ? (
-          <span className="flex items-center gap-2">
-            <LuLoader className="size-4 animate-spin" />
-            Verificando...
-          </span>
+          <>
+            <span>Verificando código…</span>
+            <LuLoader
+              aria-hidden="true"
+              className="size-4 shrink-0 animate-spin motion-reduce:animate-none"
+            />
+          </>
         ) : verifyCooldown > 0 ? (
-          `Reintentar en ${verifyCooldown}s`
+          <span aria-live="off">Reintentar en {verifyCooldown}s</span>
         ) : (
-          "Verificar código"
+          <>
+            <span>Verificar y entrar</span>
+            <LuArrowRight aria-hidden="true" className="size-4 shrink-0" />
+          </>
         )}
       </button>
 
-      {/* RESEND */}
-      <div className="flex items-center justify-between gap-2 text-center">
-        <span className="text-xs text-black">¿No recibiste el código?</span>
-
-        <button
-          type="button"
-          onClick={handleResend}
-          disabled={resendCooldown > 0}
-          className="flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-black/65 transition-colors hover:text-[#FF5C35] disabled:cursor-not-allowed disabled:text-black/30"
-        >
-          <LuRefreshCw
-            className={`size-3.5 ${
-              resendCooldown > 0 ? "" : "transition-transform hover:rotate-45"
-            }`}
-          />
-
-          {resendCooldown > 0
-            ? `Puedes reenviar en ${resendCooldown}s`
-            : "Reenviar código"}
-        </button>
-      </div>
-    </div>
+      <footer className="border-t border-[#E8E8E6] pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-x-3">
+          <p className="text-sm font-medium">¿No llegó el correo?</p>
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={isBusy || resendCooldown > 0}
+            aria-label={isResending ? "Reenviando código" : undefined}
+            className="-ml-1 inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-sm px-1 text-sm font-semibold text-[#171717] underline decoration-[#FF5C35] decoration-2 underline-offset-4 transition-colors hover:text-[#A53318] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#171717] disabled:cursor-not-allowed disabled:text-[#65655F] disabled:no-underline motion-reduce:transition-none"
+          >
+            {isResending ? (
+              <>
+                <LuLoader
+                  aria-hidden="true"
+                  className="size-3.5 animate-spin motion-reduce:animate-none"
+                />
+                <span>Reenviando…</span>
+              </>
+            ) : resendCooldown > 0 ? (
+              <span aria-live="off">Reenviar en {resendCooldown}s</span>
+            ) : (
+              loginCopy.otpResend
+            )}
+          </button>
+        </div>
+        <p className="text-sm leading-5 text-[#595954]">
+          Revisa también la carpeta de spam.
+        </p>
+        <p role="status" className="sr-only">
+          {isLoading
+            ? "Verificando código."
+            : isResending
+              ? "Reenviando código."
+              : ""}
+        </p>
+      </footer>
+    </form>
   );
 }

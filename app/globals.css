@@ -79,3 +79,9 @@ body {
 .animate-infinite-loading {
   animation: infinite-loading 1.5s infinite linear;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-infinite-loading {
+    animation: none;
+  }
+}

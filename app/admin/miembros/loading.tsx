@@ -1,27 +1,14 @@
+import { AdminHeaderSkeleton, AdminTableSkeleton, WorkspaceAccessFormSkeleton } from "@/features/admin/components/AdminLoadingSkeletons";
+
 export default function AdminMembersLoading() {
   return (
-    <div className="space-y-6 animate-pulse" aria-hidden>
-      <div className="space-y-2">
-        <div className="h-8 w-64 rounded-md bg-[#E5E5E5]" />
-        <div className="h-4 w-96 rounded-md bg-[#E5E5E5]" />
-      </div>
-
-      <div className="rounded-xl border border-[#E5E5E5] bg-[#FFFFFF] p-6">
-        <div className="h-5 w-44 rounded-md bg-[#E5E5E5]" />
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <div className="h-10 rounded-lg bg-[#F5F5F5]" />
-          <div className="h-10 rounded-lg bg-[#F5F5F5]" />
-          <div className="h-24 rounded-lg bg-[#F5F5F5] md:col-span-2" />
-          <div className="h-10 w-36 rounded-lg bg-[#E5E5E5]" />
-        </div>
-      </div>
-
-      <div className="rounded-xl border border-[#E5E5E5] bg-[#FFFFFF] p-6">
-        <div className="h-5 w-52 rounded-md bg-[#E5E5E5]" />
-        <div className="mt-4 space-y-3">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="h-12 rounded-lg bg-[#F5F5F5]" />
-          ))}
+    <div className="relative min-w-0">
+      <p role="status" className="sr-only">Cargando miembros y accesos a workspaces.</p>
+      <div aria-hidden="true" className="min-w-0 animate-pulse motion-reduce:animate-none">
+        <AdminHeaderSkeleton />
+        <div className="min-w-0 space-y-6">
+          <WorkspaceAccessFormSkeleton withEmail />
+          <AdminTableSkeleton members />
         </div>
       </div>
     </div>

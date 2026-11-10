@@ -33,8 +33,9 @@ export function LogoutButton({ variant = "default" }: LogoutButtonProps) {
     return (
       <LoaderRedirect
         redirectTo="/auth/login"
+        variant="logout"
         title="Hasta pronto"
-        description="Cerrando tu sesión..."
+        description="Puedes volver a entrar cuando lo necesites."
       />
     );
   }
@@ -48,32 +49,26 @@ export function LogoutButton({ variant = "default" }: LogoutButtonProps) {
         onClick={handleLogout}
         disabled={isPending}
         aria-label="Cerrar sesión"
+        aria-busy={isPending}
         title="Cerrar sesión"
-        className={
-          isWorkspaceDock
-            ? "group relative flex min-h-14 cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1 text-[9px] font-medium text-black/45 transition-colors duration-200 hover:text-[#FF5C35] disabled:cursor-not-allowed disabled:opacity-50 min-[390px]:text-[10px]"
-            : "group relative flex min-h-14 cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl px-1 py-1 text-[9px] font-medium text-[#737373] transition-colors duration-200 hover:text-[#171717] disabled:cursor-not-allowed disabled:opacity-50 min-[390px]:text-[10px]"
-        }
+        className={`flex h-full min-h-16 min-w-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg px-0.5 py-1 font-medium leading-4 text-[#595954] transition-colors hover:bg-[#F5F5F5] hover:text-[#A33116] focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[#A33116] disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none ${isWorkspaceDock ? "text-sm min-[390px]:text-sm" : "text-[10px] min-[390px]:text-xs"}`}
       >
-        <span className="flex size-7 items-center justify-center">
+        <span className="flex size-8 items-center justify-center">
           {isPending ? (
-            <LuLoader className="size-4 animate-spin" />
+            <LuLoader
+              aria-hidden="true"
+              className="size-5 animate-spin motion-reduce:animate-none"
+            />
           ) : (
-            <LuLogOut className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+            <LuLogOut aria-hidden="true" className="size-5" />
           )}
         </span>
 
-        <span className="max-w-full truncate leading-none">
+        <span
+          className={`max-w-full text-center ${isWorkspaceDock ? "text-sm" : "tracking-tight"}`}
+        >
           {isPending ? "Saliendo" : "Salir"}
         </span>
-
-        <span
-          className={
-            isWorkspaceDock
-              ? "absolute bottom-1 left-1/2 h-0.5 w-0 -translate-x-1/2 rounded-full bg-[#FF5C35] opacity-0 transition-all duration-200 group-hover:w-4 group-hover:opacity-100"
-              : "absolute bottom-1 left-1/2 h-0.5 w-0 -translate-x-1/2 rounded-full bg-[#18181B] opacity-0 transition-all duration-200 group-hover:w-4 group-hover:opacity-100"
-          }
-        />
       </button>
     );
   }
@@ -88,13 +83,15 @@ export function LogoutButton({ variant = "default" }: LogoutButtonProps) {
           className="group flex w-full cursor-pointer items-center gap-2.5 rounded-lg border border-[#E5E5E5] bg-[#F5F5F5] px-3.5 py-2.5 text-left text-sm font-medium text-[#171717] transition-all duration-200 hover:bg-[#27272A] hover:text-white active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isPending ? (
-            <LuLoader className="size-4 shrink-0 animate-spin" />
+            <LuLoader className="size-5 shrink-0 animate-spin" />
           ) : (
-            <LuLogOut className="size-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
+            <LuLogOut className="size-5 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
           )}
           <span>{isPending ? "Cerrando sesión..." : "Cerrar sesión"}</span>
         </button>
-        {error && <p className="px-3 text-xs leading-5 text-[#DC2626]">{error}</p>}
+        {error && (
+          <p className="px-3 text-sm leading-5 text-[#DC2626]">{error}</p>
+        )}
       </div>
     );
   }
@@ -108,15 +105,15 @@ export function LogoutButton({ variant = "default" }: LogoutButtonProps) {
         className="group flex w-full cursor-pointer items-center gap-2.5 bg-[#FF5C35] px-3.5 py-2.5 text-left text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-[#f4512b] hover:shadow-md active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isPending ? (
-          <LuLoader className="size-4 shrink-0 animate-spin" />
+          <LuLoader className="size-5 shrink-0 animate-spin" />
         ) : (
-          <LuLogOut className="size-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
+          <LuLogOut className="size-5 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
         )}
 
         <span>{isPending ? "Cerrando sesión..." : "Cerrar sesión"}</span>
       </button>
 
-      {error && <p className="px-3 text-xs leading-5 text-rose-500">{error}</p>}
+      {error && <p className="px-3 text-sm leading-5 text-rose-500">{error}</p>}
     </div>
   );
 }

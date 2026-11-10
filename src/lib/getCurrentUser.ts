@@ -1,8 +1,10 @@
+import { cache } from "react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 
-export async function getCurrentUser() {
+// Memoizado por petición: layout, página y servicios comparten la misma consulta.
+export const getCurrentUser = cache(async () => {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -18,6 +20,5 @@ export async function getCurrentUser() {
       globalRole: true,
     },
   });
-  
   return user;
-}
+});

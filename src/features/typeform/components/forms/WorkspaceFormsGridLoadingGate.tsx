@@ -1,39 +1,47 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
-
-export const WORKSPACE_FORMS_GRID_LOADING_EVENT =
-  "workspace-forms-grid-loading";
+import { createContext, useContext, useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 
 type WorkspaceFormsGridLoadingGateProps = {
   children: ReactNode;
 };
 
-type WorkspaceFormsGridLoadingEventDetail = {
-  isLoading: boolean;
+type GridOperation = {
+  busy: boolean;
+  acquire: () => boolean;
+  release: () => void;
+  run: <T>(task: () => Promise<T>) => Promise<T>;
 };
+
+const GridOperationContext = createContext<GridOperation | null>(null);
+
+export function useWorkspaceFormsGridOperation() {
+  return useContext(GridOperationContext);
+}
 
 function WorkspaceFormCardSkeleton() {
   return (
-    <article className="rounded-2xl border border-[#E8E8E6] bg-white p-4 shadow-[0_8px_30px_-18px_rgba(0,0,0,0.18)] sm:p-5">
+    <article className="flex min-w-0 animate-pulse flex-col rounded-md border border-[#FF5C35]/30 bg-white p-4 motion-reduce:animate-none sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-3">
-          <div className="h-5 w-4/5 animate-pulse rounded-full bg-[#E8E8E6]" />
-          <div className="h-4 w-full animate-pulse rounded-full bg-[#F0F0EF]" />
-          <div className="flex gap-1.5">
-            <div className="h-7 w-14 animate-pulse rounded-lg bg-[#F0F0EF]" />
-            <div className="h-7 w-20 animate-pulse rounded-lg bg-[#F0F0EF]" />
-          </div>
+          <div className="h-5 w-4/5 rounded-sm bg-[#E8E8E6]" />
+          <div className="h-5 w-full rounded-sm bg-[#E8E8E6]" />
+          <div className="h-4 w-24 max-w-full rounded-sm bg-[#F0F0EF]" />
         </div>
 
-        <div className="flex shrink-0 flex-col gap-2">
-          <div className="size-11 animate-pulse rounded-xl bg-[#FFF4F0] sm:size-9" />
-          <div className="size-11 animate-pulse rounded-xl bg-[#F7F7F6] sm:size-9" />
-        </div>
+        <div className="size-11 shrink-0 rounded-md bg-[#FFF1EC]" />
       </div>
 
-      <div className="mt-5 h-4 w-40 animate-pulse rounded-full bg-[#F0F0EF]" />
-      <div className="mt-4 h-8 w-28 animate-pulse rounded-xl bg-[#F7F7F6]" />
+      <div className="mt-5 h-4 w-32 max-w-full rounded-sm bg-[#F0F0EF]" />
+      <div className="mt-2 h-4 w-40 max-w-full rounded-sm bg-[#F0F0EF]" />
+      <div className="mt-5 space-y-3 border-t border-[#E8E8E6] pt-4">
+        <div className="h-11 w-full rounded-md bg-[#FFF1EC]" />
+        <div className="h-11 w-32 max-w-full rounded-sm bg-[#F0F0EF]" />
+        <div className="flex gap-4 border-t border-[#E8E8E6] pt-3">
+          <div className="h-6 w-20 max-w-full rounded-sm bg-[#F0F0EF]" />
+          <div className="h-6 w-20 max-w-full rounded-sm bg-[#F0F0EF]" />
+        </div>
+      </div>
     </article>
   );
 }
@@ -54,24 +62,46 @@ function WorkspaceFormsGridSkeleton() {
 export function WorkspaceFormsGridLoadingGate({
   children,
 }: WorkspaceFormsGridLoadingGateProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [reserved, setReserved] = useState(false);
+  const lock = useRef(false);
+  const transitionActive = useRef(false);
+  const [isLoading, startTransition] = useTransition();
 
   useEffect(() => {
-    function handleLoading(event: Event) {
-      const customEvent = event as CustomEvent<WorkspaceFormsGridLoadingEventDetail>;
-      setIsLoading(Boolean(customEvent.detail?.isLoading));
-    }
+    transitionActive.current = isLoading;
+    if (!isLoading && !reserved) lock.current = false;
+  }, [isLoading, reserved]);
 
-    window.addEventListener(WORKSPACE_FORMS_GRID_LOADING_EVENT, handleLoading);
+  function acquire() {
+    if (lock.current) return false;
+    lock.current = true;
+    setReserved(true);
+    return true;
+  }
 
-    return () => {
-      window.removeEventListener(WORKSPACE_FORMS_GRID_LOADING_EVENT, handleLoading);
-    };
-  }, []);
+  function release() {
+    setReserved(false);
+    if (!transitionActive.current) lock.current = false;
+  }
+
+  function run<T>(task: () => Promise<T>): Promise<T> {
+    transitionActive.current = true;
+    return new Promise<T>((resolve, reject) => {
+      startTransition(async () => {
+        try {
+          resolve(await task());
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
+  }
 
   return (
-    <div className="relative">
+    <GridOperationContext value={{ busy: reserved || isLoading, acquire, release, run }}>
+    <div className="relative" aria-busy={isLoading}>
       <div
+        inert={isLoading}
         className={
           isLoading
             ? "pointer-events-none opacity-0 transition-opacity"
@@ -89,5 +119,6 @@ export function WorkspaceFormsGridLoadingGate({
         </div>
       )}
     </div>
+    </GridOperationContext>
   );
 }

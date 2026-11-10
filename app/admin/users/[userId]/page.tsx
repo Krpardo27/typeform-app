@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/getCurrentUser";
 import { prisma } from "@/lib/prisma";
 import { AdminPageHeader } from "@/features/admin/components/AdminPageHeader";
 import { UserWorkspaceForm } from "@/features/admin/workspaces/components/UserWorkspaceForm";
+import { getAvailableAppWorkspaceWhere } from "@/features/admin/workspaces/services/workspace-availability";
 
 export default async function AdminUserPage({
   params,
@@ -20,24 +21,21 @@ export default async function AdminUserPage({
   }
 
   const { userId } = await params;
+  const workspaceWhere = await getAvailableAppWorkspaceWhere();
   const [user, workspaces] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       include: {
         workspaces: {
           where: {
-            workspace: {
-              createdFromApp: true,
-            },
+            workspace: workspaceWhere,
           },
           include: { workspace: true },
         },
       },
     }),
     prisma.workspace.findMany({
-      where: {
-        createdFromApp: true,
-      },
+      where: workspaceWhere,
       orderBy: { name: "asc" },
     }),
   ]);
@@ -52,7 +50,7 @@ export default async function AdminUserPage({
   }));
 
   return (
-    <div className="text-zinc-100">
+    <div className="text-[#171717]">
       <AdminPageHeader
         eyebrow=""
         title={user.name || "Sin nombre"}
@@ -60,8 +58,8 @@ export default async function AdminUserPage({
         backHref="/admin/users"
         backLabel="Volver a usuarios"
         actions={
-        <span className="rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-400">
-          {user.globalRole}
+        <span className="border-l-2 border-[#FF5C35]/50 pl-3 text-sm leading-5 text-[#595954]">
+          {user.globalRole === "SUPER_ADMIN" ? "Superadministrador" : "Usuario"}
         </span>
         }
       />

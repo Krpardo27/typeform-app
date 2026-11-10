@@ -38,8 +38,6 @@ export const auth = betterAuth({
       disableSignUp: false,
 
       async sendVerificationOTP({ email, otp, type }) {
-        console.log("[AUTH] OTP REQUEST RECEIVED", { email, type });
-
         const isAllowed = await prisma.allowedUser.findFirst({
           where: { email: { equals: email, mode: "insensitive" } },
         });
@@ -48,13 +46,6 @@ export const auth = betterAuth({
           select: { status: true },
         });
         const canReceiveOtp = Boolean(isAllowed) && existingUser?.status !== "REJECTED";
-
-        console.log("[AUTH] Allowed user check:", {
-          email,
-          isAllowed: !!isAllowed,
-          userStatus: existingUser?.status ?? null,
-          canReceiveOtp,
-        });
 
         await createAuditLog({
           action: "OTP_REQUESTED",
@@ -69,20 +60,16 @@ export const auth = betterAuth({
         });
 
         if (!canReceiveOtp) {
-          console.log("[AUTH] BLOCKED: email not authorized for OTP");
           await prisma.verification.deleteMany({
             where: { identifier: `${type}-otp-${email.toLowerCase()}` },
           });
           return;
         }
 
-        console.log("[AUTH] SENDING OTP EMAIL");
-
         try {
           await AuthEmailService.sendOtpEmail({ email, otp });
-          console.log("[AUTH] OTP EMAIL SENT SUCCESSFULLY");
         } catch (err) {
-          console.error("[AUTH] OTP EMAIL FAILED", err);
+          console.error("[AUTH] OTP EMAIL FAILED", err instanceof Error ? err.message : "unknown");
         }
       },
     }),

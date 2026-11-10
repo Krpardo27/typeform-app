@@ -10,10 +10,13 @@ export default function WorkspacesPageClient() {
   return (
     <>
       <button
+        type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 cursor-pointer rounded-lg bg-[#18181B] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#27272A]"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-md bg-[#FF5C35] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#F4512B] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#171717] motion-reduce:transition-none"
       >
-        <LuPlus className="size-4" />
+        <LuPlus aria-hidden="true" className="size-4 shrink-0" />
         Crear workspace
       </button>
 
