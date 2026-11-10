@@ -1,212 +1,75 @@
-"use client";
-
+import Link from "next/link";
+import { LuArrowRight, LuCircleAlert } from "react-icons/lu";
+import type { AuditTimelineEvent } from "@/features/admin/audit/services/audit-timeline.service";
 import {
-  createColumnHelper,
-  createPaginatedRowModel,
-  createSortedRowModel,
-  rowPaginationFeature,
-  rowSortingFeature,
-  tableFeatures,
-  useTable,
-} from "@tanstack/react-table";
-import { ResponseTablePagination } from "@/features/typeform/components/responses/ResponseTablePagination";
-import { type AuditTimelineEvent } from "@/features/admin/audit/services/audit-timeline.service";
-import { LuArrowDown, LuArrowUp, LuChevronsUpDown } from "react-icons/lu";
+  DASHBOARD_ACTIVITY_LIMIT,
+  formatDashboardDate,
+  getActivityContext,
+  getActivityTone,
+} from "./dashboard.utils";
 
 type Props = {
   timeline: AuditTimelineEvent[];
 };
 
-const RECENT_ACTIVITY_TABLE_FEATURES = tableFeatures({
-  rowPaginationFeature,
-  rowSortingFeature,
-  paginatedRowModel: createPaginatedRowModel(),
-  sortedRowModel: createSortedRowModel(),
-});
-
-const recentActivityColumnHelper = createColumnHelper<
-  typeof RECENT_ACTIVITY_TABLE_FEATURES,
-  AuditTimelineEvent
->();
-
-const RECENT_ACTIVITY_COLUMNS = recentActivityColumnHelper.columns([
-  recentActivityColumnHelper.accessor((event) => event.title, {
-    id: "event",
-    header: "Evento",
-  }),
-  recentActivityColumnHelper.accessor((event) => `${event.detail} ${event.actor}`, {
-    id: "detail",
-    header: "Detalle",
-  }),
-  recentActivityColumnHelper.accessor((event) => event.createdAt.getTime(), {
-    id: "createdAt",
-    header: "Fecha",
-    sortDescFirst: true,
-  }),
-]);
-
-function getSortingLabel(sortDirection: false | "asc" | "desc") {
-  if (sortDirection === "asc") return "Orden ascendente";
-  if (sortDirection === "desc") return "Orden descendente";
-  return "Sin orden";
-}
-
-function getSortIcon(sortDirection: false | "asc" | "desc") {
-  if (sortDirection === "asc") return LuArrowUp;
-  if (sortDirection === "desc") return LuArrowDown;
-  return LuChevronsUpDown;
-}
-
-function formatDate(value: Date) {
-  return new Intl.DateTimeFormat("es-CL", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(value);
-}
-
-function getEventBadgeClass(action: string, metadata: unknown) {
-  if (metadata && typeof metadata === "object") {
-    const eventType = (metadata as Record<string, unknown>).eventType;
-    if (eventType === "MEMBER_AUTHORIZED")
-      return "bg-[#16A34A]/10 text-[#16A34A]";
-    if (eventType === "MEMBER_REVOKED")
-      return "bg-[#DC2626]/10 text-[#DC2626]";
-    if (eventType === "OTP_RATE_LIMITED")
-      return "bg-[#CA8A04]/10 text-[#CA8A04]";
-  }
-  const map: Record<string, string> = {
-    WINNER_SELECTED:     "bg-[#16A34A]/10 text-[#16A34A]",
-    SENSITIVE_DATA_VIEWED: "bg-[#DC2626]/10 text-[#DC2626]",
-    FORM_CLONED:         "bg-sky-100 text-sky-700",
-    OTP_REQUESTED:       "bg-violet-100 text-violet-700",
-    LOGIN_SESSION_CREATED: "bg-sky-100 text-sky-700",
-  };
-  return map[action] ?? "bg-[#F5F5F5] text-[#737373]";
-}
+const titleColors = {
+  neutral: "text-[#171717]",
+  attention: "text-[#854D0E]",
+  critical: "text-[#9B231B]",
+};
 
 export function DashboardRecentActivity({ timeline }: Props) {
-  const activityTable = useTable({
-    features: RECENT_ACTIVITY_TABLE_FEATURES,
-    data: timeline,
-    columns: RECENT_ACTIVITY_COLUMNS,
-    initialState: {
-      pagination: {
-        pageIndex: 0,
-        pageSize: Math.min(5, Math.max(1, timeline.length)),
-      },
-      sorting: [{ id: "createdAt", desc: true }],
-    },
-    getRowId: (event: AuditTimelineEvent) => `${event.source}-${event.id}`,
-  });
+  const recentEvents = timeline.slice(0, DASHBOARD_ACTIVITY_LIMIT);
 
   return (
-    <div className="rounded-xl border border-[#E5E5E5] bg-[#FFFFFF]">
-      <div className="flex items-center justify-between border-b border-[#E5E5E5] px-6 py-4">
-        <h2 className="text-base font-semibold text-[#171717]">
-          Actividad Reciente
-        </h2>
-        <span className="text-xs text-[#737373]">Últimos eventos</span>
+    <section aria-labelledby="recent-activity-title" className="rounded-md border border-[#D1D1CD] bg-white">
+      <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-2 border-b border-[#E8E8E6] px-5 py-4">
+        <div>
+          <h2 id="recent-activity-title" className="text-base font-semibold text-[#171717]">
+            Actividad reciente
+          </h2>
+          <p className="mt-1 text-sm leading-5 text-[#595954]">
+            Últimos {DASHBOARD_ACTIVITY_LIMIT} eventos de auditoría y sesiones registradas.
+          </p>
+        </div>
+        <Link
+          href="/admin/auditoria"
+          className="inline-flex min-h-11 items-center gap-2 rounded-sm text-sm font-medium text-[#A53318] underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF5C35]"
+        >
+          Ver auditoría
+          <LuArrowRight aria-hidden="true" className="size-4 shrink-0" />
+        </Link>
       </div>
-      {timeline.length === 0 ? (
-        <p className="px-6 py-10 text-center text-sm text-[#737373]">
-          Todavía no hay eventos registrados.
-        </p>
+      {recentEvents.length === 0 ? (
+        <div className="px-5 py-8">
+          <p className="text-sm font-medium text-[#171717]">Todavía no hay actividad.</p>
+          <p className="mt-2 max-w-lg text-sm leading-6 text-[#595954]">
+            Aquí aparecerán las acciones registradas y los nuevos accesos a la plataforma.
+          </p>
+        </div>
       ) : (
-        <>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-160 border-collapse lg:min-w-190">
-              <colgroup>
-                <col className="w-48" />
-                <col />
-                <col className="w-56" />
-              </colgroup>
-
-              <thead className="bg-[#FBFBFA]">
-                {activityTable.getHeaderGroups().map((headerGroup) => (
-                  <tr
-                    key={headerGroup.id}
-                    className="border-b border-[#E5E5E5]"
-                  >
-                    {headerGroup.headers.map((header) => (
-                      <th
-                        key={header.id}
-                        scope="col"
-                        className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-[#737373] sm:px-5"
-                      >
-                        {header.isPlaceholder ? null : header.column.getCanSort() ? (() => {
-                          const sortDirection = header.column.getIsSorted();
-                          const SortIcon = getSortIcon(sortDirection);
-
-                          return (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                activityTable.setPageIndex(0);
-                                header.column.toggleSorting();
-                              }}
-                              className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-1 text-left transition-colors ${
-                                sortDirection
-                                  ? "bg-[#F5F5F5] text-[#171717]"
-                                  : "text-[#737373] hover:bg-[#F5F5F5] hover:text-[#171717]"
-                              }`}
-                              aria-label={`Ordenar por ${String(header.column.columnDef.header)}. ${getSortingLabel(sortDirection)}`}
-                            >
-                              <activityTable.FlexRender header={header} />
-                              <SortIcon
-                                className={`size-3.5 transition-colors ${
-                                  sortDirection
-                                    ? "text-[#171717]"
-                                    : "text-[#737373]/50"
-                                }`}
-                              />
-                            </button>
-                          );
-                        })() : (
-                          <activityTable.FlexRender header={header} />
-                        )}
-                      </th>
-                    ))}
-                  </tr>
-                ))}
-              </thead>
-
-              <tbody>
-                {activityTable.getPaginatedRowModel().rows.map((row) => {
-                  const event = row.original;
-
-                  return (
-                    <tr
-                      key={row.id}
-                      className="border-b border-[#E5E5E5] transition-colors last:border-b-0 hover:bg-[#F5F5F5]"
-                    >
-                      <td className="px-4 py-3 align-middle sm:px-5">
-                        <span
-                          className={`inline-flex max-w-full items-center truncate rounded px-2 py-0.5 text-xs font-medium ${getEventBadgeClass(event.action, event.metadata)}`}
-                        >
-                          {event.title}
-                        </span>
-                      </td>
-                      <td className="min-w-0 px-4 py-3 align-middle sm:px-5">
-                        <p className="truncate text-sm text-[#171717]">
-                          {event.detail}
-                        </p>
-                        <p className="truncate text-xs text-[#737373]">
-                          {event.actor}
-                        </p>
-                      </td>
-                      <td className="px-4 py-3 align-middle text-xs text-[#737373] sm:px-5">
-                        {formatDate(event.createdAt)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          <ResponseTablePagination table={activityTable} />
-        </>
+        <ol aria-label="Eventos más recientes, del más nuevo al más antiguo" className="divide-y divide-[#E8E8E6]">
+          {recentEvents.map((event) => {
+            const tone = getActivityTone(event);
+            return (
+              <li key={`${event.source}-${event.id}`} className="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+                <div className="min-w-0">
+                  <p className={`flex items-start gap-2 text-sm leading-6 font-medium ${titleColors[tone]}`}>
+                    {tone !== "neutral" && <LuCircleAlert aria-hidden="true" className="mt-1 size-4 shrink-0" />}
+                    <span className="wrap-anywhere">{event.title}</span>
+                  </p>
+                  <p className="mt-1 text-sm leading-5 text-[#595954] wrap-anywhere">
+                    {getActivityContext(event)}
+                  </p>
+                </div>
+                <time dateTime={event.createdAt.toISOString()} className="shrink-0 text-sm leading-6 text-[#595954] sm:text-right">
+                  {formatDashboardDate(event.createdAt)} UTC
+                </time>
+              </li>
+            );
+          })}
+        </ol>
       )}
-    </div>
+    </section>
   );
 }

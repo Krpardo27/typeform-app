@@ -3,55 +3,48 @@ import { LuRadio } from "react-icons/lu";
 type WorkspaceHomeHeaderProps = {
   workspaceName: string;
   workspaceRole: string;
-  currentUserEmail?: string | null;
 };
 
 export function WorkspaceHomeHeader({
   workspaceName,
   workspaceRole,
-  currentUserEmail,
 }: WorkspaceHomeHeaderProps) {
-  const userEmail = currentUserEmail ?? "Sin email";
+  const displayName = workspaceName.trim() || "Radio sin nombre";
+  const role = workspaceRole.trim().toUpperCase();
+  const isEditor = role === "EDITOR";
+  const roleLabel = isEditor
+    ? "Editor"
+    : role === "VIEWER"
+      ? "Lector"
+      : "Sin rol definido";
 
   return (
-    <header className="mt-6 border-b border-[#F5F5F5] space-y-12">
-      {/* Eyebrow */}
-      <div className="flex items-center gap-2 text-[14px] font-semibold uppercase tracking-[0.14em] text-black/40">
-        <LuRadio className="size-3.5 shrink-0 text-[#FF5C35]" />
-        <span>Workspace</span>
-      </div>
-
-      <div className="mt-3 flex flex-col gap-5 sm:mt-4 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
-        {/* Main information */}
-        <div className="min-w-0">
-          <h1 className="truncate text-2xl font-semibold tracking-tight text-black sm:text-3xl">
-            {workspaceName}
-          </h1>
-
-          <p className="mt-1.5 max-w-2xl text-sm leading-6 text-black/50 sm:mt-2">
-            Administra los formularios disponibles para esta radio o marca.
-          </p>
+    <header className="mt-6 min-w-0 border-b border-[#E5E5E5] pb-5">
+      <div className="min-w-0">
+        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-[#737373]">
+            <LuRadio
+              aria-hidden="true"
+              className="size-3.5 shrink-0 text-[#FF5C35]"
+            />
+            <span>Workspace</span>
+          </div>
+          <dl className="border-l border-[#D1D1CD] pl-3 text-sm leading-5 text-[#595954]">
+            <div>
+              <dt className="sr-only">Rol</dt>
+              <dd>{roleLabel}</dd>
+            </div>
+          </dl>
         </div>
 
-        {/* Workspace context */}
-        <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 text-md sm:w-auto sm:flex-nowrap sm:gap-4">
-          <div className="flex items-center gap-1.5">
-            <span className="text-black/40 text-md">Rol: </span>
-            <span className="font-semibold text-black/75">{workspaceRole}</span>
-          </div>
-
-          <span className="hidden h-3.5 w-px bg-black/10 sm:block" />
-
-          <div className="flex min-w-0 items-center gap-1.5">
-            <span className="text-black/40 text-md">Usuario: </span>
-            <span
-              className="max-w-[180px] truncate font-medium text-black sm:max-w-56"
-              title={userEmail}
-            >
-              {userEmail}
-            </span>
-          </div>
-        </div>
+        <h1 className="wrap-anywhere text-2xl font-semibold leading-tight tracking-tight text-[#171717]">
+          {displayName}
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-[#595954]">
+          {isEditor
+            ? "Gestiona los formularios y consulta las respuestas de esta radio."
+            : "Consulta los formularios y las respuestas de esta radio."}
+        </p>
       </div>
     </header>
   );

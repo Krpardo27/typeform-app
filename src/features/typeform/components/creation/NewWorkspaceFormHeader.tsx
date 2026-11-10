@@ -13,8 +13,8 @@ export function NewWorkspaceFormHeader({ workspaceId, workspaceName }: Props) {
       backLabel="Volver a formularios"
       eyebrow={
         <>
-          <LuFilePlus2 className="size-3.5 text-[#FF5C35]" />
-          <span className="truncate">{workspaceName}</span>
+          <LuFilePlus2 aria-hidden="true" className="size-3.5 shrink-0 text-[#FF5C35]" />
+          <span className="min-w-0 wrap-anywhere">{workspaceName}</span>
         </>
       }
       title="Crear formulario"

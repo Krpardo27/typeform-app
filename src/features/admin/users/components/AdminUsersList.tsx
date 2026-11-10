@@ -24,6 +24,7 @@ type AdminUser = {
       id: string;
       name: string;
       typeformId: string;
+      templateFormTypeformId?: string | null;
     };
   }[];
 };
@@ -93,8 +94,9 @@ export function AdminUsersList({ users, currentUserId }: AdminUsersListProps) {
   const columnCount = usersTable.getAllLeafColumns().length;
 
   return (
-    <section className="overflow-hidden rounded-xl border border-[#E5E5E5] bg-[#FFFFFF]">
-      <div className="overflow-x-auto">
+    <section className="min-w-0 max-w-full overflow-hidden rounded-xl border border-[#E5E5E5] bg-[#FFFFFF]">
+      {/* Mantiene los textos sr-only dentro del scroll, no del viewport. */}
+      <div className="relative w-full max-w-full overflow-x-auto">
         <table className="w-full min-w-180 border-collapse lg:min-w-220">
           <colgroup>
             <col className="w-80" />
@@ -113,7 +115,7 @@ export function AdminUsersList({ users, currentUserId }: AdminUsersListProps) {
                   <th
                     key={header.id}
                     scope="col"
-                    className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-[#737373] last:text-right sm:px-5"
+                    className="px-4 py-3 text-left text-sm font-semibold uppercase tracking-wider text-[#737373] last:text-right sm:px-5"
                   >
                     {header.isPlaceholder ? null : header.column.getCanSort() ? (() => {
                       const sortDirection = header.column.getIsSorted();

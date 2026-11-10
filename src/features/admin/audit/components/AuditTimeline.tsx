@@ -242,7 +242,7 @@ export function AuditTimeline({ timeline }: Props) {
         <>
           <div className="border-b border-[#E5E5E5] bg-white px-4 py-3 sm:px-5">
             <label className="block max-w-md">
-              <span className="text-xs font-medium uppercase tracking-wider text-[#737373]">
+              <span className="text-sm font-medium uppercase tracking-wider text-[#737373]">
                 Buscar en auditoría
               </span>
               <input
@@ -344,7 +344,7 @@ export function AuditTimeline({ timeline }: Props) {
                         <div className="flex min-w-0 items-center gap-2 text-[#171717]">
                           <Icon className={`size-4 shrink-0 ${style.icon}`} />
                           <span
-                            className={`inline-flex max-w-full items-center truncate rounded px-2 py-0.5 text-xs font-medium ${style.badge}`}
+                            className={`inline-flex max-w-full items-center truncate rounded px-2 py-0.5 text-sm font-medium ${style.badge}`}
                           >
                             {event.title}
                           </span>
@@ -356,7 +356,7 @@ export function AuditTimeline({ timeline }: Props) {
                           {event.actor}
                         </p>
                         {event.userAgent && (
-                          <p className="mt-1 truncate text-xs text-[#737373]">
+                          <p className="mt-1 truncate text-sm text-[#737373]">
                             {event.userAgent}
                           </p>
                         )}
@@ -367,17 +367,17 @@ export function AuditTimeline({ timeline }: Props) {
                           {event.detail}
                         </p>
                         {winnerCount && (
-                          <p className="mt-1 text-xs text-[#16A34A]">
+                          <p className="mt-1 text-sm text-[#16A34A]">
                             {winnerCount} ganador(es) seleccionados
                           </p>
                         )}
                       </td>
-                      <td className="px-4 py-4 align-middle text-xs text-[#737373]">
+                      <td className="px-4 py-4 align-middle text-sm text-[#737373]">
                         <span className="block truncate">
                           {event.ipAddress ?? "Sin IP"}
                         </span>
                       </td>
-                      <td className="px-4 py-4 align-middle text-xs text-[#737373]">
+                      <td className="px-4 py-4 align-middle text-sm text-[#737373]">
                         {formatDate(event.createdAt)}
                       </td>
                     </tr>
@@ -388,7 +388,7 @@ export function AuditTimeline({ timeline }: Props) {
           </div>
 
           {searchValue && (
-            <p className="border-t border-[#E5E5E5] px-5 py-2 text-xs text-[#737373]">
+            <p className="border-t border-[#E5E5E5] px-5 py-2 text-sm text-[#737373]">
               {filteredRowCount} evento(s) encontrados para “{searchValue}”.
             </p>
           )}

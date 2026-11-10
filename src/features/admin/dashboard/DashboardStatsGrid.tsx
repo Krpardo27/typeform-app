@@ -1,57 +1,52 @@
-import { LuFileText, LuLayoutGrid, LuUsers } from "react-icons/lu";
 import { DashboardStatCard } from "./DashboardStatCard";
+import type { DashboardStats } from "./dashboard.types";
 
-type DashboardStatsData = {
-  totalUsers: number;
-  usersThisMonth: number;
-  totalWorkspaces: number;
-  workspacesThisMonth: number;
-  totalForms: number;
-  formsThisWeek: number;
-};
-
-export function DashboardStatsGrid({
-  totalUsers,
-  usersThisMonth,
-  totalWorkspaces,
-  workspacesThisMonth,
-  totalForms,
-  formsThisWeek,
-}: DashboardStatsData) {
+export function DashboardStatsGrid({ stats }: { stats: DashboardStats }) {
   const formatNumber = (value: number) =>
     new Intl.NumberFormat("es-CL").format(value);
 
   return (
-    <div className="grid gap-4 xl:grid-cols-3 grid-cols-2">
+    <section
+      aria-label="Resumen de la plataforma"
+      className="grid grid-cols-1 divide-y divide-[#E8E8E6] rounded-md border border-[#FF5C35]/30 bg-white md:grid-cols-3 md:divide-x md:divide-y-0"
+    >
       <DashboardStatCard
         title="Usuarios"
-        value={formatNumber(totalUsers)}
-        badge={{
-          label: `${usersThisMonth > 0 ? "+" : ""}${usersThisMonth} este mes`,
-          variant: usersThisMonth > 0 ? "success" : "neutral",
-        }}
-        icon={<LuUsers className="size-5" />}
+        value={formatNumber(stats.totalUsers)}
+        periodLabel={`${formatNumber(stats.usersCreatedThisMonth)} creados este mes`}
+        detail={
+          <dl className="flex flex-wrap gap-x-3 gap-y-1">
+            {[
+              ["Activos", stats.activeUsers],
+              ["Pendientes", stats.pendingUsers],
+              ["Rechazados", stats.rejectedUsers],
+            ].map(([label, count]) => (
+              <div key={label} className="flex gap-1">
+                <dt>{label}:</dt>
+                <dd className="font-medium text-[#171717] tabular-nums">{formatNumber(Number(count))}</dd>
+              </div>
+            ))}
+          </dl>
+        }
+        href="/admin/users"
+        linkLabel="Ver usuarios"
       />
-
       <DashboardStatCard
         title="Workspaces"
-        value={formatNumber(totalWorkspaces)}
-        badge={{
-          label: `${workspacesThisMonth > 0 ? "+" : ""}${workspacesThisMonth} este mes`,
-          variant: workspacesThisMonth > 0 ? "success" : "neutral",
-        }}
-        icon={<LuLayoutGrid className="size-5" />}
+        value={formatNumber(stats.totalWorkspaces)}
+        periodLabel={`${formatNumber(stats.workspacesCreatedThisMonth)} creados este mes`}
+        detail="Espacios creados desde esta aplicación."
+        href="/admin/workspaces"
+        linkLabel="Ver workspaces"
       />
-
       <DashboardStatCard
         title="Formularios"
-        value={formatNumber(totalForms)}
-        badge={{
-          label: `${formsThisWeek > 0 ? "+" : ""}${formsThisWeek} esta semana`,
-          variant: formsThisWeek > 0 ? "success" : "neutral",
-        }}
-        icon={<LuFileText className="size-5" />}
+        value={formatNumber(stats.totalForms)}
+        periodLabel={`${formatNumber(stats.formsCreatedLast7Days)} creados en los últimos 7 días`}
+        detail="Registros locales de los workspaces de la aplicación."
+        href="/admin/workspaces"
+        linkLabel="Explorar workspaces"
       />
-    </div>
+    </section>
   );
 }

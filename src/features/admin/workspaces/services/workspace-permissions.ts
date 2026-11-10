@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { filterAvailableWorkspaces } from "./workspace-availability";
 
 type CurrentUser = {
   id: string;
@@ -30,10 +31,10 @@ export async function getVisibleWorkspaces(user: CurrentUser) {
       },
     });
 
-    return workspaces.map((workspace) => ({
+    return filterAvailableWorkspaces(workspaces.map((workspace) => ({
       ...workspace,
       role: "EDITOR" as const,
-    }));
+    })));
   }
 
   const userWorkspaces = await prisma.userWorkspace.findMany({
@@ -60,10 +61,10 @@ export async function getVisibleWorkspaces(user: CurrentUser) {
     },
   });
 
-  return userWorkspaces.map(({ workspace, role }) => ({
+  return filterAvailableWorkspaces(userWorkspaces.map(({ workspace, role }) => ({
     ...workspace,
     role,
-  }));
+  })));
 }
 
 export async function getAuthorizedWorkspace(
@@ -84,7 +85,9 @@ export async function getAuthorizedWorkspace(
       },
     });
 
-    return workspace ? { ...workspace, role: "EDITOR" as const } : null;
+    if (!workspace) return null;
+    const [available] = await filterAvailableWorkspaces([{ ...workspace, role: "EDITOR" as const }]);
+    return available ?? null;
   }
 
   const access = await prisma.userWorkspace.findFirst({
@@ -107,10 +110,7 @@ export async function getAuthorizedWorkspace(
     },
   });
 
-  return access
-    ? {
-        ...access.workspace,
-        role: access.role,
-      }
-    : null;
+  if (!access) return null;
+  const [available] = await filterAvailableWorkspaces([{ ...access.workspace, role: access.role }]);
+  return available ?? null;
 }

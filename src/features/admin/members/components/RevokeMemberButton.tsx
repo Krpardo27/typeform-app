@@ -47,7 +47,7 @@ export function RevokeMemberButton({ email }: Props) {
       type="button"
       disabled={isPending}
       onClick={handleRevoke}
-      className="inline-flex items-center gap-2 rounded-lg border border-[#DC2626]/30 bg-[#DC2626]/10 px-2.5 py-1.5 text-xs font-medium text-[#DC2626] transition hover:bg-[#DC2626]/20 disabled:opacity-50"
+      className="inline-flex items-center gap-2 rounded-lg border border-[#DC2626]/30 bg-[#DC2626]/10 px-2.5 py-1.5 text-sm font-medium text-[#DC2626] transition hover:bg-[#DC2626]/20 disabled:opacity-50"
     >
       {isPending ? <LuLoader className="size-3.5 animate-spin" /> : <LuUserMinus className="size-3.5" />}
       Revocar

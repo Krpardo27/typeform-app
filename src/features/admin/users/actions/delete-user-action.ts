@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/getCurrentUser";
 
 const deleteUserSchema = z.object({
-  userId: z.string().min(1, "ID de usuario inválido."),
+  userId: z.string().trim().min(1, "ID de usuario inválido."),
 });
 
 export async function deleteUserAction(userId: string) {
@@ -33,26 +33,26 @@ export async function deleteUserAction(userId: string) {
   }
 
   try {
-    const targetUser = await prisma.user.findUnique({
-      where: { id: validatedUserId },
-      select: { id: true, email: true, globalRole: true },
-    });
-
-    if (!targetUser) {
-      return { error: "Usuario no encontrado." };
-    }
-
-    if (targetUser.globalRole === "SUPER_ADMIN") {
-      const superAdminCount = await prisma.user.count({
-        where: { globalRole: "SUPER_ADMIN" },
+    const result = await prisma.$transaction(async (tx) => {
+      const targetUser = await tx.user.findUnique({
+        where: { id: validatedUserId },
+        select: { id: true, email: true, globalRole: true },
       });
 
-      if (superAdminCount <= 1) {
-        return { error: "No puedes eliminar al único Super Admin." };
+      if (!targetUser) {
+        return { error: "Usuario no encontrado." };
       }
-    }
 
-    await prisma.$transaction(async (tx) => {
+      if (targetUser.globalRole === "SUPER_ADMIN") {
+        const superAdminCount = await tx.user.count({
+          where: { globalRole: "SUPER_ADMIN" },
+        });
+
+        if (superAdminCount <= 1) {
+          return { error: "No puedes eliminar al único superadministrador." };
+        }
+      }
+
       await tx.session.deleteMany({
         where: { userId: validatedUserId },
       });
@@ -73,16 +73,19 @@ export async function deleteUserAction(userId: string) {
       await tx.user.delete({
         where: { id: validatedUserId },
       });
-    });
+      return { success: true as const };
+    }, { isolationLevel: "Serializable" });
+
+    if (result.error) return result;
 
     revalidatePath("/admin/users");
     revalidatePath("/admin/miembros");
     revalidatePath("/admin/workspaces");
 
-    return { success: true };
+    return result;
   } catch (error) {
     console.error(error);
 
-    return { error: "No fue posible eliminar el usuario." };
+    return { error: "No fue posible eliminar al usuario." };
   }
 }

@@ -1,20 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef } from "react";
 import { usePathname } from "next/navigation";
-import {
-  LuChevronDown,
-  LuFileText,
-  LuLayoutDashboard,
-  LuRadio,
-} from "react-icons/lu";
+import { LuChevronDown, LuFileText, LuLayoutDashboard } from "react-icons/lu";
 import { LogoutButton } from "@/shared/components/LogoutButton";
+import { WorkspaceRadioLogo } from "./WorkspaceRadioLogo";
 
 type WorkspaceMobileDockProps = {
   workspaces: {
     id: string;
     name: string;
+    typeformId?: string;
+    templateFormTypeformId?: string | null;
   }[];
   currentWorkspaceId?: string;
   currentSection?: "home" | "forms";
@@ -22,64 +20,70 @@ type WorkspaceMobileDockProps = {
 
 const workspaceNavItems = [
   { label: "Inicio", href: "", icon: LuLayoutDashboard, section: "home" },
-  { label: "Forms", href: "forms", icon: LuFileText, section: "forms" },
+  { label: "Formularios", href: "forms", icon: LuFileText, section: "forms" },
 ] as const;
-
-function getShortWorkspaceName(name?: string) {
-  if (!name) return "Radio";
-
-  return name.length > 11 ? `${name.slice(0, 10)}…` : name;
-}
 
 export function WorkspaceMobileDock({
   workspaces,
   currentWorkspaceId,
+  currentSection,
 }: WorkspaceMobileDockProps) {
-  const pathname = usePathname();
+  const pathname = usePathname()?.replace(/\/$/, "") ?? "";
+  const id = useId();
   const detailsRef = useRef<HTMLDetailsElement | null>(null);
-  const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false);
 
   const currentWorkspace = workspaces.find(
     (workspace) => workspace.id === currentWorkspaceId,
   );
+  const hasSingleWorkspace =
+    workspaces.length === 1 && Boolean(currentWorkspace);
+  const currentRadio = {
+    name: currentWorkspace?.name ?? "Radios",
+    typeformId: currentWorkspace?.typeformId ?? currentWorkspace?.id ?? "",
+    templateFormTypeformId: currentWorkspace?.templateFormTypeformId,
+  };
 
   const workspaceHomeHref = currentWorkspaceId
     ? `/workspaces/${currentWorkspaceId}`
     : "/workspaces/me";
 
-  const isHomeActive = currentWorkspaceId
+  const formsHref = `${workspaceHomeHref}/forms`;
+  const responsesHref = `${workspaceHomeHref}/responses`;
+  const isHomeActive = pathname
     ? pathname === workspaceHomeHref
-    : pathname === "/workspaces/me";
-
-  const isFormsActive = currentWorkspaceId
-    ? pathname === `/workspaces/${currentWorkspaceId}/forms`
-    : false;
+    : currentSection === "home";
+  const isFormsActive =
+    Boolean(currentWorkspaceId) &&
+    (pathname
+      ? pathname === formsHref ||
+        pathname.startsWith(`${formsHref}/`) ||
+        pathname === responsesHref ||
+        pathname.startsWith(`${responsesHref}/`)
+      : currentSection === "forms");
 
   useEffect(() => {
-    function handlePointerDown(event: MouseEvent) {
-      const target = event.target as Node;
-
-      if (!detailsRef.current || detailsRef.current.contains(target)) {
-        return;
+    function handlePointerDown(event: PointerEvent) {
+      if (
+        event.target instanceof Node &&
+        detailsRef.current &&
+        !detailsRef.current.contains(event.target)
+      ) {
+        detailsRef.current.open = false;
       }
-
-      setIsWorkspaceMenuOpen(false);
     }
 
-    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("pointerdown", handlePointerDown);
 
     return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("pointerdown", handlePointerDown);
     };
   }, []);
 
-  const triggerHapticFeedback = () => {
-    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-      navigator.vibrate(12);
-    }
-  };
-
-  const closeWorkspaceMenu = () => setIsWorkspaceMenuOpen(false);
+  function closeWorkspaceMenu(restoreFocus = false) {
+    if (!detailsRef.current) return;
+    detailsRef.current.open = false;
+    if (restoreFocus) detailsRef.current.querySelector("summary")?.focus();
+  }
 
   const navItems = currentWorkspaceId
     ? workspaceNavItems.map((item) => ({
@@ -90,19 +94,11 @@ export function WorkspaceMobileDock({
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 lg:hidden">
-      <div
-        className="
-          relative mx-auto w-full max-w-xl
-          overflow-visible
-          rounded-[1.35rem]
-          border border-[#E8E8E6]
-          bg-white/95
-          shadow-[0_-12px_35px_-12px_rgba(0,0,0,0.18)]
-          backdrop-blur-xl
-        "
-      >
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-[#FF5C35]/60 to-transparent" />
-        <nav className="grid grid-cols-4 gap-1 p-1.5">
+      <div className="relative mx-auto w-full max-w-xl rounded-xl border border-[#E5E5E5] bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+        <nav
+          aria-label="Navegación del workspace"
+          className={`grid gap-1 p-1.5 ${currentWorkspaceId ? "grid-cols-4" : "grid-cols-2"}`}
+        >
           {navItems.map((item) => {
             const Icon = item.icon;
 
@@ -114,170 +110,145 @@ export function WorkspaceMobileDock({
               <Link
                 key={item.label}
                 href={href}
-                onClick={(event) => {
-                  if (item.active) {
-                    event.preventDefault();
-                    return;
-                  }
-
-                  triggerHapticFeedback();
-                }}
-                className={
-                  item.active
-                    ? item.label === "Forms"
-                      ? `
-                        group relative min-w-0
-                        flex min-h-14
-                        flex-col items-center justify-center
-                        gap-1
-                        rounded-2xl
-                        border border-[#7C3AED]/10
-                        bg-[#7C3AED]/10
-                        px-0.5 py-1
-                        text-[9px] font-semibold
-                        text-[#7C3AED]
-                        transition-all duration-200
-                        min-[390px]:text-[11px]
-                      `
-                      : `
-                        group relative min-w-0
-                        flex min-h-14
-                        flex-col items-center justify-center
-                        gap-1
-                        rounded-2xl
-                        border border-[#FF5C35]/10
-                        bg-[#FF5C35]/10
-                        px-0.5 py-1
-                        text-[9px] font-semibold
-                        text-[#FF5C35]
-                        transition-all duration-200
-                        min-[390px]:text-[11px]
-                      `
-                    : `
-                      group relative min-w-0
-                      flex min-h-14
-                      flex-col items-center justify-center
-                      gap-1
-                      rounded-2xl
-                      border border-transparent
-                      px-0.5 py-1
-                      text-[9px] font-medium
-                      text-[#000000]/55
-                      transition-all duration-200
-                      hover:bg-[#F7F7F6]
-                      hover:text-[#000000]
-                      min-[390px]:text-[11px]
-                    `
+                aria-current={
+                  pathname === href
+                    ? "page"
+                    : item.active
+                      ? "location"
+                      : undefined
                 }
+                onNavigate={(event) => {
+                  closeWorkspaceMenu();
+                  if (pathname === href) event.preventDefault();
+                }}
+                className={`flex min-h-12 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-0.5 py-1 text-[10px] leading-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[#A33116] motion-reduce:transition-none min-[390px]:text-sm ${
+                  item.active
+                    ? "bg-[#FFF1EB] font-semibold text-[#FF5C35]"
+                    : "font-medium text-[#595954] hover:bg-[#F5F5F5] hover:text-[#171717]"
+                }`}
               >
-                <Icon className="h-4 w-4 shrink-0" />
-
-                <span className="max-w-full truncate leading-none">
-                  {item.label}
+                <span className="flex size-8 items-center justify-center">
+                  <Icon aria-hidden="true" className="size-5 shrink-0" />
                 </span>
-
-                <span
-                  className={
-                    item.active
-                      ? item.label === "Forms"
-                        ? "absolute inset-x-3 bottom-1 h-0.5 rounded-full bg-[#7C3AED] transition-all duration-300 ease-out"
-                        : "absolute inset-x-3 bottom-1 h-0.5 rounded-full bg-[#FF5C35] transition-all duration-300 ease-out"
-                      : item.label === "Forms"
-                        ? "absolute inset-x-1/2 bottom-1 h-0.5 rounded-full bg-[#7C3AED]/80 opacity-0 transition-all duration-300 ease-out group-hover:inset-x-4 group-hover:opacity-100"
-                        : "absolute inset-x-1/2 bottom-1 h-0.5 rounded-full bg-[#FF5C35]/80 opacity-0 transition-all duration-300 ease-out group-hover:inset-x-4 group-hover:opacity-100"
-                  }
-                />
+                <span className="max-w-full text-center">{item.label}</span>
               </Link>
             );
           })}
 
-          <details
-            ref={detailsRef}
-            open={isWorkspaceMenuOpen}
-            onToggle={(event) => {
-              setIsWorkspaceMenuOpen(event.currentTarget.open);
-            }}
-            className="group relative min-w-0"
-          >
-            <summary
-              className="
-                relative flex min-h-14 min-w-0
-                cursor-pointer list-none
-                flex-col items-center justify-center
-                gap-1
-                rounded-2xl
-                border border-transparent
-                px-0.5 py-1
-                text-[11px] font-medium
-                text-[#000000]/55
-                outline-none
-                transition-all duration-200
-                marker:hidden
-                hover:bg-[#F7F7F6]
-                hover:text-[#000000]
-                min-[390px]:text-[10px]
-                [&::-webkit-details-marker]:hidden
-              "
-            >
-              <LuRadio className="h-4 w-4 shrink-0 text-[#FF5C35]" />
-
-              <div className="flex min-w-0 items-center gap-1">
-                <span className="max-w-full truncate leading-none">
-                  {getShortWorkspaceName(currentWorkspace?.name)}
-                </span>
-
-                <LuChevronDown
-                  className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${
-                    isWorkspaceMenuOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </div>
-            </summary>
-
+          {hasSingleWorkspace ? (
             <div
-              className="
-                absolute bottom-full right-0 z-50 mb-2
-                max-h-72 w-[min(14rem,calc(100vw-1rem))]
-                overflow-y-auto
-                rounded-2xl
-                border border-[#E8E8E6]
-                bg-white
-                p-1.5
-                shadow-[0_16px_40px_-14px_rgba(0,0,0,0.22)]
-              "
+              role="img"
+              aria-label={`Radio actual: ${currentRadio.name}`}
+              title={currentRadio.name}
+              className="flex min-h-16 min-w-0 items-center justify-center rounded-lg px-1 py-1"
             >
-              {workspaces.map((workspace) => {
-                const isActive = currentWorkspaceId === workspace.id;
-
-                return (
-                  <Link
-                    key={workspace.id}
-                    href={`/workspaces/${workspace.id}`}
-                    prefetch={false}
-                    onClick={() => {
-                      closeWorkspaceMenu();
-                      triggerHapticFeedback();
-                    }}
-                    className={`
-                      block
-                      rounded-xl
-                      border
-                      px-3 py-2
-                      text-sm
-                      transition-all
-                      ${
-                        isActive
-                          ? "border-[#FF5C35]/10 bg-[#FF5C35]/10 font-medium text-[#FF5C35]"
-                          : "border-transparent text-[#000000]/70 hover:border-[#E8E8E6] hover:bg-[#F7F7F6] hover:text-[#000000]"
-                      }
-                    `}
-                  >
-                    <span className="block truncate">{workspace.name}</span>
-                  </Link>
-                );
-              })}
+              <WorkspaceRadioLogo
+                workspace={currentRadio}
+                size={64}
+                alt=""
+                fallback="icon"
+              />
             </div>
-          </details>
+          ) : (
+            <details
+              key={pathname}
+              ref={detailsRef}
+              onBlur={(event) => {
+                // Tocar texto no enfocable deja relatedTarget en null. El cierre
+                // por pulsaciones fuera del menú ya lo gestiona pointerdown.
+                if (
+                  event.relatedTarget &&
+                  !event.currentTarget.contains(event.relatedTarget)
+                )
+                  closeWorkspaceMenu();
+              }}
+              onKeyDown={(event) => {
+                if (
+                  event.key === "Escape" &&
+                  !event.nativeEvent.isComposing &&
+                  detailsRef.current?.open
+                ) {
+                  event.preventDefault();
+                  closeWorkspaceMenu(true);
+                }
+              }}
+              className="group min-w-0"
+            >
+              <summary
+                aria-label={
+                  currentWorkspace
+                    ? `Cambiar radio. Actual: ${currentWorkspace.name}`
+                    : "Elegir radio"
+                }
+                aria-controls={`${id}-radio-menu`}
+                title={currentWorkspace?.name ?? "Elegir radio"}
+                className="flex min-h-16 min-w-0 cursor-pointer list-none flex-col items-center justify-center gap-1 rounded-lg px-1 py-1 text-sm font-medium leading-4 text-[#595954] transition-colors marker:hidden hover:bg-[#F5F5F5] hover:text-[#171717] focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[#A33116] motion-reduce:transition-none min-[390px]:text-sm [&::-webkit-details-marker]:hidden"
+              >
+                <WorkspaceRadioLogo
+                  workspace={currentRadio}
+                  size={64}
+                  alt=""
+                  fallback="icon"
+                />
+                <LuChevronDown
+                  aria-hidden="true"
+                  className="size-4 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none"
+                />
+              </summary>
+
+              <nav
+                id={`${id}-radio-menu`}
+                aria-label="Cambiar radio"
+                className="absolute inset-x-0 bottom-full z-50 mb-2 max-h-[min(20rem,calc(100dvh-10rem-env(safe-area-inset-bottom)))] overflow-y-auto overscroll-contain rounded-lg border border-[#E5E5E5] bg-white p-1.5 shadow-lg"
+              >
+                <p className="px-3 py-2 text-sm font-medium text-[#737373]">
+                  Tus radios
+                </p>
+                {workspaces.length === 0 && (
+                  <p className="px-3 py-4 text-sm text-[#595954]">
+                    No tienes radios asignadas.
+                  </p>
+                )}
+                {workspaces.map((workspace) => {
+                  const isActive = currentWorkspaceId === workspace.id;
+                  const href = `/workspaces/${workspace.id}`;
+
+                  return (
+                    <Link
+                      key={workspace.id}
+                      href={href}
+                      prefetch={false}
+                      aria-current={isActive ? "location" : undefined}
+                      title={workspace.name}
+                      onNavigate={(event) => {
+                        const isCurrentPage = pathname === href;
+                        closeWorkspaceMenu(isCurrentPage);
+                        if (isCurrentPage) event.preventDefault();
+                      }}
+                      className={`flex min-h-12 min-w-0 items-center gap-3 rounded-md px-3 py-1.5 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[#A33116] motion-reduce:transition-none ${
+                        isActive
+                          ? "bg-[#FFF1EB] font-medium text-[#A33116]"
+                          : "text-[#525252] hover:bg-[#F5F5F5] hover:text-[#171717]"
+                      }`}
+                    >
+                      <WorkspaceRadioLogo
+                        workspace={{
+                          ...workspace,
+                          typeformId: workspace.typeformId ?? workspace.id,
+                        }}
+                        size={64}
+                        alt=""
+                        fallback="icon"
+                      />
+                      <span className="min-w-0 flex-1 wrap-anywhere leading-5">
+                        {workspace.name}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </nav>
+            </details>
+          )}
 
           <div className="min-w-0 [&>button]:w-full [&>button]:min-w-0">
             <LogoutButton variant="workspace-dock" />

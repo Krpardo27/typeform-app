@@ -1,16 +1,19 @@
 "use client";
 
-import { usePathname, useSelectedLayoutSegment } from "next/navigation";
+import { useSelectedLayoutSegment } from "next/navigation";
 import { WorkspaceShell } from "./WorkspaceShell";
 
 type WorkspaceShellFrameProps = {
   user: {
     name?: string | null;
     email: string;
+    globalRole?: string;
   };
   workspaces: {
     id: string;
     name: string;
+    typeformId?: string;
+    templateFormTypeformId?: string | null;
   }[];
   currentWorkspaceId: string;
   children: React.ReactNode;
@@ -22,14 +25,9 @@ export function WorkspaceShellFrame({
   currentWorkspaceId,
   children,
 }: WorkspaceShellFrameProps) {
-  const pathname = usePathname();
   const segment = useSelectedLayoutSegment();
   const currentSection =
     segment === "forms" || segment === "responses" ? "forms" : "home";
-  const showSearchOnFormsList =
-    /^\/workspaces\/[^/]+\/forms\/?$/.test(pathname ?? "");
-  const showSearchOnNewForm =
-    /^\/workspaces\/[^/]+\/forms\/new\/?$/.test(pathname ?? "");
 
   return (
     <WorkspaceShell
@@ -37,7 +35,6 @@ export function WorkspaceShellFrame({
       workspaces={workspaces}
       currentWorkspaceId={currentWorkspaceId}
       currentSection={currentSection}
-      showGlobalSearch={showSearchOnFormsList || showSearchOnNewForm}
     >
       {children}
     </WorkspaceShell>

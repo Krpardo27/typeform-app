@@ -1,16 +1,21 @@
 import Link from "next/link";
-import { LuFileText, LuHouse, LuLayoutDashboard } from "react-icons/lu";
-import { LogoutButton } from "../../../../shared/components/LogoutButton";
+import { LuFileText, LuLayoutDashboard } from "react-icons/lu";
+import { LogoutButton } from "@/shared/components/LogoutButton";
+import { WorkspacePanelLink } from "./WorkspacePanelLink";
+import { WorkspaceRadioLogo } from "./WorkspaceRadioLogo";
 
 type WorkspaceSidebarProps = {
   user: {
     name?: string | null;
     email: string;
+    globalRole?: string;
   };
 
   workspaces: {
     id: string;
     name: string;
+    typeformId?: string;
+    templateFormTypeformId?: string | null;
   }[];
 
   currentWorkspaceId?: string;
@@ -19,115 +24,148 @@ type WorkspaceSidebarProps = {
 
 const workspaceNavItems = [
   { label: "Inicio", href: "", icon: LuLayoutDashboard, section: "home" },
-  { label: "Formularios", href: "forms", icon: LuFileText },
+  { label: "Formularios", href: "forms", icon: LuFileText, section: "forms" },
 ] as const;
 
 export function WorkspaceSidebar({
   user,
   workspaces,
   currentWorkspaceId,
-  currentSection,
+  currentSection = "home",
 }: WorkspaceSidebarProps) {
-  const displayName = user.name?.trim() || user.email.split("@")[0];
+  const displayName =
+    user.name?.trim() || user.email.split("@")[0].trim() || "Usuario";
+  const panelHref = user.globalRole === "SUPER_ADMIN"
+    ? "/admin/workspaces"
+    : workspaces[0] ? `/workspaces/${workspaces[0].id}` : "/workspaces/me";
+  const focusClassName =
+    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A33116]";
 
   return (
-    <aside className="hidden h-dvh w-72 shrink-0 flex-col overflow-y-auto border-r border-[#E5E5E5] bg-[#FFFFFF] px-4 py-6 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex">
-      <div className="mb-6 flex h-full flex-col bg-[#FFFFFF]">
-        <div className="mb-4">
-          <Link
-            href={
-              currentWorkspaceId
-                ? `/workspaces/${currentWorkspaceId}`
-                : "/workspaces/me"
-            }
-            className="mb-5 flex items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium text-[#000000]/70 transition hover:bg-[#F5F5F5] hover:text-[#000000]"
-          >
-            <LuHouse className="size-4 text-[#FF5C35]" />
-            Panel
-          </Link>
+    <aside
+      aria-label="Barra lateral de radios"
+      className="hidden h-dvh w-72 shrink-0 flex-col border-r border-[#E5E5E5] bg-white px-4 py-5 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex"
+    >
+      <div className="flex min-h-0 flex-1 flex-col">
+        <nav aria-label="Panel" className="shrink-0 border-b border-[#E5E5E5] pb-4">
+          <WorkspacePanelLink href={panelHref} focusClassName={focusClassName} />
+        </nav>
 
-          <p className="mb-2 px-2 text-xs font-medium uppercase tracking-wider text-[#000000]/45">
-            Radios
-          </p>
-          <div className="space-y-1">
-            {workspaces.map((w) => {
-              const isActive = currentWorkspaceId === w.id;
-
-              return (
-                <Link
-                  key={w.id}
-                  href={`/workspaces/${w.id}`}
-                  prefetch={false}
-                  className={`block w-full rounded-md px-2 py-1.5 text-left text-sm transition ${
-                    isActive
-                      ? "bg-[#FF5C35]/10 text-[#FF5C35]"
-                      : "text-[#000000]/65 hover:bg-[#F5F5F5] hover:text-[#000000]"
-                  }`}
-                >
-                  {w.name}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
-        {currentWorkspaceId && (
-          <nav className="mt-3 border-t border-[#F5F5F5] pt-4">
-            <p className="mb-2 px-2 text-xs font-medium uppercase tracking-wider text-[#000000]/45">
-              Workspace
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-5">
+          <nav aria-label="Radios">
+            <p className="mb-3 px-3 text-sm font-semibold uppercase tracking-wider text-[#737373]">
+              Radios
             </p>
-            <div className="space-y-1">
-              {workspaceNavItems.map((item) => {
-                const Icon = item.icon;
-                const section = "section" in item ? item.section : item.href;
-                const isActive = currentSection === section;
-                const href = item.href
-                  ? `/workspaces/${currentWorkspaceId}/${item.href}`
-                  : `/workspaces/${currentWorkspaceId}`;
-                const itemClassName = `flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
-                  isActive
-                    ? "bg-[#7C3AED]/10 text-[#7C3AED] cursor-pointer"
-                    : "text-[#000000]/65 hover:bg-[#F5F5F5] hover:text-[#000000]"
-                }`;
-
-                if (isActive) {
-                  return (
-                    <span
-                      key={item.label}
-                      aria-current="page"
-                      className={`${itemClassName} cursor-default`}
-                    >
-                      <Icon className="size-4" />
-                      {item.label}
-                    </span>
-                  );
-                }
+            <ul className="space-y-1">
+              {workspaces.map((workspace) => {
+                const isActive = currentWorkspaceId === workspace.id;
 
                 return (
-                  <Link
-                    key={item.label}
-                    href={href}
-                    className={itemClassName}
-                  >
-                    <Icon className="size-4" />
-                    {item.label}
-                  </Link>
+                  <li key={workspace.id}>
+                    <Link
+                      href={`/workspaces/${workspace.id}`}
+                      prefetch={false}
+                      aria-current={isActive ? "location" : undefined}
+                      title={workspace.name}
+                      className={`flex min-h-12 w-full items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition-colors motion-reduce:transition-none ${focusClassName} ${
+                        isActive
+                          ? "bg-[#FFF1EB] font-medium text-[#FF5C35]"
+                          : "text-[#525252] hover:bg-[#F5F5F5] hover:text-[#171717]"
+                      }`}
+                    >
+                      <WorkspaceRadioLogo
+                        workspace={{ ...workspace, typeformId: workspace.typeformId ?? workspace.id }}
+                        size={64}
+                        alt=""
+                        fallback="icon"
+                      />
+                      <span className="min-w-0 flex-1 wrap-anywhere leading-5">
+                        {workspace.name}
+                      </span>
+                      {isActive && (
+                        <span
+                          aria-hidden="true"
+                          className="size-1.5 shrink-0 rounded-full bg-[#FF5C35]"
+                        />
+                      )}
+                    </Link>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
+            {workspaces.length === 0 && (
+              <p className="px-3 text-sm leading-6 text-[#737373]">
+                No tienes radios asignadas.
+              </p>
+            )}
           </nav>
-        )}
 
-        <div className="mt-auto border-t border-[#F5F5F5] px-1 pt-4">
-          <div className="mb-4 flex items-center gap-3 min-w-0">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-[#F5F5F5] bg-[#F5F5F5] text-sm font-bold text-[#FF5C35]">
+          {currentWorkspaceId && (
+            <nav
+              aria-label="Workspace actual"
+              className="mt-5 border-t border-[#E5E5E5] pt-5"
+            >
+              <p className="mb-3 px-3 text-sm font-semibold uppercase tracking-wider text-[#737373]">
+                Workspace actual
+              </p>
+              <ul className="space-y-1">
+                {workspaceNavItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = currentSection === item.section;
+                  const href = item.href
+                    ? `/workspaces/${currentWorkspaceId}/${item.href}`
+                    : `/workspaces/${currentWorkspaceId}`;
+                  const itemClassName = `group flex min-h-10 min-w-0 items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm leading-5 transition-colors motion-reduce:transition-none ${focusClassName} ${
+                    isActive
+                      ? "bg-[#FFF1EB] font-medium text-[#FF5C35]"
+                      : "text-[#525252] hover:bg-[#F5F5F5] hover:text-[#171717]"
+                  }`;
+
+                  return (
+                    <li key={item.section}>
+                      <Link
+                        href={href}
+                        aria-current={isActive ? "location" : undefined}
+                        className={itemClassName}
+                      >
+                        <Icon
+                          aria-hidden="true"
+                          className={`size-4 shrink-0 ${
+                            isActive
+                              ? "text-[#FF5C35]"
+                              : "text-[#737373] group-hover:text-[#525252]"
+                          }`}
+                        />
+                        <span className="min-w-0 flex-1 wrap-anywhere">
+                          {item.label}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
+          )}
+        </div>
+
+        <div className="shrink-0 border-t border-[#E5E5E5] px-1 pt-4">
+          <div className="mb-4 flex min-w-0 items-center gap-3">
+            <div
+              aria-hidden="true"
+              className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-[#E5E5E5] bg-[#FAFAFA] text-sm font-semibold text-[#525252]"
+            >
               {displayName.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-[#000000]">
+              <p
+                title={displayName}
+                className="truncate text-sm font-semibold text-[#171717]"
+              >
                 {displayName}
               </p>
-              <p className="truncate text-xs text-[#000000]/55">{user.email}</p>
+              <p title={user.email} className="truncate text-sm leading-5 text-[#737373]">
+                {user.email}
+              </p>
             </div>
           </div>
 

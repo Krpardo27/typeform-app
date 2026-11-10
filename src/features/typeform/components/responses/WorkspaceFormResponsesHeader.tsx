@@ -18,8 +18,11 @@ export function WorkspaceFormResponsesHeader({
       backLabel="Volver a formularios"
       eyebrow={
         <>
-          <LuInbox className="size-3.5 text-[#7C3AED]" />
-          <span>{workspaceName}</span>
+          <LuInbox
+            aria-hidden="true"
+            className="size-3.5 shrink-0 text-[#FF5C35]"
+          />
+          <span className="min-w-0 wrap-anywhere">{workspaceName}</span>
         </>
       }
       title={`Respuestas de: ${formTitle}`}

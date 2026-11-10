@@ -45,21 +45,15 @@ export function isAllowedOrigin(origin: string | null): boolean {
 }
 
 export function getRequestIpFromHeaders(headers: Headers): string {
-  const xForwardedFor = headers.get("x-forwarded-for");
-  if (xForwardedFor) {
-    const firstIp = xForwardedFor.split(",")[0]?.trim();
-    if (firstIp) return firstIp;
-  }
-
-  const candidates = [
-    headers.get("x-real-ip"),
-    headers.get("cf-connecting-ip"),
-    headers.get("x-client-ip"),
-  ];
+  // Headers fijados por el proxy de confianza primero; el primer valor de XFF lo controla el cliente.
+  const candidates = [headers.get("x-real-ip"), headers.get("cf-connecting-ip")];
 
   for (const candidate of candidates) {
     if (candidate?.trim()) return candidate.trim();
   }
+
+  const lastForwarded = headers.get("x-forwarded-for")?.split(",").at(-1)?.trim();
+  if (lastForwarded) return lastForwarded;
 
   return "unknown";
 }

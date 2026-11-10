@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LuMail, LuLoader, LuTriangle } from "react-icons/lu";
+import { LuArrowRight, LuCircleAlert, LuLoader } from "react-icons/lu";
 
 import { emailSchema, type EmailFormValues } from "../schemas/login.schema";
 import { requestOtpAction } from "../actions/login.actions";
@@ -14,6 +14,8 @@ type EmailStepProps = {
 };
 
 export function EmailStep({ onSuccess }: EmailStepProps) {
+  const inputId = useId();
+  const pendingRequest = useRef(false);
   const [isLoading, setIsLoading] = useState(false);
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [retryAfterSeconds, setRetryAfterSeconds] = useState(0);
@@ -39,11 +41,14 @@ export function EmailStep({ onSuccess }: EmailStepProps) {
   });
 
   async function onSubmit(values: EmailFormValues) {
+    if (pendingRequest.current) return;
+
     if (retryAfterSeconds > 0) {
       setServerMessage(loginCopy.tooManyAttempts(retryAfterSeconds));
       return;
     }
 
+    pendingRequest.current = true;
     setIsLoading(true);
     setServerMessage(null);
 
@@ -62,96 +67,89 @@ export function EmailStep({ onSuccess }: EmailStepProps) {
       }
     } catch {
       setServerMessage("No pudimos procesar tu solicitud. Intenta nuevamente.");
+    } finally {
+      pendingRequest.current = false;
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      <div className="space-y-1.5">
+    <form
+      onSubmit={(event) => void handleSubmit(onSubmit)(event)}
+      noValidate
+      aria-labelledby={`${inputId}-title`}
+      className="space-y-7"
+    >
+      <div>
+        <h2 id={`${inputId}-title`} className="text-2xl leading-tight font-medium tracking-tight sm:text-3xl">
+          Iniciar sesión
+        </h2>
+        <p className="mt-3 text-sm leading-6 text-[#595954]">
+          Te enviaremos un código a tu correo para entrar.
+        </p>
+        <p role="status" className="sr-only">
+          {isLoading ? "Enviando el código a tu correo." : ""}
+        </p>
+      </div>
+
+      <div>
         <label
-          htmlFor="email"
-          className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-[#111111]/55"
+          htmlFor={inputId}
+          className="mb-3 block text-sm font-medium text-[#171717]"
         >
-          <LuMail className="size-4 text-[#FF5C35]" />
           {loginCopy.emailLabel}
         </label>
 
         <input
-          id="email"
+          id={inputId}
           type="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          readOnly={isLoading}
           placeholder={loginCopy.emailPlaceholder}
+          aria-invalid={Boolean(errors.email)}
+          aria-describedby={`${inputId}-hint${errors.email ? ` ${inputId}-error` : ""}`}
           {...register("email")}
-          className="
-            w-full 
-            rounded-xl
-            border border-[#E8E8E6]
-            bg-white
-            px-4 py-3
-            text-sm text-[#111111]
-            shadow-[0_2px_8px_-6px_rgba(0,0,0,0.15)]
-            outline-none
-            transition-all duration-200
-            placeholder:text-[#111111]/35
-            hover:border-[#D8D8D5]
-            focus:border-[#FF5C35]
-            focus:ring-4
-            focus:ring-[#FF5C35]/10
-          "
+          className="min-h-14 w-full min-w-0 rounded-t-sm border-0 border-b-2 border-[#B8B8B0] bg-[#F5F5F2] px-3 py-3 text-base text-[#171717] outline-none transition-colors placeholder:text-[#767670] focus:border-[#FF5C35] focus:bg-[#FFF8F5] focus:outline-2 focus:outline-offset-2 focus:outline-[#FF5C35] read-only:opacity-60 aria-invalid:border-[#B42318] motion-reduce:transition-none"
         />
-
+        <p id={`${inputId}-hint`} className="mt-3 text-sm leading-5 text-[#595954]">
+          Ingresa el correo con el que te dieron acceso.
+        </p>
         {errors.email && (
-          <p className="flex items-center gap-1.5 pl-1 pt-1 text-xs font-medium text-rose-500">
-            <LuTriangle className="size-3.5" />
-            {errors.email.message}
+          <p id={`${inputId}-error`} role="alert" className="mt-3 flex items-start gap-2 text-sm leading-5 text-[#9B231B]">
+            <LuCircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            <span>{errors.email.message}</span>
           </p>
         )}
       </div>
 
       {serverMessage && (
-        <div className="rounded-xl border border-[#E8E8E6] bg-[#F7F7F6] p-3.5 text-center shadow-[0_4px_12px_-10px_rgba(0,0,0,0.2)]">
-          <p className="text-sm leading-relaxed text-[#111111]/65">
-            {serverMessage}
-          </p>
-        </div>
+        <p role="alert" className="border-l-2 border-[#B42318] bg-[#FFF4F2] px-3 py-3 text-sm leading-5 text-[#9B231B]">
+          {serverMessage}
+        </p>
       )}
 
       <button
         type="submit"
         disabled={isLoading || retryAfterSeconds > 0}
-        className="
-          w-full
-          cursor-pointer
-          rounded-xl
-          bg-[#FF5C35]
-          px-4 py-3
-          text-sm font-semibold
-          text-white
-          shadow-[0_8px_20px_-8px_rgba(255,92,53,0.45)]
-          transition-all duration-200
-          hover:-translate-y-0.5
-          hover:bg-[#F6532D]
-          hover:shadow-[0_12px_24px_-10px_rgba(255,92,53,0.5)]
-          active:translate-y-0
-          active:scale-[0.99]
-          disabled:pointer-events-none
-          disabled:cursor-not-allowed
-          disabled:opacity-50
-          disabled:shadow-none
-        "
+        className="flex min-h-13 w-full cursor-pointer items-center justify-between gap-3 rounded-md border border-transparent bg-[#FF5C35] px-4 py-3.5 text-left text-sm font-semibold text-white transition-colors hover:bg-[#F4512B] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#171717] disabled:cursor-not-allowed disabled:border-[#D1D1CD] disabled:bg-[#F0F0ED] disabled:text-[#65655F] motion-reduce:transition-none"
       >
         {isLoading ? (
-          <span className="flex items-center justify-center gap-2">
-            <LuLoader className="size-4 animate-spin" />
-            Enviando...
-          </span>
+          <>
+            <span>Enviando código…</span>
+            <LuLoader aria-hidden="true" className="size-4 shrink-0 animate-spin motion-reduce:animate-none" />
+          </>
         ) : retryAfterSeconds > 0 ? (
-          `Reintenta en ${retryAfterSeconds}s`
+          <span aria-live="off">Reintenta en {retryAfterSeconds}s</span>
         ) : (
-          loginCopy.emailSubmit
+          <>
+            <span>{loginCopy.emailSubmit}</span>
+            <LuArrowRight aria-hidden="true" className="size-4 shrink-0" />
+          </>
         )}
       </button>
+
     </form>
   );
 }

@@ -1,48 +1,41 @@
 type WorkspaceFormResponsesStatsProps = {
   totalParticipants: number;
-  shownParticipants: number;
   selectedWinnersCount: number;
 };
 
-const CARD_CLASSNAME =
-  "rounded-2xl border border-[#E8E8E6] bg-white p-5 shadow-[0_8px_30px_-18px_rgba(0,0,0,0.18)]";
-
 export function WorkspaceFormResponsesStats({
   totalParticipants,
-  shownParticipants,
   selectedWinnersCount,
 }: WorkspaceFormResponsesStatsProps) {
+  const numberFormat = new Intl.NumberFormat("es-CL");
+  const stats = [
+    {
+      label: "Participantes",
+      value: totalParticipants,
+    },
+    {
+      label: "Ganadores seleccionados",
+      value: selectedWinnersCount,
+    },
+  ];
+
   return (
-    <section className="lg:mt-8 lg:grid gap-4 md:grid-cols-3 flex flex-wrap">
-      <article className={CARD_CLASSNAME}>
-        <p className="text-xs font-medium uppercase tracking-wider text-[#000000]/45">
-          Participantes
-        </p>
-
-        <p className="mt-3 text-2xl font-bold text-[#111111]">
-          {totalParticipants}
-        </p>
-      </article>
-
-      <article className={CARD_CLASSNAME}>
-        <p className="text-xs font-medium uppercase tracking-wider text-[#000000]/45">
-          Mostrados
-        </p>
-
-        <p className="mt-3 text-2xl font-bold text-[#111111]">
-          {shownParticipants}
-        </p>
-      </article>
-
-      <article className={CARD_CLASSNAME}>
-        <p className="text-xs font-medium uppercase tracking-wider text-[#000000]/45">
-          Ganadores seleccionados
-        </p>
-
-        <p className="mt-3 text-2xl font-bold text-[#111111]">
-          {selectedWinnersCount}
-        </p>
-      </article>
+    <section aria-label="Resumen de participantes" className="mt-6 sm:mt-8">
+      <dl className="grid max-w-xl grid-cols-2 gap-3">
+        {stats.map((stat) => (
+          <div
+            key={stat.label}
+            className="flex min-w-0 flex-col rounded-lg border border-[#E5E5E5] bg-white p-4"
+          >
+            <dt className="min-h-10 text-sm font-medium leading-5 text-[#595954] sm:min-h-0">
+              {stat.label}
+            </dt>
+            <dd className="mt-3 text-2xl font-semibold leading-none tracking-tight text-[#171717] tabular-nums">
+              {numberFormat.format(stat.value)}
+            </dd>
+          </div>
+        ))}
+      </dl>
     </section>
   );
 }

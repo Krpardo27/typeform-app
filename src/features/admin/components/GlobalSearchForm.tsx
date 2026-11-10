@@ -88,7 +88,7 @@ export default function GlobalSearchForm({
 
     const formItems = results.forms.map((form) => ({
       id: `form:${form.id}`,
-      href: `/workspaces/${form.workspaceId}/forms/${form.id}`,
+      href: `/workspaces/${encodeURIComponent(form.workspaceId)}/forms/${encodeURIComponent(form.id)}/responses`,
     }));
 
     const participantItems = results.participants.map((participant) => ({
@@ -271,11 +271,11 @@ export default function GlobalSearchForm({
           aria-label="Buscador global"
           className="
       w-full
-      border border-[#E8E8E6]
-      bg-white
+      border border-[#FF5C35]/40
       py-2.5
       pl-9
       pr-4
+      rounded-md
       text-sm
       text-[#000000]/85
       outline-none
@@ -284,7 +284,7 @@ export default function GlobalSearchForm({
       placeholder:text-[#000000]/40
       hover:border-[#DCDCD9]
       hover:shadow-[0_4px_14px_-10px_rgba(0,0,0,0.25)]
-      focus:border-[#FF5C35]/40
+      focus:border-[#FF5C35]
       focus:bg-white
       focus:ring-4
       focus:ring-[#FF5C35]/8
@@ -359,7 +359,7 @@ export default function GlobalSearchForm({
                     {results.forms.map((form: FormSearchResult) => (
                       <li key={form.id}>
                         <Link
-                          href={`/workspaces/${form.workspaceId}/forms/${form.id}`}
+                          href={`/workspaces/${encodeURIComponent(form.workspaceId)}/forms/${encodeURIComponent(form.id)}/responses`}
                           onClick={handleSelectResult}
                           onMouseEnter={() => {
                             const index = searchableItems.findIndex(

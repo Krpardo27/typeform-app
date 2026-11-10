@@ -16,7 +16,7 @@ export function AuditStatsGrid({
   return (
     <section className="grid grid-cols-2 gap-4 md:grid-cols-4">
       <article className="rounded-xl border border-[#E5E5E5] bg-[#FFFFFF] p-5">
-        <p className="text-xs font-medium uppercase tracking-wider text-[#737373]">
+        <p className="text-sm font-medium uppercase tracking-wider text-[#737373]">
           Registros visibles
         </p>
         <p className="mt-3 text-2xl font-bold text-[#171717]">
@@ -25,14 +25,14 @@ export function AuditStatsGrid({
       </article>
 
       <article className="rounded-xl border border-[#E5E5E5] bg-[#FFFFFF] p-5">
-        <p className="text-xs font-medium uppercase tracking-wider text-[#737373]">
+        <p className="text-sm font-medium uppercase tracking-wider text-[#737373]">
           Inicios de sesión
         </p>
         <p className="mt-3 text-2xl font-bold text-[#171717]">{sessionCount}</p>
       </article>
 
       <article className="rounded-xl border border-[#E5E5E5] bg-[#FFFFFF] p-5">
-        <p className="text-xs font-medium uppercase tracking-wider text-[#737373]">
+        <p className="text-sm font-medium uppercase tracking-wider text-[#737373]">
           Acciones auditadas
         </p>
         <p className="mt-3 text-2xl font-bold text-[#171717]">
@@ -41,7 +41,7 @@ export function AuditStatsGrid({
       </article>
 
       <article className="rounded-xl border border-[#E5E5E5] bg-[#FFFFFF] p-5">
-        <p className="text-xs font-medium uppercase tracking-wider text-[#737373]">
+        <p className="text-sm font-medium uppercase tracking-wider text-[#737373]">
           IPs registradas
         </p>
         <p className="mt-3 text-2xl font-bold text-[#171717]">{ipCount}</p>

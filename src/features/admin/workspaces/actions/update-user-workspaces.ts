@@ -1,17 +1,30 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { WorkspaceRole } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/getCurrentUser";
+import { getAvailableAppWorkspaceWhere } from "../services/workspace-availability";
 
-type UpdateUserWorkspacesInput = {
-  userId: string;
-  workspaceIds: string[];
-};
+const assignmentSchema = z.string()
+  .transform((value) => value.split("::"))
+  .pipe(z.tuple([
+    z.string().trim().min(1),
+    z.enum([WorkspaceRole.VIEWER, WorkspaceRole.EDITOR]),
+  ]))
+  .transform(([workspaceId, role]) => ({ workspaceId, role }));
+
+const updateUserWorkspacesSchema = z.object({
+  userId: z.string().trim().min(1),
+  workspaceIds: z.array(assignmentSchema).refine(
+    (assignments) => new Set(assignments.map(({ workspaceId }) => workspaceId)).size === assignments.length,
+    { message: "No se permiten workspaces duplicados" },
+  ),
+});
 
 export async function updateUserWorkspaces(
-  data: UpdateUserWorkspacesInput,
+  data: unknown,
 ) {
   const currentUser = await getCurrentUser();
 
@@ -31,55 +44,23 @@ export async function updateUserWorkspaces(
     };
   }
 
-  const { userId, workspaceIds } = data;
+  const parsed = updateUserWorkspacesSchema.safeParse(data);
 
-  const roleByWorkspaceId = new Map<string, WorkspaceRole>();
-
-  for (const rawWorkspaceId of workspaceIds) {
-    const [workspaceId, rawRole] = rawWorkspaceId.split("::");
-    const role =
-      rawRole === WorkspaceRole.EDITOR
-        ? WorkspaceRole.EDITOR
-        : WorkspaceRole.VIEWER;
-
-    if (!workspaceId) {
-      continue;
-    }
-
-    if (
-      role !== WorkspaceRole.VIEWER &&
-      role !== WorkspaceRole.EDITOR
-    ) {
-      return {
-        success: false,
-        message: "Rol de workspace invalido",
-        changed: false,
-      };
-    }
-
-    roleByWorkspaceId.set(workspaceId, role);
+  if (!parsed.success) {
+    return {
+      success: false,
+      message: "Datos de permisos invalidos",
+      changed: false,
+    };
   }
 
-  const normalizedWorkspaceIds = [...roleByWorkspaceId.keys()];
+  const { userId, workspaceIds: nextAssignments } = parsed.data;
+  const normalizedWorkspaceIds = nextAssignments.map(({ workspaceId }) => workspaceId);
 
-  const [user, validWorkspaces] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true },
-    }),
-
-    prisma.workspace.findMany({
-      where: {
-        id: {
-          in: normalizedWorkspaceIds,
-        },
-        createdFromApp: true,
-      },
-      select: {
-        id: true,
-      },
-    }),
-  ]);
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
 
   if (!user) {
     return {
@@ -89,20 +70,26 @@ export async function updateUserWorkspaces(
     };
   }
 
-  const validWorkspaceIds = validWorkspaces.map((workspace) => workspace.id);
+  const workspaceWhere = await getAvailableAppWorkspaceWhere();
+  const validWorkspaces = await prisma.workspace.findMany({
+    where: { ...workspaceWhere, id: { in: normalizedWorkspaceIds } },
+    select: { id: true },
+  });
 
-  const validWorkspaceIdSet = new Set(validWorkspaceIds);
+  const validWorkspaceIdSet = new Set(validWorkspaces.map((workspace) => workspace.id));
 
-  const nextAssignments = [...roleByWorkspaceId.entries()]
-    .filter(([workspaceId]) => validWorkspaceIdSet.has(workspaceId))
-    .map(([workspaceId, role]) => ({ workspaceId, role }));
+  if (normalizedWorkspaceIds.some((workspaceId) => !validWorkspaceIdSet.has(workspaceId))) {
+    return {
+      success: false,
+      message: "Uno o mas workspaces no existen o no se pueden asignar",
+      changed: false,
+    };
+  }
 
   const currentAssignments = await prisma.userWorkspace.findMany({
     where: {
       userId,
-      workspace: {
-        createdFromApp: true,
-      },
+      workspace: workspaceWhere,
     },
     select: {
       workspaceId: true,
@@ -134,9 +121,8 @@ export async function updateUserWorkspaces(
     prisma.userWorkspace.deleteMany({
       where: {
         userId,
-        workspace: {
-          createdFromApp: true,
-        },
+        // Revocar solo accesos activos/editables; conservar históricos y externos.
+        workspace: workspaceWhere,
         workspaceId: {
           notIn: nextAssignments.map((item) => item.workspaceId),
         },

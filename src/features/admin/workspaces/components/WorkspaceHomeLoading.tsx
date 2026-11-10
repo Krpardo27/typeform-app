@@ -1,6 +1,6 @@
 export function WorkspaceHomeLoading() {
   return (
-    <div className="space-y-8 animate-pulse" aria-hidden>
+    <div className="space-y-8 animate-pulse motion-reduce:animate-none" aria-hidden>
       <header className="border-b border-[#F5F5F5] pb-6">
         <div className="flex items-center gap-2">
           <div className="size-3.5 rounded-full bg-[#FF5C35]/30" />
@@ -17,17 +17,17 @@ export function WorkspaceHomeLoading() {
         </div>
       </header>
 
-      <section className="grid gap-4 xl:grid-cols-3">
+      <section className="grid min-w-0 gap-3 md:grid-cols-2">
         {Array.from({ length: 2 }).map((_, index) => (
           <article
             key={index}
-            className="rounded-xl border border-[#F5F5F5] bg-[#FFFFFF] p-5"
+            className="min-w-0 rounded-lg border border-[#E5E5E5] bg-white p-4 sm:p-5"
           >
             <div className="flex items-center gap-3">
-              <div className="size-10 rounded-lg border border-[#F5F5F5] bg-[#F5F5F5]" />
-              <div className="space-y-2">
-                <div className="h-4 w-36 rounded-md bg-[#F5F5F5]" />
-                <div className="h-3 w-56 rounded-md bg-[#F5F5F5]" />
+              <div className="size-10 shrink-0 rounded-md bg-[#F5F5F5]" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="h-4 w-36 max-w-full rounded-md bg-[#F5F5F5]" />
+                <div className="h-3 w-56 max-w-full rounded-md bg-[#F5F5F5]" />
               </div>
             </div>
           </article>

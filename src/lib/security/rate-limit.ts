@@ -120,7 +120,10 @@ export class AuthRateLimitError extends Error {
 export async function enforceAuthRateLimit(
   input: AuthRateLimitInput,
 ): Promise<void> {
-  const keys = toAuthRateLimitKeys(input);
+  await enforceRateLimitKeys(toAuthRateLimitKeys(input));
+}
+
+export async function enforceRateLimitKeys(keys: string[]): Promise<void> {
   let maxRetryAfter = 0;
 
   for (const key of keys) {

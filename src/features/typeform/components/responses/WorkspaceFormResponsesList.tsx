@@ -1,29 +1,22 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import {
   columnFilteringFeature,
   createColumnHelper,
   createFilteredRowModel,
-  createPaginatedRowModel,
   globalFilteringFeature,
-  rowPaginationFeature,
+  filterFn_includesString,
   tableFeatures,
   useTable,
 } from "@tanstack/react-table";
 import { ResponseExportButton } from "@/features/typeform/components/responses/ResponseExportButton";
-import { ResponseTablePagination } from "@/features/typeform/components/responses/ResponseTablePagination";
 import { ResponseTableRow } from "@/features/typeform/components/responses/ResponseTableRow";
 import type { MaskedTypeformResponse } from "@/features/typeform/services/typeform.service";
 
 type WorkspaceFormResponsesListProps = {
-  highlightedResponses?: MaskedTypeformResponse[];
-  highlightedContactsByToken?: Record<string, string>;
+  contactsByToken?: Record<string, string>;
   responses: MaskedTypeformResponse[];
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
   exportBaseHref?: string;
   canExportResponses: boolean;
 };
@@ -38,9 +31,8 @@ type ResponseTableItem = {
 const RESPONSE_TABLE_FEATURES = tableFeatures({
   columnFilteringFeature,
   globalFilteringFeature,
-  rowPaginationFeature,
   filteredRowModel: createFilteredRowModel(),
-  paginatedRowModel: createPaginatedRowModel(),
+  filterFns: { includesString: filterFn_includesString },
 });
 
 const responseTableColumnHelper = createColumnHelper<
@@ -55,7 +47,7 @@ const RESPONSE_TABLE_COLUMNS = responseTableColumnHelper.columns([
   }),
   responseTableColumnHelper.display({
     id: "participant",
-    header: "Participante",
+    header: "Ganador",
   }),
   responseTableColumnHelper.display({ id: "contact", header: "Contacto" }),
   responseTableColumnHelper.display({ id: "submittedAt", header: "Enviado" }),
@@ -74,6 +66,9 @@ function filterUnavailableExpanded(
 
 function getResponseSearchText(row: ResponseTableItem) {
   const response = row.response;
+  if (response.visibility !== "winner") {
+    return [row.participantLabel, response.token, response.participantNumber].filter(Boolean).join(" ");
+  }
   const values = [
     row.participantLabel,
     row.contactOverride,
@@ -95,101 +90,76 @@ function getResponseSearchText(row: ResponseTableItem) {
 }
 
 export function WorkspaceFormResponsesList({
-  highlightedResponses = [],
-  highlightedContactsByToken = {},
+  contactsByToken = {},
   responses,
-  currentPage,
-  totalPages,
-  totalItems,
-  itemsPerPage,
   exportBaseHref,
   canExportResponses,
 }: WorkspaceFormResponsesListProps) {
-  const safeCurrentPage = Math.min(currentPage, Math.max(1, totalPages));
-  const hasWinnerResponses = highlightedResponses.length > 0;
-
-  const highlightedTokenSet = useMemo(
-    () => new Set(highlightedResponses.map((response) => response.token)),
-    [highlightedResponses],
-  );
-  const paginatedResponses = useMemo(
-    () =>
-      responses
-        .map((response, index) => ({ response, index }))
-        .filter(({ response }) => !highlightedTokenSet.has(response.token)),
-    [highlightedTokenSet, responses],
-  );
-
+  const id = useId();
   const tableRows = useMemo<ResponseTableItem[]>(
-    () => [
-      ...highlightedResponses.map((response, index) => ({
+    () => {
+      const seen = new Set<string>();
+      return responses.filter((response) => {
+        if (response.visibility !== "winner" || seen.has(response.token)) return false;
+        seen.add(response.token);
+        return true;
+      }).map((response, index) => ({
         response,
         participantLabel: `Ganador #${index + 1}`,
-        contactOverride: highlightedContactsByToken[response.token],
+        contactOverride: contactsByToken[response.token],
         variant: "winner" as const,
-      })),
-      ...paginatedResponses.map(({ response, index }) => ({
-        response,
-        participantLabel: `Participante #${
-          response.participantNumber ??
-          (safeCurrentPage - 1) * itemsPerPage + index + 1
-        }`,
-      })),
-    ],
-    [
-      highlightedContactsByToken,
-      highlightedResponses,
-      itemsPerPage,
-      paginatedResponses,
-      safeCurrentPage,
-    ],
+      }));
+    },
+    [contactsByToken, responses],
   );
 
   const table = useTable({
     features: RESPONSE_TABLE_FEATURES,
     data: tableRows,
     columns: RESPONSE_TABLE_COLUMNS,
-    initialState: {
-      pagination: {
-        pageIndex: 0,
-        pageSize: Math.min(10, Math.max(1, tableRows.length)),
-      },
-    },
     getColumnCanGlobalFilter: (column) => column.id === "search",
+    globalFilterFn: "includesString",
     getRowId: (row: ResponseTableItem) => row.response.token,
   });
 
-  const visibleHeaders = table
-    .getHeaderGroups()[0]
-    ?.headers.filter((header) => header.id !== "search") ?? [];
+  const visibleHeaders =
+    table
+      .getHeaderGroups()[0]
+      ?.headers.filter((header) => header.id !== "search") ?? [];
   const visibleColumnCount = visibleHeaders.length;
   const filteredRows = table.getFilteredRowModel().rows;
-  const paginatedRows = table.getPaginatedRowModel().rows;
   const searchValue = String(table.state.globalFilter ?? "");
 
   const responseTokens = useMemo(
-    () => filteredRows.map((row) => row.original.response.token),
-    [filteredRows],
+    () => tableRows.filter((row) => row.response.visibility === "winner").map((row) => row.response.token),
+    [tableRows],
   );
 
-  const [expandedTokens, setExpandedTokens] = useState<string[]>(
-    highlightedResponses.length > 0
-      ? highlightedResponses.map((response) => response.token)
-      : responses[0]
-        ? [responses[0].token]
-        : [],
-  );
+  const selectionKey = JSON.stringify(responseTokens);
+  const [expansion, setExpansion] = useState(() => ({ key: selectionKey, tokens: responseTokens }));
+  const expandedTokens = expansion.key === selectionKey ? expansion.tokens : responseTokens;
+
+  function setExpandedTokens(update: (current: string[]) => string[]) {
+    setExpansion((current) => ({
+      key: selectionKey,
+      tokens: update(current.key === selectionKey ? current.tokens : responseTokens),
+    }));
+  }
 
   const normalizedExpandedTokens = useMemo(
     () => filterUnavailableExpanded(expandedTokens, responseTokens),
     [expandedTokens, responseTokens],
   );
 
+  const visibleTokens = filteredRows
+    .filter((row) => row.original.response.visibility === "winner")
+    .map((row) => row.original.response.token);
   const allExpanded =
-    paginatedResponses.length > 0 &&
-    paginatedResponses.every(({ response }) =>
-      normalizedExpandedTokens.includes(response.token),
-    );
+    visibleTokens.length > 0 &&
+    visibleTokens.every((token) => normalizedExpandedTokens.includes(token));
+  const anyVisibleExpanded = visibleTokens.some((token) =>
+    normalizedExpandedTokens.includes(token),
+  );
 
   function toggleToken(token: string) {
     setExpandedTokens((prev) => {
@@ -202,92 +172,86 @@ export function WorkspaceFormResponsesList({
   }
 
   function expandAll() {
-    setExpandedTokens([
-      ...highlightedResponses.map((response) => response.token),
-      ...paginatedResponses.map(({ response }) => response.token),
+    setExpandedTokens((previous) => [
+      ...new Set([
+        ...filterUnavailableExpanded(previous, responseTokens),
+        ...visibleTokens,
+      ]),
     ]);
   }
 
   function collapseAll() {
-    setExpandedTokens([]);
+    const visible = new Set(visibleTokens);
+    setExpandedTokens((previous) =>
+      filterUnavailableExpanded(previous, responseTokens).filter(
+        (token) => !visible.has(token),
+      ),
+    );
   }
 
   function handleSearchChange(value: string) {
-    table.setPageIndex(0);
     table.setGlobalFilter(value || undefined);
   }
 
   return (
-    <section className="mt-8 space-y-5">
-      {responseTokens.length === 0 ? (
+    <section aria-labelledby={`${id}-title`} className="mt-8 min-w-0 space-y-5">
+      {tableRows.length === 0 ? (
         <div
           className="
-            rounded-2xl
-            border border-dashed border-[#E8E8E6]
+            rounded-md
+            border border-[#FF5C35]/30
             bg-white
             px-6 py-12
-            text-center
-            shadow-[0_8px_30px_-18px_rgba(0,0,0,0.18)]
           "
         >
-          <p className="text-sm font-medium text-[#000000]/80">
-            No hay respuestas para esta página
-          </p>
+          <h2
+            id={`${id}-title`}
+            className="text-base font-medium text-[#171717]"
+          >
+            Datos de los ganadores
+          </h2>
 
-          <p className="mt-1 text-xs text-[#000000]/55">
-            Ajusta la paginación o espera nuevas respuestas de Typeform.
+          <p className="mt-2 text-sm leading-6 text-[#595954]">
+            Confirma una selección de ganadores para consultar aquí sus datos y respuestas.
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-[#DADAD6] bg-white">
-          <div className="flex flex-col gap-3 border-b border-[#E8E8E6] bg-white px-3 py-3 sm:px-4 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0 overflow-hidden rounded-md border border-[#FF5C35]/35 bg-white text-[#171717]">
+          <div className="flex flex-col gap-4 border-b border-[#FF5C35]/20 px-4 py-4 sm:px-5">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-[#111111]">
-                Respuestas del formulario
-              </p>
-              <p className="mt-0.5 text-xs text-[#000000]/50">
-                {totalItems} participantes en Typeform · {tableRows.length}{" "}
-                filas cargadas
+              <h2 id={`${id}-title`} className="text-base font-semibold">
+                Datos de los ganadores
+              </h2>
+              <p className="mt-2 text-sm leading-5 text-[#595954]">
+                {tableRows.length} {tableRows.length === 1 ? "ganador confirmado" : "ganadores confirmados"}. Solo estos participantes tienen datos visibles.
               </p>
             </div>
 
-            <div className="grid gap-2 sm:flex sm:items-center">
-              <label className="min-w-0 sm:w-64">
-                <span className="sr-only">Buscar filas cargadas</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="min-w-0 basis-full sm:min-w-56 sm:basis-auto sm:flex-1">
+                <span className="sr-only">Buscar ganadores confirmados</span>
                 <input
                   type="search"
                   value={searchValue}
                   onChange={(event) => handleSearchChange(event.target.value)}
-                  placeholder="Buscar filas cargadas"
-                  className="min-h-10 w-full rounded-lg border border-[#DCDCD9] bg-white px-3 py-2 text-sm text-[#111111] outline-none transition placeholder:text-[#000000]/40 focus:border-[#111111] sm:min-h-8"
+                  placeholder="Buscar ganadores confirmados"
+                  className="min-h-11 w-full rounded-md border border-[#FF5C35]/35 bg-white px-3 py-2 text-sm text-[#171717] outline-none placeholder:text-[#767670] focus:border-[#FF5C35] focus:outline-2 focus:outline-offset-2 focus:outline-[#FF5C35]"
                 />
               </label>
 
               {exportBaseHref && (
-                <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
-                  <ResponseExportButton
-                    baseHref={exportBaseHref}
-                    scope="participants"
-                    label="Participantes"
-                    variant="participants"
-                    canExport={canExportResponses}
-                  />
-
+                <div>
                   <ResponseExportButton
                     baseHref={exportBaseHref}
                     scope="winners"
-                    label="Ganadores"
+                    label="Exportar ganadores"
                     variant="winners"
-                    canExport={canExportResponses && hasWinnerResponses}
+                    canExport={canExportResponses}
                     disabledMessage={
-                      canExportResponses
-                        ? "No hay ganadores para exportar"
-                        : "No tienes permisos para exportar"
+                      "No tienes permisos para exportar"
                     }
                     disabledDescription={
-                      canExportResponses
-                        ? "Selecciona ganadores antes de descargar el archivo."
-                        : "Solo los usuarios con rol editor pueden descargar respuestas."
+                      "Solo los usuarios con rol editor pueden descargar respuestas."
                     }
                   />
                 </div>
@@ -296,25 +260,33 @@ export function WorkspaceFormResponsesList({
               <button
                 type="button"
                 onClick={expandAll}
-                disabled={allExpanded}
-                className="rounded-lg cursor-pointer border border-[#E8E8E6] bg-white px-3 py-2 text-xs font-medium text-[#000000]/70 transition-colors hover:border-black/20 hover:text-black disabled:cursor-not-allowed disabled:opacity-40 sm:py-1.5"
+                disabled={visibleTokens.length === 0 || allExpanded}
+                className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-md border border-[#FF5C35]/35 px-3 py-2 text-sm font-medium text-[#A53318] transition-colors hover:border-[#FF5C35] hover:bg-[#FFF1EC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF5C35] disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none"
               >
-                Expandir todo
+                Expandir visibles
               </button>
 
               <button
                 type="button"
                 onClick={collapseAll}
-                disabled={normalizedExpandedTokens.length === 0}
-                className="rounded-lg cursor-pointer border border-[#E8E8E6] bg-white px-3 py-2 text-xs font-medium text-[#000000]/70 transition-colors hover:border-black/20 hover:text-black disabled:cursor-not-allowed disabled:opacity-40 sm:py-1.5"
+                disabled={!anyVisibleExpanded}
+                className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-md border border-[#D1D1CD] px-3 py-2 text-sm font-medium text-[#595954] transition-colors hover:border-[#FF5C35]/60 hover:text-[#171717] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF5C35] disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none"
               >
-                Contraer todo
+                Contraer visibles
               </button>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div
+            role="region"
+            aria-label="Tabla de datos de ganadores confirmados"
+            tabIndex={0}
+            className="relative overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#FF5C35]"
+          >
             <table className="w-full min-w-200 border-collapse lg:min-w-225">
+              <caption className="sr-only">
+                Ganadores confirmados, contactos y respuestas del formulario
+              </caption>
               <thead className="bg-[#FBFBFA]">
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr
@@ -324,32 +296,35 @@ export function WorkspaceFormResponsesList({
                     {headerGroup.headers
                       .filter((header) => header.id !== "search")
                       .map((header) => (
-                      <th
-                        key={header.id}
-                        scope="col"
-                        className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-[#000000]/45 last:text-right"
-                      >
-                        {header.isPlaceholder ? null : (
-                          <table.FlexRender header={header} />
-                        )}
-                      </th>
-                    ))}
+                        <th
+                          key={header.id}
+                          scope="col"
+                          className="px-4 py-3 text-left text-sm font-medium text-[#595954] last:text-right"
+                        >
+                          {header.isPlaceholder ? null : header.column.id ===
+                            "actions" ? (
+                            <span className="sr-only">Expandir respuesta</span>
+                          ) : (
+                            <table.FlexRender header={header} />
+                          )}
+                        </th>
+                      ))}
                   </tr>
                 ))}
               </thead>
 
               <tbody>
-                {paginatedRows.length === 0 ? (
+                {filteredRows.length === 0 ? (
                   <tr>
                     <td
                       colSpan={visibleColumnCount}
-                      className="px-4 py-10 text-center text-sm text-[#000000]/50"
+                      className="px-4 py-8 text-center text-sm text-[#595954]"
                     >
-                      No hay respuestas que coincidan con la búsqueda.
+                      No hay ganadores que coincidan con la búsqueda.
                     </td>
                   </tr>
                 ) : (
-                  paginatedRows.map((row) => (
+                  filteredRows.map((row) => (
                     <ResponseTableRow
                       key={row.id}
                       response={row.original.response}
@@ -369,12 +344,15 @@ export function WorkspaceFormResponsesList({
           </div>
 
           {searchValue && (
-            <p className="border-t border-[#E8E8E6] px-4 py-2 text-xs text-[#000000]/50">
-              {filteredRows.length} fila(s) cargadas encontradas para “{searchValue}”.
+            <p
+              role="status"
+              className="border-t border-[#E8E8E6] px-4 py-3 text-sm text-[#595954]"
+            >
+              {filteredRows.length} ganador(es) encontrados para “
+              {searchValue}”.
             </p>
           )}
 
-          <ResponseTablePagination table={table} />
         </div>
       )}
     </section>

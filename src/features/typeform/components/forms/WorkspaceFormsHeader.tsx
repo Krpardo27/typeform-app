@@ -19,15 +19,15 @@ export function WorkspaceFormsHeader({
     <WorkspaceHeader
       eyebrow={
         <>
-          <LuFileText className="size-3.5 text-[#FF5C35]" />
-          <span className="truncate">{workspaceName}</span>
+          <LuFileText aria-hidden="true" className="size-3.5 shrink-0 text-[#FF5C35]" />
+          <span className="min-w-0 wrap-anywhere">{workspaceName}</span>
         </>
       }
       title="Formularios"
       actions={
         <>
           <p className="rounded-lg border border-[#F5F5F5] bg-[#FFFFFF] px-3 py-2 text-sm text-[#000000]/65">
-            {totalItems} total
+            {totalItems} Formularios
           </p>
 
           {canCreateForms ? (

@@ -47,6 +47,10 @@ function createMissingDatabaseClient(): PrismaClient {
 
 function createPrismaClient() {
   if (!process.env.DATABASE_URL) {
+    if (process.env.NODE_ENV === "production" && process.env.NEXT_PHASE !== "phase-production-build") {
+      throw new Error(missingDatabaseMessage);
+    }
+
     return createMissingDatabaseClient();
   }
 
@@ -67,7 +71,7 @@ function createPrismaClient() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (client as any).$on("query", (e: QueryEvent) => {
       if (e.duration > 50) {
-        console.warn(`[Prisma slow query ${e.duration}ms]\n  ${e.query}\n  params: ${e.params}`);
+        console.warn(`[Prisma slow query ${e.duration}ms]\n  ${e.query}`);
       } else {
         console.log(`[Prisma ${e.duration}ms] ${e.query}`);
       }

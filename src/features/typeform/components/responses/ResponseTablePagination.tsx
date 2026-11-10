@@ -27,10 +27,22 @@ type ResponseTablePaginationTable = {
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
 
+const navigationButtonClass = "inline-flex h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center rounded-md border border-[#E5E5E5] bg-white text-[#595954] transition-colors hover:border-[#B8B8B2] hover:text-[#171717] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A33116] disabled:cursor-default disabled:opacity-40 motion-reduce:transition-none";
+
 export function ResponseTablePagination({
   table,
+  pageSizeOptions = PAGE_SIZE_OPTIONS,
+  showAllPageSizeOption = false,
+  itemLabel = "filas",
+  pageSizeLabel = "Filas por página de la tabla",
+  isPending = false,
 }: {
   table: ResponseTablePaginationTable;
+  pageSizeOptions?: number[];
+  showAllPageSizeOption?: boolean;
+  itemLabel?: string;
+  pageSizeLabel?: string;
+  isPending?: boolean;
 }) {
   const pageIndex = table.state.pagination.pageIndex;
   const pageSize = table.state.pagination.pageSize;
@@ -38,86 +50,101 @@ export function ResponseTablePagination({
   const currentPage = pageIndex + 1;
 
   return (
-    <div className="flex flex-col gap-3 border-t border-[#E8E8E6] bg-white px-3 py-3 text-xs text-[#000000]/60 sm:px-4 lg:flex-row lg:items-center lg:justify-between">
+    <nav aria-label="Paginación" aria-busy={isPending} className="flex min-w-0 flex-col gap-3 border-t border-[#E8E8E6] bg-white px-3 py-3 text-sm text-[#595954] sm:px-4 xl:flex-row xl:items-center xl:justify-between">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="font-medium text-[#111111]">{table.getRowCount()} filas</span>
-        <span className="text-[#000000]/25">/</span>
+        <span className="font-medium text-[#171717]">{table.getRowCount()} {itemLabel}</span>
+        <span aria-hidden="true" className="text-[#737373]">/</span>
         <span>
           Página {currentPage} de {pageCount}
         </span>
       </div>
 
-      <div className="grid gap-2 sm:flex sm:flex-wrap sm:items-center">
+      <div className="grid min-w-0 gap-2 sm:flex sm:flex-wrap sm:items-center">
         <select
-          value={pageSize}
-          onChange={(event) => table.setPageSize(Number(event.target.value))}
-          className="h-9 w-full rounded-lg border border-[#E5E5E5] bg-white px-2 text-xs text-[#111111] outline-none transition-colors hover:border-black/20 focus:border-black/30 sm:h-8 sm:w-auto"
-          aria-label="Filas por página de la tabla"
+          value={pageSize === Infinity ? "all" : pageSize}
+          onChange={(event) => table.setPageSize(event.target.value === "all" ? Infinity : Number(event.target.value))}
+          disabled={isPending}
+          className="min-h-11 w-full min-w-0 max-w-full cursor-pointer rounded-md border border-[#E5E5E5] bg-white px-2 text-sm text-[#171717] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A33116] disabled:cursor-default disabled:opacity-40 sm:w-auto"
+          aria-label={pageSizeLabel}
         >
-          {PAGE_SIZE_OPTIONS.map((option) => (
+          {pageSizeOptions.map((option) => (
             <option key={option} value={option}>
-              {option} filas
+              {option} {itemLabel}
             </option>
           ))}
+          {showAllPageSizeOption && <option value="all">Todos</option>}
         </select>
 
-        <div className="grid grid-cols-4 gap-1 sm:flex sm:items-center">
+        <div className="grid grid-cols-4 gap-2 sm:flex sm:items-center sm:gap-1">
           <button
             type="button"
             onClick={() => table.firstPage()}
-            disabled={!table.getCanPreviousPage()}
+            disabled={isPending || !table.getCanPreviousPage()}
             aria-label="Primera página"
-            className="inline-flex h-9 cursor-pointer items-center justify-center rounded-lg border border-[#E5E5E5] bg-white text-[#000000]/60 transition-colors hover:border-black/20 hover:text-black disabled:cursor-not-allowed disabled:opacity-40 sm:size-8"
+            className={navigationButtonClass}
           >
-            <LuChevronsLeft className="size-3.5" />
+            <LuChevronsLeft aria-hidden="true" className="size-6 text-[#FF5C35]" />
           </button>
 
           <button
             type="button"
             onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+            disabled={isPending || !table.getCanPreviousPage()}
             aria-label="Página anterior"
-            className="inline-flex h-9 cursor-pointer items-center justify-center rounded-lg border border-[#E5E5E5] bg-white text-[#000000]/60 transition-colors hover:border-black/20 hover:text-black disabled:cursor-not-allowed disabled:opacity-40 sm:size-8"
+            className={navigationButtonClass}
           >
-            <LuChevronLeft className="size-3.5" />
+            <LuChevronLeft aria-hidden="true" className="size-6 text-[#FF5C35]" />
           </button>
 
           <button
             type="button"
             onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
+            disabled={isPending || !table.getCanNextPage()}
             aria-label="Página siguiente"
-            className="inline-flex h-9 cursor-pointer items-center justify-center rounded-lg border border-[#E5E5E5] bg-white text-[#000000]/60 transition-colors hover:border-black/20 hover:text-black disabled:cursor-not-allowed disabled:opacity-40 sm:size-8"
+            className={navigationButtonClass}
           >
-            <LuChevronRight className="size-3.5" />
+            <LuChevronRight aria-hidden="true" className="size-6 text-[#FF5C35]" />
           </button>
 
           <button
             type="button"
             onClick={() => table.lastPage()}
-            disabled={!table.getCanLastPage()}
+            disabled={isPending || !table.getCanLastPage()}
             aria-label="Última página"
-            className="inline-flex h-9 cursor-pointer items-center justify-center rounded-lg border border-[#E5E5E5] bg-white text-[#000000]/60 transition-colors hover:border-black/20 hover:text-black disabled:cursor-not-allowed disabled:opacity-40 sm:size-8"
+            className={navigationButtonClass}
           >
-            <LuChevronsRight className="size-3.5" />
+            <LuChevronsRight aria-hidden="true" className="size-6 text-[#FF5C35]" />
           </button>
         </div>
 
-        <label className="flex items-center gap-2 text-[#000000]/50 sm:gap-1">
-          Ir a
-          <input
-            type="number"
-            min={1}
-            max={Math.max(1, pageCount)}
-            value={currentPage}
-            onChange={(event) => {
-              const nextPage = Number(event.target.value);
-              table.setPageIndex(Math.max(0, nextPage - 1));
-            }}
-            className="h-9 min-w-0 flex-1 rounded-lg border border-[#E5E5E5] bg-white px-2 text-xs text-[#111111] outline-none transition-colors hover:border-black/20 focus:border-black/30 sm:h-8 sm:w-16 sm:flex-none"
-          />
-        </label>
+        <form
+          key={`${currentPage}-${pageCount}`}
+          className="flex w-full min-w-0 items-center gap-2 sm:w-auto"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (isPending) return;
+            const nextPage = Number(new FormData(event.currentTarget).get("page"));
+            if (!Number.isSafeInteger(nextPage) || nextPage < 1 || nextPage > pageCount) return;
+            if (nextPage !== currentPage) table.setPageIndex(nextPage - 1);
+          }}
+        >
+          <label className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
+            <span className="shrink-0">Ir a</span>
+            <input
+              name="page"
+              type="number"
+              min={1}
+              max={Math.max(1, pageCount)}
+              defaultValue={currentPage}
+              disabled={isPending || pageCount <= 1}
+              required
+              className="min-h-11 w-full min-w-0 rounded-md border border-[#E5E5E5] bg-white px-2 text-sm text-[#171717] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A33116] disabled:opacity-40 sm:w-16"
+            />
+          </label>
+          <button type="submit" disabled={isPending || pageCount <= 1} className={navigationButtonClass}>Ir</button>
+        </form>
       </div>
-    </div>
+      {isPending && <span role="status">Cargando participantes…</span>}
+    </nav>
   );
 }

@@ -5,6 +5,7 @@ import { AdminMembersHeader } from "@/features/admin/members/components/AdminMem
 import { AuthorizeMemberForm } from "@/features/admin/members/components/AuthorizeMemberForm";
 import { NoWorkspacesNotice } from "@/features/admin/members/components/NoWorkspacesNotice";
 import { RecentWhitelist } from "@/features/admin/members/components/RecentWhitelist";
+import { getAvailableAppWorkspaceWhere } from "@/features/admin/workspaces/services/workspace-availability";
 
 export default async function AdminMembersPage() {
   const currentUser = await getCurrentUser();
@@ -17,15 +18,15 @@ export default async function AdminMembersPage() {
     notFound();
   }
 
+  const workspaceWhere = await getAvailableAppWorkspaceWhere();
   const workspaces = await prisma.workspace.findMany({
-    where: {
-      createdFromApp: true,
-    },
+    where: workspaceWhere,
     orderBy: { name: "asc" },
     select: {
       id: true,
       name: true,
       typeformId: true,
+      templateFormTypeformId: true,
     },
   });
 
@@ -50,15 +51,14 @@ export default async function AdminMembersPage() {
           include: {
             workspaces: {
               where: {
-                workspace: {
-                  createdFromApp: true,
-                },
+                workspace: workspaceWhere,
               },
               include: {
                 workspace: {
                   select: {
                     name: true,
                     typeformId: true,
+                    templateFormTypeformId: true,
                   },
                 },
               },

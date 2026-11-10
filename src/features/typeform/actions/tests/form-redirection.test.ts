@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   createAuditLog: vi.fn(),
   createDefaultTypeformFormForWorkspace: vi.fn(),
   duplicateTypeformForm: vi.fn(),
+  findWorkspaceFormsByTitle: vi.fn(),
   getWorkspaceAccessContext: vi.fn(),
   notFound: vi.fn(() => {
     throw new Error("NEXT_NOT_FOUND");
@@ -34,6 +35,7 @@ vi.mock("@/features/typeform/services/typeform.service", () => ({
   createDefaultTypeformFormForWorkspace:
     mocks.createDefaultTypeformFormForWorkspace,
   duplicateTypeformForm: mocks.duplicateTypeformForm,
+  findWorkspaceFormsByTitle: mocks.findWorkspaceFormsByTitle,
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -81,6 +83,7 @@ function expectRedirectToFormsList(error: unknown) {
 describe("form action redirection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.findWorkspaceFormsByTitle.mockResolvedValue([]);
 
     mocks.getWorkspaceAccessContext.mockResolvedValue({
       user: USER,

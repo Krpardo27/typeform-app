@@ -5,10 +5,11 @@ import { revalidatePath } from "next/cache";
 import { getWorkspaceAccessContext } from "@/features/admin/workspaces/services/workspace-access";
 import { createDefaultTypeformFormForWorkspace } from "@/features/typeform/services/typeform.service";
 import { prisma } from "@/lib/prisma";
+import { createAuditLog } from "@/features/admin/audit/services/audit-log.service";
 import { getWorkspaceFormsListPath } from "@/features/typeform/utils/form-redirect";
 
 export async function createDefaultFormForWorkspaceAction(workspaceId: string) {
-  const { workspace, canCreateForms } = await getWorkspaceAccessContext(workspaceId);
+  const { user, workspace, canCreateForms } = await getWorkspaceAccessContext(workspaceId);
 
   if (!canCreateForms) {
     notFound();
@@ -44,6 +45,18 @@ export async function createDefaultFormForWorkspaceAction(workspaceId: string) {
       description: `Formulario base inicial para ${workspace.name}`,
       selfUrl: duplicated.createdForm.self?.href ?? null,
       workspaceId: workspace.id,
+    },
+  });
+
+  await createAuditLog({
+    action: "FORM_CLONED",
+    actor: user,
+    target: { type: "form", id: duplicated.createdForm.id },
+    context: {
+      workspaceId: workspace.id,
+      workspaceName: workspace.name,
+      formId: duplicated.createdForm.id,
+      metadata: { sourceFormId: baseFormId },
     },
   });
 

@@ -77,12 +77,12 @@ export default async function MyWorkspacesPage() {
                   Sesión autenticada
                 </p>
 
-                <p className="truncate text-xs text-[#A1A1AA]">
+                <p className="truncate text-sm text-[#A1A1AA]">
                   {user.email}
                 </p>
               </div>
 
-              <span className="ml-auto flex shrink-0 items-center gap-1.5 text-xs font-medium text-[#16A34A]">
+              <span className="ml-auto flex shrink-0 items-center gap-1.5 text-sm font-medium text-[#16A34A]">
                 <span className="size-1.5 rounded-full bg-[#16A34A]" />
                 Activa
               </span>
