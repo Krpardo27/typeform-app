@@ -40,8 +40,6 @@ export function WorkspaceHomeActions({
         <div className="flex min-w-0 items-center gap-3 rounded-lg border border-[#E5E5E5] bg-[#FAFAF9] p-4 sm:p-5">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-[#F0F0EE] text-[#737373]">
             <LuFilePlus2 aria-hidden="true" className="size-5" />
-            Crear formulario Duplica un formulario existente para crear uno
-            nuevo.
           </span>
           <div className="min-w-0 flex-1 wrap-anywhere">
             <h2 className="text-base font-semibold leading-6 text-[#595954]">
