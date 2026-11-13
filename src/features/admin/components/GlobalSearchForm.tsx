@@ -101,6 +101,7 @@ export default function GlobalSearchForm({
 
   useEffect(() => {
     let isCancelled = false;
+    const controller = new AbortController();
 
     if (query.length < minLength) {
       onResults?.(null);
@@ -134,6 +135,7 @@ export default function GlobalSearchForm({
           {
             method: "GET",
             cache: "no-store",
+            signal: controller.signal,
           },
         );
 
@@ -172,6 +174,7 @@ export default function GlobalSearchForm({
     return () => {
       isCancelled = true;
       clearTimeout(timeout);
+      controller.abort();
     };
   }, [
     debounceMs,

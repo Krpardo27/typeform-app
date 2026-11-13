@@ -6,6 +6,8 @@ import type { TypeformFormSummary } from "@/features/typeform/services/typeform.
 import type Pagination from "@/shared/components/Pagination";
 import type { AdminWorkspacesGrid } from "../components/AdminWorkspacesGrid";
 
+vi.mock("@/lib/getCurrentUser", () => ({ getCurrentUser: vi.fn(async () => ({ id: "admin", globalRole: "SUPER_ADMIN" })) }));
+
 const mocks = vi.hoisted(() => ({
   workspaceFindFirst: vi.fn(),
   workspaceFindMany: vi.fn(),

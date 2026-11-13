@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "@/lib/prisma";
@@ -22,6 +23,33 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
+
+  user: {
+    additionalFields: {
+      globalRole: { type: ["USER", "SUPER_ADMIN"], defaultValue: "USER", input: false },
+      status: { type: ["PENDING", "ACTIVE", "REJECTED"], defaultValue: "PENDING", input: false },
+    },
+  },
+
+  databaseHooks: {
+    session: {
+      create: {
+        before: async (session) => {
+          const user = await prisma.user.findUnique({
+            where: { id: session.userId },
+            select: { email: true, status: true },
+          });
+          const allowed = user && user.status !== "REJECTED"
+            ? await prisma.allowedUser.findFirst({
+                where: { email: { equals: user.email, mode: "insensitive" } },
+                select: { id: true },
+              })
+            : null;
+          if (!allowed) throw new APIError("FORBIDDEN", { message: "Acceso no autorizado" });
+        },
+      },
+    },
+  },
 
   emailAndPassword: {
     enabled: false,

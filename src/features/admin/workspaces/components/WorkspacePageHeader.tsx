@@ -24,7 +24,7 @@ export function WorkspacePageHeader({ title, description, actions, backHref, rad
       )}
       <div className="flex min-w-0 flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex min-w-0 flex-1 flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
-          {radio && <WorkspaceRadioLogo workspace={radio} size={100} fallback="none" />}
+          {radio && <WorkspaceRadioLogo workspace={radio} size={100} fallback="none" loading="eager" />}
           <div className="min-w-0 flex-1">
             <h1 className="wrap-anywhere text-2xl font-semibold leading-tight tracking-tight text-[#171717]">{title}</h1>
             {description && <div className="mt-2 text-sm leading-6 text-[#595954]">{description}</div>}

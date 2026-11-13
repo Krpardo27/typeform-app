@@ -4,7 +4,7 @@ import NewWorkspaceFormPage from "./page";
 
 const mocks = vi.hoisted(() => ({ access: vi.fn(), forms: vi.fn(), createDefault: vi.fn(), duplicate: vi.fn() }));
 vi.mock("next/navigation", () => ({ notFound: () => { throw new Error("NOT_FOUND"); } }));
-vi.mock("@/features/admin/workspaces/services/workspace-access", () => ({ getWorkspaceAccessContext: mocks.access }));
+vi.mock("@/features/admin/workspaces/services/workspace-access", () => ({ getWorkspaceRenderContext: mocks.access }));
 vi.mock("@/features/typeform/services/typeform.service", () => ({ getWorkspaceForms: mocks.forms }));
 vi.mock("@/features/typeform/actions/create-default-form-for-workspace.action", () => ({ createDefaultFormForWorkspaceAction: mocks.createDefault }));
 vi.mock("@/features/typeform/components/forms/WorkspaceFormDuplicateButton", () => ({

@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { getWorkspaceAccessContext } from "@/features/admin/workspaces/services/workspace-access";
+import { getWorkspaceRenderContext } from "@/features/admin/workspaces/services/workspace-access";
 import NewWorkspaceFormPage from "../new/page";
 import {
   formBelongsToWorkspace,
@@ -43,7 +43,7 @@ export default async function WorkspaceFormDetailPage({
     );
   }
 
-  const { workspace } = await getWorkspaceAccessContext(workspaceId);
+  const { workspace } = await getWorkspaceRenderContext(workspaceId);
   const form = await getExistingTypeformForm(formId);
   const resolvedWorkspaceTypeformId = await resolveWorkspaceTypeformId(
     workspace.typeformId,

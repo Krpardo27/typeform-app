@@ -241,7 +241,7 @@ describe("controles SSR de ganadores", () => {
     expect(html).not.toContain("min-w-240");
     expect(html).not.toMatch(/<(?:td|th)\b[^>]*class="[^"]*min-w-/);
     expect(html).not.toContain("col-span-");
-    expect(html).toContain("relative max-h-88 overflow-auto");
+    expect(html).toContain("relative lg:max-h-88 overflow-auto");
     expect(html).toContain('placeholder="Buscar por número de participante, región o comuna"');
     expect(html).not.toMatch(/aria-describedby="[^"]*-search-hint"/);
     expect(html).toContain('aria-label="Seleccionar participante #12"');

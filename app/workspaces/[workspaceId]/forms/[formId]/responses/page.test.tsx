@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   list: vi.fn(), panel: vi.fn(), cookies: vi.fn(),
   confirm: vi.fn(), begin: vi.fn(), readParticipant: vi.fn(), readWinner: vi.fn(), finish: vi.fn(),
 }));
-vi.mock("@/features/admin/workspaces/services/workspace-access", () => ({ getWorkspaceAccessContext: mocks.access }));
+vi.mock("@/features/admin/workspaces/services/workspace-access", () => ({ getWorkspaceRenderContext: mocks.access }));
 vi.mock("next/headers", () => ({ cookies: mocks.cookies }));
 vi.mock("@/lib/prisma", () => ({ prisma: {
   userWorkspace: { findUnique: mocks.membership },
@@ -125,6 +125,13 @@ describe("FormResponsesPage en preview fixture", () => {
 });
 
 describe("FormResponsesPage", () => {
+  it("deniega membresía retirada en lugar de reutilizar el rol anterior del workspace", async () => {
+    mocks.membership.mockResolvedValue(null);
+    await expect(renderPage()).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
+    expect(mocks.responses).not.toHaveBeenCalled();
+    expect(mocks.winners).not.toHaveBeenCalled();
+  });
+
   it("firma opaca estable por tokens/selectedAt y formulario local sin exponer fechas ni motivos", async () => {
     const rows = [
       { responseToken: "token-0", selectedAt: new Date("2026-11-01T10:00:00Z"), reason: "MOTIVO-PRIVADO" },

@@ -1,6 +1,6 @@
 import { WorkspaceHomeActions } from "@/features/admin/workspaces/components/WorkspaceHomeActions";
 import { WorkspaceHomeHeader } from "@/features/admin/workspaces/components/WorkspaceHomeHeader";
-import { getWorkspaceAccessContext } from "@/features/admin/workspaces/services/workspace-access";
+import { getWorkspaceRenderContext } from "@/features/admin/workspaces/services/workspace-access";
 
 export default async function WorkspacePage({
   params,
@@ -9,7 +9,7 @@ export default async function WorkspacePage({
 }) {
   const { workspaceId } = await params;
   const { workspace, canCreateForms } =
-    await getWorkspaceAccessContext(workspaceId);
+    await getWorkspaceRenderContext(workspaceId);
   return (
     <>
       <WorkspaceHomeHeader

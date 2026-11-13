@@ -75,6 +75,7 @@ describe("flujo de DeleteUserButton con servicios simulados", () => {
     const onClick = handler();
     const first = onClick();
     await onClick();
+    await vi.waitFor(() => expect(mocks.fire).toHaveBeenCalledOnce());
     expect(mocks.fire).toHaveBeenCalledOnce();
     close({ isConfirmed: false });
     await first;

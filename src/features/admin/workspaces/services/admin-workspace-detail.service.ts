@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
+import { requireSuperAdmin } from "@/lib/requireSuperAdmin";
 import {
   getTypeformWorkspace,
   getWorkspaceForms,
@@ -7,8 +8,9 @@ import {
 } from "@/features/typeform/services/typeform.service";
 import { WORKSPACE_FORMS_PAGE_SIZE, parseWorkspacePage } from "../utils/workspace-view";
 
-export const getAdminWorkspace = cache(async (workspaceId: string) =>
-  prisma.workspace.findFirst({
+export const getAdminWorkspace = cache(async (workspaceId: string) => {
+  await requireSuperAdmin();
+  return prisma.workspace.findFirst({
     where: {
       createdFromApp: true,
       OR: [{ id: workspaceId }, { typeformId: workspaceId }],
@@ -20,10 +22,11 @@ export const getAdminWorkspace = cache(async (workspaceId: string) =>
       templateFormTypeformId: true,
       _count: { select: { users: true, forms: true } },
     },
-  }),
-);
+  });
+});
 
 export async function getAdminWorkspaceFormsPage(workspaceTypeformId: string, requestedPage: number) {
+  await requireSuperAdmin();
   // La primera página (cacheada por el servicio Typeform) permite conocer
   // el límite antes de enviar una página fuera de rango al proveedor.
   const firstPage = await getWorkspaceForms(workspaceTypeformId, {

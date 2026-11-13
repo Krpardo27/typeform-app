@@ -14,7 +14,7 @@ type LoaderRedirectProps = {
 
 export default function LoaderRedirect({
   redirectTo,
-  delayMs = 1000,
+  delayMs = 0,
   title,
   description,
   variant = "default",
@@ -22,6 +22,10 @@ export default function LoaderRedirect({
   const router = useRouter();
 
   useEffect(() => {
+    if (delayMs <= 0) {
+      router.replace(redirectTo);
+      return;
+    }
     const timer = window.setTimeout(() => {
       router.replace(redirectTo);
     }, delayMs);

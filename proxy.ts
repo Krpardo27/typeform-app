@@ -14,7 +14,9 @@ export default async function proxy(request: NextRequest) {
     const corsHeaders = getCorsHeaders(origin);
 
     if (request.method === "OPTIONS") {
-      return NextResponse.json({}, { headers: corsHeaders });
+      const response = new NextResponse(null, { status: 204, headers: corsHeaders });
+      applyStandardSecurityHeaders(response);
+      return response;
     }
 
     const apiResponse = NextResponse.next();
@@ -28,9 +30,10 @@ export default async function proxy(request: NextRequest) {
 
   const session = await auth.api.getSession({
     headers: request.headers,
+    query: { disableCookieCache: true },
   });
 
-  if (!session) {
+  if (!session || session.user.status === "REJECTED") {
     const redirectResponse = NextResponse.redirect(
       new URL("/auth/login", request.url),
     );
