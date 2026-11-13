@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { filterAvailableWorkspaces } from "./workspace-availability";
+import { filterAvailableWorkspaces, type WorkspaceAvailabilityLoader } from "./workspace-availability";
 
 type CurrentUser = {
   id: string;
@@ -16,7 +16,7 @@ export type WorkspaceSummary = {
   role: WorkspaceRole;
 };
 
-export async function getVisibleWorkspaces(user: CurrentUser) {
+export async function getVisibleWorkspaces(user: CurrentUser, loadAvailableIds?: WorkspaceAvailabilityLoader) {
   if (user.globalRole === "SUPER_ADMIN") {
     const workspaces = await prisma.workspace.findMany({
       where: {
@@ -34,7 +34,7 @@ export async function getVisibleWorkspaces(user: CurrentUser) {
     return filterAvailableWorkspaces(workspaces.map((workspace) => ({
       ...workspace,
       role: "EDITOR" as const,
-    })));
+    })), loadAvailableIds);
   }
 
   const userWorkspaces = await prisma.userWorkspace.findMany({
@@ -64,12 +64,13 @@ export async function getVisibleWorkspaces(user: CurrentUser) {
   return filterAvailableWorkspaces(userWorkspaces.map(({ workspace, role }) => ({
     ...workspace,
     role,
-  })));
+  })), loadAvailableIds);
 }
 
 export async function getAuthorizedWorkspace(
   user: CurrentUser,
   workspaceId: string,
+  loadAvailableIds?: WorkspaceAvailabilityLoader,
 ) {
   if (user.globalRole === "SUPER_ADMIN") {
     const workspace = await prisma.workspace.findFirst({
@@ -86,7 +87,7 @@ export async function getAuthorizedWorkspace(
     });
 
     if (!workspace) return null;
-    const [available] = await filterAvailableWorkspaces([{ ...workspace, role: "EDITOR" as const }]);
+    const [available] = await filterAvailableWorkspaces([{ ...workspace, role: "EDITOR" as const }], loadAvailableIds);
     return available ?? null;
   }
 
@@ -111,6 +112,6 @@ export async function getAuthorizedWorkspace(
   });
 
   if (!access) return null;
-  const [available] = await filterAvailableWorkspaces([{ ...access.workspace, role: access.role }]);
+  const [available] = await filterAvailableWorkspaces([{ ...access.workspace, role: access.role }], loadAvailableIds);
   return available ?? null;
 }

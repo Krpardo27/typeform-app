@@ -1,4 +1,4 @@
-import { getWorkspaceAccessContext } from "@/features/admin/workspaces/services/workspace-access";
+import { getWorkspaceRenderContext } from "@/features/admin/workspaces/services/workspace-access";
 import { EmptyWorkspaceFormsState } from "@/features/typeform/components/forms/EmptyWorkspaceFormsState";
 import { WorkspaceFormsGrid } from "@/features/typeform/components/forms/WorkspaceFormsGrid";
 import { WorkspaceFormsHeader } from "@/features/typeform/components/forms/WorkspaceFormsHeader";
@@ -17,7 +17,7 @@ export default async function WorkspaceFormsPage({
 }) {
   const { workspaceId } = await params;
   const { page, pageSize } = await searchParams;
-  const { workspace, canCreateForms } = await getWorkspaceAccessContext(workspaceId);
+  const { workspace, canCreateForms } = await getWorkspaceRenderContext(workspaceId);
 
   const requestedPage = Number.parseInt(page ?? "1", 10) || 1;
   const requestedPageSize = Number.parseInt(pageSize ?? String(DEFAULT_PAGE_SIZE), 10);

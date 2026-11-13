@@ -13,11 +13,12 @@ type WorkspaceRadioLogoProps = {
   size?: 32 | 40 | 48 | 64 | 80 | 100;
   alt?: string;
   fallback?: "name" | "none" | "icon";
+  loading?: "eager" | "lazy";
 };
 
 const sizeClasses = { 32: "size-8", 40: "size-10", 48: "size-12", 64: "size-16", 80: "size-20", 100: "size-25" } as const;
 
-export function WorkspaceRadioLogo({ workspace, size = 64, alt, fallback = "name" }: WorkspaceRadioLogoProps) {
+export function WorkspaceRadioLogo({ workspace, size = 64, alt, fallback = "name", loading = "lazy" }: WorkspaceRadioLogoProps) {
   const logo = getWorkspaceRadioLogo({ ...workspace, templateFormTypeformId: workspace.templateFormTypeformId ?? null });
 
   if (!logo) {
@@ -40,6 +41,7 @@ export function WorkspaceRadioLogo({ workspace, size = 64, alt, fallback = "name
       width={size}
       height={size}
       sizes={`${size}px`}
+      loading={loading}
       className={`${sizeClasses[size]} shrink-0 rounded-sm bg-white object-contain`}
     />
   );

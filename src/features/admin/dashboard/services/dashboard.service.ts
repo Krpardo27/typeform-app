@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { requireSuperAdmin } from "@/lib/requireSuperAdmin";
 import { buildAuditTimeline } from "@/features/admin/audit/services/audit-timeline.service";
 import { DASHBOARD_ACTIVITY_LIMIT, getDashboardPeriods } from "../dashboard.utils";
 import type { DashboardStats } from "../dashboard.types";
 
 export async function getDashboardSummary() {
+  await requireSuperAdmin();
   const now = new Date();
   const { startOfMonth, sevenDaysAgo } = getDashboardPeriods(now);
   const createdThisMonth = { gte: startOfMonth, lte: now };

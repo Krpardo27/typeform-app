@@ -8,5 +8,9 @@ export default async function HomePage() {
     redirect("/auth/login");
   }
 
+  if (user.globalRole === "SUPER_ADMIN") {
+    redirect("/admin/workspaces");
+  }
+
   redirect("/workspaces/me");
 }

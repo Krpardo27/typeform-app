@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requireSuperAdmin } from "@/lib/requireSuperAdmin";
 import { AdminAuditHeader } from "@/features/admin/audit/components/AdminAuditHeader";
 import { AuditDateFilter } from "@/features/admin/audit/components/AuditDateFilter";
 import { AuditStatsGrid } from "@/features/admin/audit/components/AuditStatsGrid";
@@ -16,6 +17,7 @@ export default async function AdminAuditPage({
     to?: string | string[];
   }>;
 }) {
+  await requireSuperAdmin();
   const rawSearchParams = await searchParams;
   const { from, to, error, createdAt } = getAuditDateFilter(rawSearchParams.from, rawSearchParams.to);
   const where = createdAt ? { createdAt } : undefined;

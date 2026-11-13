@@ -3,6 +3,7 @@
 import { getCurrentUser } from "@/lib/getCurrentUser";
 import { SearchAuthError } from "./search-auth-error";
 import { prisma } from "@/lib/prisma";
+import { createWorkspaceAvailabilityLoader, type WorkspaceAvailabilityLoader } from "@/features/admin/workspaces/services/workspace-availability";
 import {
   getAuthorizedWorkspace,
   getVisibleWorkspaces,
@@ -19,6 +20,7 @@ import {
 const MIN_SEARCH_LENGTH = 2;
 const MAX_RESULTS_PER_SECTION = 12;
 const WORKSPACE_FORMS_SEARCH_PAGE_SIZE = 200;
+const SEARCH_PAGE_CONCURRENCY = 4;
 
 function looksLikeInternalWorkspaceId(value: string) {
   return /^c[a-z0-9]{20,}$/i.test(value);
@@ -149,8 +151,9 @@ async function searchVisibleWorkspaces(
     globalRole: "SUPER_ADMIN" | "USER";
   },
   query: string,
+  loadAvailableIds: WorkspaceAvailabilityLoader,
 ): Promise<WorkspaceSearchResult[]> {
-  const workspaces = await getVisibleWorkspaces(currentUser);
+  const workspaces = await getVisibleWorkspaces(currentUser, loadAvailableIds);
   const queryLower = query.toLowerCase();
 
   return workspaces
@@ -176,16 +179,17 @@ async function getAllWorkspaceForms(workspaceLookupKey: string) {
     return firstPage.items;
   }
 
-  const remainingPages = await Promise.all(
-    Array.from({ length: firstPage.page_count - 1 }, (_, index) =>
-      getWorkspaceForms(workspaceLookupKey, {
-        page: index + 2,
-        pageSize: WORKSPACE_FORMS_SEARCH_PAGE_SIZE,
+  const items = [...firstPage.items];
+  for (let page = 2; page <= firstPage.page_count; page += SEARCH_PAGE_CONCURRENCY) {
+    const pages = await Promise.all(Array.from(
+      { length: Math.min(SEARCH_PAGE_CONCURRENCY, firstPage.page_count - page + 1) },
+      (_, offset) => getWorkspaceForms(workspaceLookupKey, {
+        page: page + offset, pageSize: WORKSPACE_FORMS_SEARCH_PAGE_SIZE,
       }),
-    ),
-  );
-
-  return [firstPage, ...remainingPages].flatMap((page) => page.items);
+    ));
+    items.push(...pages.flatMap((result) => result.items));
+  }
+  return items;
 }
 
 async function searchWorkspaceForms(
@@ -197,8 +201,9 @@ async function searchWorkspaceForms(
   },
   workspaceId: string,
   query: string,
+  loadAvailableIds: WorkspaceAvailabilityLoader,
 ): Promise<FormSearchResult[]> {
-  const workspace = await getAuthorizedWorkspace(currentUser, workspaceId);
+  const workspace = await getAuthorizedWorkspace(currentUser, workspaceId, loadAvailableIds);
 
   if (!workspace) {
     return [];
@@ -238,8 +243,9 @@ async function searchFormParticipants(
     formId: string;
     query: string;
   },
+  loadAvailableIds: WorkspaceAvailabilityLoader,
 ): Promise<ParticipantSearchResult[]> {
-  const workspace = await getAuthorizedWorkspace(currentUser, options.workspaceId);
+  const workspace = await getAuthorizedWorkspace(currentUser, options.workspaceId, loadAvailableIds);
 
   if (!workspace) {
     return [];
@@ -329,19 +335,27 @@ export async function searchGlobalAction(
   }
 
   const isSuperAdmin = currentUser.globalRole === "SUPER_ADMIN";
+  if (!isSuperAdmin) {
+    const allowed = await prisma.allowedUser.findFirst({
+      where: { email: { equals: currentUser.email, mode: "insensitive" } },
+      select: { id: true },
+    });
+    if (!allowed) throw new SearchAuthError();
+  }
+  const loadAvailableIds = createWorkspaceAvailabilityLoader();
 
   const [workspaces, authorizedUsers, forms, participants] = await Promise.all([
-    searchVisibleWorkspaces(currentUser, query),
+    searchVisibleWorkspaces(currentUser, query, loadAvailableIds),
     isSuperAdmin ? searchAuthorizedUsers(query) : Promise.resolve([]),
     options?.includeForms && options.workspaceId
-      ? searchWorkspaceForms(currentUser, options.workspaceId, query)
+      ? searchWorkspaceForms(currentUser, options.workspaceId, query, loadAvailableIds)
       : Promise.resolve([]),
     isSuperAdmin && options?.includeParticipants && options.workspaceId && options.formId
       ? searchFormParticipants(currentUser, {
           workspaceId: options.workspaceId,
           formId: options.formId,
           query,
-        })
+        }, loadAvailableIds)
       : Promise.resolve([]),
   ]);
 

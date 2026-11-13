@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/getCurrentUser", () => ({ getCurrentUser: vi.fn(async () => ({ id: "admin", globalRole: "SUPER_ADMIN" })) }));
+
 type Row = {
   id: string; name: string; typeformId: string; createdFromApp: boolean;
   templateFormTypeformId: string | null; _count: { users: number };

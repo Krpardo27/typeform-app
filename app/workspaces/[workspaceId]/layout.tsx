@@ -1,8 +1,7 @@
 import { ReactNode } from "react";
 import type { Metadata } from "next";
-import { prisma } from "@/lib/prisma";
 import { WorkspaceShellFrame } from "@/features/admin/workspaces/components/WorkspaceShellFrame";
-import { getWorkspaceAccessContext } from "@/features/admin/workspaces/services/workspace-access";
+import { getWorkspaceRenderContext } from "@/features/admin/workspaces/services/workspace-access";
 
 type Props = {
   children: ReactNode;
@@ -16,13 +15,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { workspaceId } = await params;
 
-  const workspace = await prisma.workspace.findFirst({
-    where: {
-      createdFromApp: true,
-      OR: [{ id: workspaceId }, { typeformId: workspaceId }],
-    },
-    select: { name: true },
-  });
+  const { workspace } = await getWorkspaceRenderContext(workspaceId);
 
   return {
     title: workspace?.name ?? "Workspace",
@@ -34,7 +27,7 @@ export default async function WorkspaceSegmentLayout({
   params,
 }: Props) {
   const { workspaceId } = await params;
-  const { user, workspaces, workspace } = await getWorkspaceAccessContext(workspaceId);
+  const { user, workspaces, workspace } = await getWorkspaceRenderContext(workspaceId);
 
   return (
     <WorkspaceShellFrame

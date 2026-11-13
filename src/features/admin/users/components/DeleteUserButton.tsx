@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { unstable_rethrow, useRouter } from "next/navigation";
 import { LuTrash2, LuLoaderCircle } from "react-icons/lu";
 import { deleteUserAction } from "../actions/delete-user-action";
-import Swal, { type SweetAlertOptions } from "sweetalert2";
+import type { SweetAlertOptions } from "sweetalert2";
 import { toast } from "sonner";
 
 type Props = {
@@ -46,6 +46,7 @@ export function DeleteUserButton({ userId, userName, disabled }: Props) {
     setIsBusy(true);
 
     try {
+      const { default: Swal } = await import("sweetalert2");
       const result = await Swal.fire<boolean>({
         ...swalTheme,
         titleText: `¿Eliminar a ${displayName}?`,

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getWorkspaceAccessContext } from "@/features/admin/workspaces/services/workspace-access";
+import { getWorkspaceRenderContext } from "@/features/admin/workspaces/services/workspace-access";
 import { createDefaultFormForWorkspaceAction } from "@/features/typeform/actions/create-default-form-for-workspace.action";
 import { BaseFormsGrid } from "@/features/typeform/components/creation/BaseFormsGrid";
 import { EmptyBaseFormsState } from "@/features/typeform/components/creation/EmptyBaseFormsState";
@@ -19,7 +19,7 @@ export default async function NewWorkspaceFormPage({
 }) {
   const { workspaceId } = await params;
   const { page, pageSize } = await searchParams;
-  const { workspace, canCreateForms } = await getWorkspaceAccessContext(workspaceId);
+  const { workspace, canCreateForms } = await getWorkspaceRenderContext(workspaceId);
 
   if (!canCreateForms) {
     notFound();

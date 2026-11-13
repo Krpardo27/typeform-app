@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { LuArrowUpRight } from "react-icons/lu";
-import { getWorkspaceAccessContext } from "@/features/admin/workspaces/services/workspace-access";
+import { getWorkspaceRenderContext } from "@/features/admin/workspaces/services/workspace-access";
 import { WorkspaceFormResponsesHeader } from "@/features/typeform/components/responses/WorkspaceFormResponsesHeader";
 import { WorkspaceFormResponsesStats } from "@/features/typeform/components/responses/WorkspaceFormResponsesStats";
 import { confirmWinnersForRevealAction } from "@/features/typeform/actions/select-winners.action";
@@ -136,26 +136,31 @@ export default async function FormResponsesPage({
   }>;
 }) {
   const { workspaceId, formId } = await params;
-  const { user, workspace } = await getWorkspaceAccessContext(workspaceId);
+  const { user, workspace } = await getWorkspaceRenderContext(workspaceId);
   const { winnerRegionFilter, winnerSelection, winnerError } =
     await searchParams;
 
-  const userWorkspaceMembership = await prisma.userWorkspace.findUnique({
-    where: {
-      userId_workspaceId: {
-        userId: user.id,
-        workspaceId: workspace.id,
+  const [userWorkspaceMembership, form, resolvedWorkspaceTypeformId] = await Promise.all([
+    prisma.userWorkspace.findUnique({
+      where: {
+        userId_workspaceId: {
+          userId: user.id,
+          workspaceId: workspace.id,
+        },
       },
-    },
-    select: {
-      role: true,
-    },
-  });
+      select: {
+        role: true,
+      },
+    }),
+    getExistingTypeformForm(formId),
+    resolveWorkspaceTypeformId(workspace.typeformId),
+  ]);
 
-  const effectiveRole = userWorkspaceMembership?.role ?? workspace.role;
+  if (user.globalRole !== "SUPER_ADMIN" && !userWorkspaceMembership) notFound();
   const canSelectWinners =
-    user.globalRole === "SUPER_ADMIN" || effectiveRole === "EDITOR";
-  const form = await getExistingTypeformForm(formId);
+    user.globalRole === "SUPER_ADMIN" || userWorkspaceMembership?.role === "EDITOR";
+
+  if (!formBelongsToWorkspace(form, resolvedWorkspaceTypeformId)) notFound();
 
   const localForm = await prisma.form.findUnique({
     where: { typeformId: form.id },
@@ -198,14 +203,6 @@ export default async function FormResponsesPage({
     ]).sort(([first], [second]) => (first ?? "").localeCompare(second ?? "")),
   ])).digest("hex");
 
-  const resolvedWorkspaceTypeformId = await resolveWorkspaceTypeformId(
-    workspace.typeformId,
-  );
-
-  if (!formBelongsToWorkspace(form, resolvedWorkspaceTypeformId)) {
-    notFound();
-  }
-
   const allResponses = await loadFormResponses(form.id);
   const chronologicalParticipantResponses =
     getChronologicalParticipantResponses(allResponses);
@@ -236,8 +233,9 @@ export default async function FormResponsesPage({
     : undefined;
   const embedInfo = getEmbedInfo(form.id, workspace.typeformId, undefined, workspace.templateFormTypeformId);
   const publicFormUrl = embedInfo.publicUrl ?? form._links?.display ?? embedInfo.src ?? `https://form.typeform.com/to/${encodeURIComponent(form.id)}`;
+  const candidateTokens = new Set(winnerCandidateResponses.map((response) => response.token));
   const missingWinnerTokens = [...persistedWinnerTokens]
-    .filter((token) => !winnerCandidateResponses.some((response) => response.token === token))
+    .filter((token) => !candidateTokens.has(token))
     .sort();
   const showWinnerPanel = canSelectWinners &&
     (winnerCandidateResponses.length > 0 || persistedWinnerTokens.size > 0);

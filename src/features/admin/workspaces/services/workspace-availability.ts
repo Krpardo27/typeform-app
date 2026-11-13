@@ -11,9 +11,19 @@ export const getAvailableAppWorkspaceWhere = cache(async () => ({
   typeformId: { in: [...await getAvailableWorkspaceIds()] },
 }));
 
-export async function filterAvailableWorkspaces<T extends { typeformId: string }>(workspaces: T[]): Promise<T[]> {
+export type WorkspaceAvailabilityLoader = () => Promise<ReadonlySet<string>>;
+
+export function createWorkspaceAvailabilityLoader(): WorkspaceAvailabilityLoader {
+  let pending: Promise<ReadonlySet<string>> | undefined;
+  return () => pending ??= getAvailableWorkspaceIds();
+}
+
+export async function filterAvailableWorkspaces<T extends { typeformId: string }>(
+  workspaces: T[],
+  loadAvailableIds: WorkspaceAvailabilityLoader = getAvailableWorkspaceIds,
+): Promise<T[]> {
   if (workspaces.length === 0) return [];
-  const availableIds = await getAvailableWorkspaceIds();
+  const availableIds = await loadAvailableIds();
   // Comparar IDs exactos: un workspace nuevo con el mismo nombre no es el anterior.
   return workspaces.filter((workspace) => availableIds.has(workspace.typeformId));
 }

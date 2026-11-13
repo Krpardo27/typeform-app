@@ -15,7 +15,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound, redirect: mocks.redirect }));
 vi.mock("@/features/admin/workspaces/services/workspace-access", () => ({
-  getWorkspaceAccessContext: mocks.access,
+  getWorkspaceRenderContext: mocks.access,
 }));
 vi.mock("@/features/typeform/services/typeform.service", () => ({
   getTypeformForm: mocks.form,

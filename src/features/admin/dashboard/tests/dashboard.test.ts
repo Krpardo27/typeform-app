@@ -3,6 +3,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { buildAuditTimeline } from "@/features/admin/audit/services/audit-timeline.service";
 
+vi.mock("@/lib/getCurrentUser", () => ({ getCurrentUser: vi.fn(async () => ({ id: "admin", globalRole: "SUPER_ADMIN" })) }));
+
 const mocks = vi.hoisted(() => ({
   auditFindMany: vi.fn(),
   sessionFindMany: vi.fn(),

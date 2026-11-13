@@ -1,6 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/getCurrentUser", () => ({ getCurrentUser: vi.fn(async () => ({ id: "admin", globalRole: "SUPER_ADMIN" })) }));
+
 const mocks = vi.hoisted(() => ({ auditLogs: vi.fn(), sessions: vi.fn(), timeline: vi.fn() }));
 vi.mock("@/lib/prisma", () => ({ prisma: {
   auditLog: { findMany: mocks.auditLogs }, session: { findMany: mocks.sessions },

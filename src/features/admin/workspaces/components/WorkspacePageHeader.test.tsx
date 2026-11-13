@@ -18,6 +18,7 @@ describe("WorkspacePageHeader", () => {
     const width = image?.match(/\bwidth="(\d+)"/)?.[1];
     expect(Number(width)).toBeGreaterThan(0);
     expect(image).toContain(`height="${width}"`);
+    expect(image).toContain('loading="eager"');
     expect(html).toContain("Plantilla de origen");
     expect(html).toContain('href="/admin/workspaces"');
     expect(html).toContain("sm:flex-row sm:items-center");
@@ -45,5 +46,6 @@ describe("WorkspaceRadioLogo", () => {
     expect(html).toContain(`width="${size}"`);
     expect(html).toContain(`height="${size}"`);
     expect(html).toContain("object-contain");
+    expect(html).toContain('loading="lazy"');
   });
 });

@@ -1,9 +1,11 @@
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
+import { requireSuperAdmin } from "@/lib/requireSuperAdmin";
 import { getAvailableAppWorkspaceWhere } from "./workspace-availability";
 import { WORKSPACE_PAGE_SIZES } from "../utils/workspace-view";
 
 export const getAdminWorkspacesPage = cache(async (requestedPage: number, requestedPageSize: number) => {
+  await requireSuperAdmin();
   const itemsPerPage = WORKSPACE_PAGE_SIZES.find((size) => size === requestedPageSize) ?? WORKSPACE_PAGE_SIZES[0];
   const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
   const where = await getAvailableAppWorkspaceWhere();
